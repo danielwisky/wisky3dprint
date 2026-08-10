@@ -221,6 +221,70 @@
   })();
 
   (function () {
+    var form = document.getElementById("admin-calc");
+    if (!form) return;
+
+    var peso = document.getElementById("admin-calc-peso");
+    var horas = document.getElementById("admin-calc-horas");
+    var minutos = document.getElementById("admin-calc-minutos");
+    var filamento = document.getElementById("admin-calc-filamento");
+    var maoDeObra = document.getElementById("admin-calc-mao-de-obra");
+    var margemInput = document.getElementById("admin-calc-margem");
+    var out = document.getElementById("admin-calc-result");
+    var breakdown = document.getElementById("admin-calc-breakdown");
+    var d = form.dataset;
+    var fmt = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+
+    var rows = {
+      filamento: document.getElementById("admin-calc-b-filamento"),
+      energia: document.getElementById("admin-calc-b-energia"),
+      desgaste: document.getElementById("admin-calc-b-desgaste"),
+      subtotal: document.getElementById("admin-calc-b-subtotal"),
+      margem: document.getElementById("admin-calc-b-margem"),
+      margemLabel: document.getElementById("admin-calc-b-margem-label"),
+      maoDeObra: document.getElementById("admin-calc-b-mao-de-obra")
+    };
+
+    function calc() {
+      var g = parseFloat(String(peso.value).replace(",", "."));
+      var h = (parseFloat(horas.value) || 0) + (parseFloat(minutos.value) || 0) / 60;
+      var filamentoKg = parseFloat(String(filamento.value).replace(",", "."));
+      var maoDeObraVal = parseFloat(String(maoDeObra.value).replace(",", ".")) || 0;
+      var margemPct = parseFloat(String(margemInput.value).replace(",", "."));
+      if (!isFinite(margemPct)) margemPct = parseFloat(d.margemPct) || 0;
+
+      if (!isFinite(g) || g <= 0 || h <= 0 || !isFinite(filamentoKg) || filamentoKg <= 0 || maoDeObraVal < 0 || margemPct < 0) {
+        out.textContent = "Preencha os campos";
+        out.classList.remove("has-value");
+        breakdown.hidden = true;
+        return;
+      }
+
+      var custoFilamento = (g / 1000) * filamentoKg;
+      var energia = (parseFloat(d.potenciaW) * h / 1000) * parseFloat(d.tarifaKwh);
+      var desgaste = parseFloat(d.desgaste);
+      var subtotal = custoFilamento + energia + desgaste;
+      var margem = subtotal * (margemPct / 100);
+      var total = subtotal + margem + maoDeObraVal;
+
+      rows.filamento.textContent = fmt.format(custoFilamento);
+      rows.energia.textContent = fmt.format(energia);
+      rows.desgaste.textContent = fmt.format(desgaste);
+      rows.subtotal.textContent = fmt.format(subtotal);
+      rows.margemLabel.textContent = "Margem (" + margemPct + "%)";
+      rows.margem.textContent = fmt.format(margem);
+      rows.maoDeObra.textContent = fmt.format(maoDeObraVal);
+      breakdown.hidden = false;
+
+      out.textContent = fmt.format(total);
+      out.classList.add("has-value");
+    }
+
+    form.addEventListener("input", calc);
+    form.addEventListener("submit", function (e) { e.preventDefault(); calc(); });
+  })();
+
+  (function () {
     var btn = document.querySelector(".theme-toggle");
     if (!btn) return;
 

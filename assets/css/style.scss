@@ -2301,6 +2301,29 @@ body.gallery-modal-open {
   outline: none;
   border-color: var(--cyan);
 }
+.calc-fields-time {
+  gap: 0.6rem;
+}
+.calc-breakdown {
+  margin-top: 1.5rem;
+  padding: 0.25rem 1rem;
+  background: var(--surface-soft);
+  border-radius: 14px;
+}
+.calc-breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.calc-breakdown-row:last-child {
+  border-bottom: none;
+  color: var(--text);
+  font-weight: 600;
+}
 .calc-result-box {
   margin-top: 1.5rem;
   padding: 1.25rem;
