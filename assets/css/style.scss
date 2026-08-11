@@ -2467,8 +2467,9 @@ body.gallery-modal-open {
   gap: 0.35rem;
   margin-bottom: 1.5rem;
 }
+.calc-print-brand-row { display: flex; align-items: center; gap: 0.6rem; }
 .calc-print-logo { width: 48px; height: 48px; }
-.calc-print-brand { font-size: 0.85rem; color: #555; }
+.calc-print-brand { font-size: 0.95rem; color: #555; }
 .calc-print-title { font-size: 1.3rem; margin-top: 0.5rem; }
 .calc-print-table { width: 100%; border-collapse: collapse; }
 .calc-print-table th,
