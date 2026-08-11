@@ -2106,7 +2106,8 @@ body.gallery-modal-open {
   }
 
   // Navbar mobile = $nav-h-mobile + safe-area; mantém o título abaixo do menu fixo.
-  .section-estoque {
+  .section-estoque,
+  .section-calc {
     padding-top: calc(#{$nav-h-mobile} + env(safe-area-inset-top, 0px) + 3rem);
   }
 
