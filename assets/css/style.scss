@@ -2288,6 +2288,7 @@ body.gallery-modal-open {
   .calc-fields { grid-template-columns: 1fr; }
 }
 .calc-field { display: flex; flex-direction: column; gap: 0.4rem; }
+.calc-field-full { grid-column: 1 / -1; }
 .calc-field label { font-size: 0.85rem; color: var(--muted); font-weight: 600; }
 .calc-field input {
   padding: 0.7rem 0.9rem;
@@ -2396,6 +2397,99 @@ body.gallery-modal-open {
   font-size: 0.8rem;
   color: var(--muted-soft);
   text-align: center;
+}
+
+.calc-add-btn { width: 100%; margin-top: 1.25rem; }
+
+.calc-itens {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+.calc-itens h3 { margin: 0 0 0.75rem; font-size: 0.95rem; }
+.calc-itens-list {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.calc-item-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.8rem;
+  background: var(--surface-soft);
+  border-radius: 10px;
+}
+.calc-item-info { flex: 1; font-size: 0.85rem; }
+.calc-item-valor { font-weight: 600; font-size: 0.85rem; }
+.calc-item-remove {
+  border: none;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0.1rem 0.3rem;
+}
+.calc-item-remove:hover { color: var(--text); }
+.calc-itens-total {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--border);
+  font-weight: 700;
+}
+.calc-itens-actions { display: flex; gap: 0.75rem; margin-top: 1rem; }
+@media (max-width: 520px) {
+  .calc-itens-actions { flex-direction: column; }
+}
+
+// Antes de imprimir, o JS move .calc-print para ser filho direto do body —
+// assim o seletor abaixo esconde só o resto da página (nav, seções, footer),
+// sem sobrar espaço em branco de conteúdo invisível no PDF.
+.calc-print { display: none; }
+@media print {
+  body.is-printing-calc > *:not(.calc-print) { display: none !important; }
+  body.is-printing-calc .calc-print {
+    display: block;
+    padding: 2rem;
+    background: #fff;
+    color: #111;
+  }
+}
+.calc-print-header {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
+  margin-bottom: 1.5rem;
+}
+.calc-print-brand-row {
+  display: flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 0.6rem;
+}
+.calc-print-logo { width: 48px; height: 48px; }
+.calc-print-brand { font-size: 0.95rem; color: #555; }
+.calc-print-title { font-size: 1.3rem; margin-top: 0.5rem; text-align: center; }
+.calc-print-table { width: 100%; border-collapse: collapse; }
+.calc-print-table th,
+.calc-print-table td {
+  text-align: left;
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid #ccc;
+  font-size: 0.9rem;
+}
+.calc-print-total {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1rem;
+  font-size: 1.1rem;
+  font-weight: 700;
 }
 
 .faq-list {

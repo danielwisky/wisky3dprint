@@ -27,6 +27,17 @@ kramdown:
 plugins:
   - jekyll-seo-tag
   - jekyll-sitemap
+  - jekyll-minifier
+
+# Minifica só o .js (assets/js/main.js). HTML, CSS e XML ficam de fora do
+# escopo — CSS já sai comprimido pelo Sass e minificar HTML tem mais risco.
+jekyll-minifier:
+  exclude:
+    - "*.html"
+    - "*.htm"
+    - "*.xml"
+    - "*.css"
+    - "*.json"
 
 calculadora:
   custo_filamento_kg: 129
@@ -34,6 +45,7 @@ calculadora:
   tarifa_kwh: 0.80
   desgaste: 2.00
   margem_pct: 100
+  perda_pct: 10
   montagem: 20
 
 exclude:
