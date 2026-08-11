@@ -239,6 +239,7 @@
     var itensList = document.getElementById("orcamento-calc-itens-list");
     var itensTotalOut = document.getElementById("orcamento-calc-itens-total");
     var pdfBtn = document.getElementById("orcamento-calc-pdf");
+    var csvBtn = document.getElementById("orcamento-calc-csv");
     var clearBtn = document.getElementById("orcamento-calc-clear");
     var printBox = document.getElementById("orcamento-calc-print");
     var printBody = document.getElementById("orcamento-calc-print-body");
@@ -428,6 +429,61 @@
 
     window.addEventListener("afterprint", function () {
       document.body.classList.remove("is-printing-calc");
+    });
+
+    function csvNum(n) {
+      return n.toFixed(2).replace(".", ",");
+    }
+
+    function csvField(value) {
+      var str = String(value);
+      return /[";\n]/.test(str) ? '"' + str.replace(/"/g, '""') + '"' : str;
+    }
+
+    csvBtn.addEventListener("click", function () {
+      if (!itens.length) return;
+
+      var linhas = [[
+        "Peça", "Quantidade", "Filamento", "Energia", "Desgaste da impressora",
+        "Subtotal", "Perda (%)", "Perda", "Margem (%)", "Margem", "Mão de obra",
+        "Valor unitário", "Valor total"
+      ]];
+      var total = 0;
+
+      itens.forEach(function (item, i) {
+        total += item.itemTotal;
+        linhas.push([
+          item.nome || "Peça " + (i + 1),
+          item.qtd,
+          csvNum(item.custoFilamento),
+          csvNum(item.energia),
+          csvNum(item.desgaste),
+          csvNum(item.subtotal),
+          csvNum(item.perdaPct),
+          csvNum(item.perda),
+          csvNum(item.margemPct),
+          csvNum(item.margem),
+          csvNum(item.maoDeObra),
+          csvNum(item.unitTotal),
+          csvNum(item.itemTotal)
+        ]);
+      });
+
+      linhas.push(["Total geral", "", "", "", "", "", "", "", "", "", "", "", csvNum(total)]);
+
+      var csv = linhas.map(function (linha) {
+        return linha.map(csvField).join(";");
+      }).join("\r\n");
+
+      var blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = "orcamento.csv";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     });
 
     form.addEventListener("input", calc);
