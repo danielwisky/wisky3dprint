@@ -499,11 +499,15 @@
       if (!printLogo) return;
       var hidden = localStorage.getItem(LOGO_HIDDEN_KEY) === "1";
       var custom = localStorage.getItem(LOGO_CUSTOM_KEY);
+      var hasCustom = !!custom;
 
-      logoHideInput.checked = hidden;
-      printLogo.style.display = hidden ? "none" : "";
+      // Com logo própria, a marca Wisky 3D Print (texto) fica sempre oculta.
+      logoHideInput.checked = hidden || hasCustom;
+      logoHideInput.disabled = hasCustom;
+
+      printLogo.style.display = hidden && !hasCustom ? "none" : "";
       printLogo.src = custom || printLogo.dataset.defaultSrc;
-      if (printBrand) printBrand.style.display = hidden ? "none" : "";
+      if (printBrand) printBrand.style.display = hidden || hasCustom ? "none" : "";
     }
 
     logoHideInput.addEventListener("change", function () {
@@ -533,7 +537,7 @@
       var reader = new FileReader();
       reader.onload = function () {
         localStorage.setItem(LOGO_CUSTOM_KEY, reader.result);
-        localStorage.removeItem(LOGO_HIDDEN_KEY);
+        localStorage.setItem(LOGO_HIDDEN_KEY, "1");
         applyLogoState();
       };
       reader.readAsDataURL(file);
