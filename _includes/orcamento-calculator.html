@@ -92,14 +92,28 @@
       <button type="button" id="orcamento-calc-csv" class="btn btn-ghost">Exportar CSV</button>
       <button type="button" id="orcamento-calc-clear" class="btn btn-ghost">Limpar orçamento</button>
     </div>
+
+    <div class="calc-logo-options">
+      <h3>Personalizar orçamento</h3>
+      <p class="calc-logo-options-hint">Vai usar esta calculadora para o seu próprio negócio? Oculte o logotipo da Wisky 3D Print ou coloque o seu.</p>
+      <label class="calc-logo-option-checkbox" id="orcamento-calc-logo-hide-label" title="Marcado automaticamente enquanto você estiver usando uma logo própria">
+        <input type="checkbox" id="orcamento-calc-logo-hide">
+        Ocultar logotipo Wisky 3D Print
+      </label>
+      <div class="calc-logo-option-row">
+        <label for="orcamento-calc-logo-upload" class="btn btn-ghost calc-logo-upload-btn">Usar minha própria logo</label>
+        <input type="file" id="orcamento-calc-logo-upload" accept="image/*" hidden>
+        <button type="button" id="orcamento-calc-logo-reset" class="btn btn-ghost">Restaurar logo padrão</button>
+      </div>
+    </div>
   </div>
 </form>
 
 <div class="calc-print" id="orcamento-calc-print" aria-hidden="true">
   <div class="calc-print-header">
     <div class="calc-print-brand-row">
-      <img src="{{ '/assets/img/logo-icon.png' | relative_url }}" alt="Wisky 3D Print" class="calc-print-logo" width="48" height="48">
-      <span class="calc-print-brand">Wisky 3D Print</span>
+      <img src="{{ '/assets/img/logo-icon.png' | relative_url }}" data-default-src="{{ '/assets/img/logo-icon.png' | relative_url }}" alt="Wisky 3D Print" class="calc-print-logo" id="orcamento-calc-print-logo">
+      <span class="calc-print-brand" id="orcamento-calc-print-brand">Wisky 3D Print</span>
     </div>
     <strong class="calc-print-title">Orçamento</strong>
   </div>
@@ -118,4 +132,5 @@
     <span>Total</span>
     <span id="orcamento-calc-print-total">—</span>
   </div>
+  <p class="calc-print-blessing">Deus seja louvado!</p>
 </div>
