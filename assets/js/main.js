@@ -244,6 +244,10 @@
     var printBox = document.getElementById("orcamento-calc-print");
     var printBody = document.getElementById("orcamento-calc-print-body");
     var printTotalOut = document.getElementById("orcamento-calc-print-total");
+    var printLogo = document.getElementById("orcamento-calc-print-logo");
+    var logoHideInput = document.getElementById("orcamento-calc-logo-hide");
+    var logoUploadInput = document.getElementById("orcamento-calc-logo-upload");
+    var logoResetBtn = document.getElementById("orcamento-calc-logo-reset");
     var d = form.dataset;
     var fmt = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -485,6 +489,62 @@
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     });
+
+    var LOGO_HIDDEN_KEY = "orcamentoCalc:logoHidden";
+    var LOGO_CUSTOM_KEY = "orcamentoCalc:logoCustom";
+    var LOGO_MAX_BYTES = 500 * 1024;
+
+    function applyLogoState() {
+      if (!printLogo) return;
+      var hidden = localStorage.getItem(LOGO_HIDDEN_KEY) === "1";
+      var custom = localStorage.getItem(LOGO_CUSTOM_KEY);
+
+      logoHideInput.checked = hidden;
+      printLogo.style.display = hidden ? "none" : "";
+      printLogo.src = custom || printLogo.dataset.defaultSrc;
+    }
+
+    logoHideInput.addEventListener("change", function () {
+      if (logoHideInput.checked) {
+        localStorage.setItem(LOGO_HIDDEN_KEY, "1");
+      } else {
+        localStorage.removeItem(LOGO_HIDDEN_KEY);
+      }
+      applyLogoState();
+    });
+
+    logoUploadInput.addEventListener("change", function () {
+      var file = logoUploadInput.files && logoUploadInput.files[0];
+      if (!file) return;
+
+      if (!/^image\//.test(file.type)) {
+        alert("Escolha um arquivo de imagem.");
+        logoUploadInput.value = "";
+        return;
+      }
+      if (file.size > LOGO_MAX_BYTES) {
+        alert("A imagem é muito grande. Escolha uma imagem de até 500KB.");
+        logoUploadInput.value = "";
+        return;
+      }
+
+      var reader = new FileReader();
+      reader.onload = function () {
+        localStorage.setItem(LOGO_CUSTOM_KEY, reader.result);
+        localStorage.removeItem(LOGO_HIDDEN_KEY);
+        applyLogoState();
+      };
+      reader.readAsDataURL(file);
+    });
+
+    logoResetBtn.addEventListener("click", function () {
+      localStorage.removeItem(LOGO_HIDDEN_KEY);
+      localStorage.removeItem(LOGO_CUSTOM_KEY);
+      logoUploadInput.value = "";
+      applyLogoState();
+    });
+
+    applyLogoState();
 
     form.addEventListener("input", calc);
     form.addEventListener("submit", function (e) {
