@@ -245,6 +245,7 @@
     var printBody = document.getElementById("orcamento-calc-print-body");
     var printTotalOut = document.getElementById("orcamento-calc-print-total");
     var printLogo = document.getElementById("orcamento-calc-print-logo");
+    var printBrand = document.getElementById("orcamento-calc-print-brand");
     var logoHideInput = document.getElementById("orcamento-calc-logo-hide");
     var logoUploadInput = document.getElementById("orcamento-calc-logo-upload");
     var logoResetBtn = document.getElementById("orcamento-calc-logo-reset");
@@ -502,6 +503,7 @@
       logoHideInput.checked = hidden;
       printLogo.style.display = hidden ? "none" : "";
       printLogo.src = custom || printLogo.dataset.defaultSrc;
+      if (printBrand) printBrand.style.display = hidden ? "none" : "";
     }
 
     logoHideInput.addEventListener("change", function () {
