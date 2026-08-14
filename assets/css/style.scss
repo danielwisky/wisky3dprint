@@ -2456,6 +2456,55 @@ body.gallery-modal-open {
   padding: 0.1rem 0.3rem;
 }
 .calc-item-remove:hover { color: var(--text); }
+.calc-desconto {
+  margin-bottom: 1rem;
+}
+.calc-desconto label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+.calc-desconto-fields {
+  display: flex;
+  gap: 0.6rem;
+}
+.calc-desconto-fields input,
+.calc-desconto-fields select {
+  padding: 0.7rem 0.9rem;
+  background: var(--surface-soft);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  color: var(--text);
+  font: inherit;
+}
+.calc-desconto-fields input:focus-visible,
+.calc-desconto-fields select:focus-visible {
+  outline: none;
+  border-color: var(--cyan);
+}
+#orcamento-calc-desconto-valor { width: 5rem; flex: none; }
+#orcamento-calc-desconto-tipo { flex: none; }
+#orcamento-calc-desconto-texto { flex: 1; min-width: 0; }
+@media (max-width: 520px) {
+  .calc-desconto-fields { flex-wrap: wrap; }
+  #orcamento-calc-desconto-texto { flex-basis: 100%; }
+}
+.calc-desconto-label-texto {
+  font-weight: 400;
+  opacity: 0.75;
+}
+#orcamento-calc-desconto-breakdown .calc-breakdown-row:last-child {
+  font-weight: 400;
+  color: var(--muted);
+}
+.calc-itens-total-breakdown {
+  padding: 0.25rem 1rem;
+  background: var(--surface-soft);
+  border-radius: 14px;
+  margin-bottom: 0.5rem;
+}
 .calc-itens-total {
   display: flex;
   justify-content: space-between;
@@ -2522,10 +2571,20 @@ body.gallery-modal-open {
   border-bottom: 1px solid #ccc;
   font-size: 0.9rem;
 }
+.calc-print-total-breakdown {
+  margin-top: 1rem;
+}
+.calc-print-total-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.3rem 0;
+  font-size: 0.9rem;
+  color: #555;
+}
 .calc-print-total {
   display: flex;
   justify-content: space-between;
-  margin-top: 1rem;
+  margin-top: 0.5rem;
   font-size: 1.1rem;
   font-weight: 700;
 }

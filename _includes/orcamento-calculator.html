@@ -83,6 +83,29 @@
   <div class="calc-itens" id="orcamento-calc-itens" hidden>
     <h3>Itens do orçamento</h3>
     <ul class="calc-itens-list" id="orcamento-calc-itens-list"></ul>
+
+    <div class="calc-desconto">
+      <label for="orcamento-calc-desconto-valor">Desconto</label>
+      <div class="calc-desconto-fields">
+        <input type="text" id="orcamento-calc-desconto-valor" name="descontoValor" inputmode="decimal" autocomplete="off" placeholder="0">
+        <select id="orcamento-calc-desconto-tipo" name="descontoTipo">
+          <option value="pct">%</option>
+          <option value="valor">R$</option>
+        </select>
+        <input type="text" id="orcamento-calc-desconto-texto" name="descontoTexto" autocomplete="off" placeholder="Texto (opcional)">
+      </div>
+    </div>
+
+    <div class="calc-itens-total-breakdown" id="orcamento-calc-desconto-breakdown" hidden>
+      <div class="calc-breakdown-row">
+        <span>Subtotal</span>
+        <span id="orcamento-calc-itens-subtotal">—</span>
+      </div>
+      <div class="calc-breakdown-row">
+        <span id="orcamento-calc-desconto-label">Desconto</span>
+        <span id="orcamento-calc-desconto-out">—</span>
+      </div>
+    </div>
     <div class="calc-itens-total">
       <span>Total geral</span>
       <span id="orcamento-calc-itens-total">—</span>
@@ -128,6 +151,16 @@
     </thead>
     <tbody id="orcamento-calc-print-body"></tbody>
   </table>
+  <div class="calc-print-total-breakdown" id="orcamento-calc-print-desconto-breakdown" hidden>
+    <div class="calc-print-total-row">
+      <span>Subtotal</span>
+      <span id="orcamento-calc-print-subtotal">—</span>
+    </div>
+    <div class="calc-print-total-row">
+      <span id="orcamento-calc-print-desconto-label">Desconto</span>
+      <span id="orcamento-calc-print-desconto">—</span>
+    </div>
+  </div>
   <div class="calc-print-total">
     <span>Total</span>
     <span id="orcamento-calc-print-total">—</span>
