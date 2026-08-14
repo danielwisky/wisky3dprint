@@ -238,11 +238,22 @@
     var itensBox = document.getElementById("orcamento-calc-itens");
     var itensList = document.getElementById("orcamento-calc-itens-list");
     var itensTotalOut = document.getElementById("orcamento-calc-itens-total");
+    var descontoValorInput = document.getElementById("orcamento-calc-desconto-valor");
+    var descontoTipoInput = document.getElementById("orcamento-calc-desconto-tipo");
+    var descontoTextoInput = document.getElementById("orcamento-calc-desconto-texto");
+    var descontoBreakdown = document.getElementById("orcamento-calc-desconto-breakdown");
+    var itensSubtotalOut = document.getElementById("orcamento-calc-itens-subtotal");
+    var descontoLabel = document.getElementById("orcamento-calc-desconto-label");
+    var descontoOut = document.getElementById("orcamento-calc-desconto-out");
     var pdfBtn = document.getElementById("orcamento-calc-pdf");
     var csvBtn = document.getElementById("orcamento-calc-csv");
     var clearBtn = document.getElementById("orcamento-calc-clear");
     var printBox = document.getElementById("orcamento-calc-print");
     var printBody = document.getElementById("orcamento-calc-print-body");
+    var printDescontoBreakdown = document.getElementById("orcamento-calc-print-desconto-breakdown");
+    var printSubtotalOut = document.getElementById("orcamento-calc-print-subtotal");
+    var printDescontoLabel = document.getElementById("orcamento-calc-print-desconto-label");
+    var printDescontoOut = document.getElementById("orcamento-calc-print-desconto");
     var printTotalOut = document.getElementById("orcamento-calc-print-total");
     var printLogo = document.getElementById("orcamento-calc-print-logo");
     var printBrand = document.getElementById("orcamento-calc-print-brand");
@@ -341,6 +352,25 @@
       addBtn.disabled = false;
     }
 
+    function setDescontoLabel(el) {
+      var texto = (descontoTextoInput.value || "").trim();
+      el.innerHTML = "";
+      el.appendChild(document.createTextNode("Desconto"));
+      if (texto) {
+        var span = document.createElement("span");
+        span.className = "calc-desconto-label-texto";
+        span.textContent = " (" + texto + ")";
+        el.appendChild(span);
+      }
+    }
+
+    function computeDesconto(subtotal) {
+      var valor = parseFloat(String(descontoValorInput.value).replace(",", "."));
+      if (!isFinite(valor) || valor <= 0) return 0;
+      var desconto = descontoTipoInput.value === "pct" ? subtotal * (valor / 100) : valor;
+      return Math.min(desconto, subtotal);
+    }
+
     function renderItens() {
       itensList.innerHTML = "";
       var total = 0;
@@ -375,9 +405,23 @@
         itensList.appendChild(li);
       });
 
-      itensTotalOut.textContent = fmt.format(total);
+      var desconto = computeDesconto(total);
+      if (desconto > 0) {
+        itensSubtotalOut.textContent = fmt.format(total);
+        setDescontoLabel(descontoLabel);
+        descontoOut.textContent = "-" + fmt.format(desconto);
+        descontoBreakdown.hidden = false;
+      } else {
+        descontoBreakdown.hidden = true;
+      }
+
+      itensTotalOut.textContent = fmt.format(total - desconto);
       itensBox.hidden = itens.length === 0;
     }
+
+    [descontoValorInput, descontoTipoInput, descontoTextoInput].forEach(function (el) {
+      el.addEventListener("input", renderItens);
+    });
 
     addBtn.addEventListener("click", function () {
       if (!current) return;
@@ -401,6 +445,9 @@
 
     clearBtn.addEventListener("click", function () {
       itens = [];
+      descontoValorInput.value = "";
+      descontoTipoInput.value = "pct";
+      descontoTextoInput.value = "";
       renderItens();
     });
 
@@ -424,7 +471,16 @@
         printBody.appendChild(tr);
       });
 
-      printTotalOut.textContent = fmt.format(total);
+      var desconto = computeDesconto(total);
+      if (desconto > 0) {
+        printSubtotalOut.textContent = fmt.format(total);
+        setDescontoLabel(printDescontoLabel);
+        printDescontoOut.textContent = "-" + fmt.format(desconto);
+        printDescontoBreakdown.hidden = false;
+      } else {
+        printDescontoBreakdown.hidden = true;
+      }
+      printTotalOut.textContent = fmt.format(total - desconto);
 
       // Vira filho direto do body pra CSS de impressão poder esconder só o resto da página.
       document.body.appendChild(printBox);
