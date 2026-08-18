@@ -176,3 +176,14 @@ pecas:
     preco: 100
     tamanho_cm: 28
     descricao: "Réplica decorativa do sabre do jovem Jedi. Cerca de 28 cm."
+
+  - nome: "Kid Goku"
+    categorias: ["Personagens", "Dragon Ball"]
+    pronta_entrega: true
+    imagens:
+      - "/assets/img/estoque/goku-crianca-3.webp"
+      - "/assets/img/estoque/goku-crianca-1.webp"
+      - "/assets/img/estoque/goku-crianca-2.webp"
+    preco: 90
+    tamanho_cm: 19
+    descricao: "O Saiyajin em sua versão criança, com bastão sagrado. Cerca de 19 cm."

@@ -1,4 +1,8 @@
 posts:
+  - id: "DcLn6LTx9t9"
+    type: "reel"
+    image: "/assets/img/gallery/DcLn6LTx9t9.webp"
+    caption: "☁️🐉 GOKU CRIANÇA EM IMPRESSÃO 3D! 💥🥋"
   - id: "DbmMRM7xmhR"
     type: "reel"
     image: "/assets/img/gallery/DbmMRM7xmhR.webp"
@@ -90,7 +94,3 @@ posts:
     type: "p"
     image: "/assets/img/gallery/DYrwigYkQHU.webp"
     caption: "⚡️ JOGO DE BALANÇA POKÉMON EM IMPRESSÃO 3D! ⚖️🐭"
-  - id: "DYmc699EflI"
-    type: "p"
-    image: "/assets/img/gallery/DYmc699EflI.webp"
-    caption: "🪓 KRATOS EM IMPRESSÃO 3D! 🔥🏛️"
