@@ -56,7 +56,7 @@ pecas:
 
   - nome: "Goku"
     categorias: ["Personagens", "Dragon Ball"]
-    pronta_entrega: true
+    pronta_entrega: false
     imagens:
       - "/assets/img/estoque/goku-3.webp"
       - "/assets/img/estoque/goku-1.webp"
@@ -67,7 +67,7 @@ pecas:
 
   - nome: "Haaland"
     categorias: ["Personagens", "Futebol"]
-    pronta_entrega: true
+    pronta_entrega: false
     imagens:
       - "/assets/img/estoque/haaland-1.webp"
       - "/assets/img/estoque/haaland-2.webp"
@@ -78,7 +78,7 @@ pecas:
 
   - nome: "Pikachu Cosplay Angel (Stitch)"
     categorias: ["Personagens", "Pokémon"]
-    pronta_entrega: true
+    pronta_entrega: false
     imagens:
       - "/assets/img/estoque/pikachu-stitch-1.webp"
       - "/assets/img/estoque/pikachu-stitch-2.webp"
@@ -115,7 +115,7 @@ pecas:
 
   - nome: "Coringa (Joker)"
     categorias: ["Personagens", "Urban Vibes", "DC"]
-    pronta_entrega: true
+    pronta_entrega: false
     imagens:
       - "/assets/img/estoque/joker-1.webp"
       - "/assets/img/estoque/joker-3.webp"
