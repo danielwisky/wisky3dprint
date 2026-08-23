@@ -1,19 +1,9 @@
 <footer class="site-footer">
-  <div class="container">
-    <div class="footer-grid">
-      <div class="footer-brand">
-        <img class="site-logo-mark" src="{{ '/assets/img/logo-icon.png' | relative_url }}" alt="" width="36" height="36">
-        <p>Sob encomenda: do modelo 3D à peça pronta na sua mão.</p>
-      </div>
-      <div class="footer-links">
-        <a href="{{ site.makerworld_url }}" target="_blank" rel="noopener noreferrer">MakerWorld</a>
-        <a href="{{ site.instagram.profile_url }}" target="_blank" rel="noopener noreferrer">Instagram</a>
-        <a href="#como-funciona">Como funciona</a>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <p class="footer-copy">© {{ site.time | date: '%Y' }} {{ site.title }}</p>
-      <p class="footer-blessing">Deus seja louvado!</p>
+  <div class="container footer-row">
+    <p class="footer-copy">© {{ site.time | date: '%Y' }} {{ site.title }}</p>
+    <div class="footer-links">
+      <a href="{{ site.makerworld_url }}" target="_blank" rel="noopener noreferrer">MakerWorld</a>
+      <a href="{{ site.instagram.profile_url }}" target="_blank" rel="noopener noreferrer">Instagram</a>
     </div>
   </div>
 </footer>
