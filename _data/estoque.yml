@@ -188,6 +188,16 @@ pecas:
     tamanho_cm: 24
     descricao: "O gigante verde da Marvel em pose de força, com short roxo detalhado. Cerca de 24 cm."
 
+  - nome: "Luminária Rosa Encantada"
+    categorias: ["Decoração"]
+    pronta_entrega: true
+    imagens:
+      - "/assets/img/estoque/luminaria-rosa-2.webp"
+      - "/assets/img/estoque/luminaria-rosa-1.webp"
+      - "/assets/img/estoque/luminaria-rosa-3.webp"
+    preco: 100
+    descricao: "Inspirada no conto de A Bela e a Fera, com luz LED que ilumina a rosa por baixo da cúpula. Peça decorativa pronta para presentear."
+
   - nome: "Kid Goku"
     categorias: ["Personagens", "Dragon Ball"]
     pronta_entrega: true
