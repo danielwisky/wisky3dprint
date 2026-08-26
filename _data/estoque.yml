@@ -202,10 +202,10 @@ pecas:
     categorias: ["Marvel", "Decoração"]
     pronta_entrega: true
     imagens:
-      - "/assets/img/estoque/arc-reactor-mk1-1.webp"
-      - "/assets/img/estoque/arc-reactor-mk1-2.webp"
       - "/assets/img/estoque/arc-reactor-mk1-3.webp"
+      - "/assets/img/estoque/arc-reactor-mk1-2.webp"
       - "/assets/img/estoque/arc-reactor-mk1-4.webp"
+      - "/assets/img/estoque/arc-reactor-mk1-1.webp"
     preco: 110
     descricao: "Réplica do reator arc Mark 1 do Homem de Ferro, com luz LED e base de apoio. Peça de decoração pronta para exibir."
 
