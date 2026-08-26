@@ -1,6 +1,6 @@
 # Wisky 3D Print
 
-Landing page de impressão 3D sob encomenda — [wisky3dprint.com.br](https://wisky3dprint.com.br)
+Landing page de impressão 3D sob encomenda: [wisky3dprint.com.br](https://wisky3dprint.com.br)
 
 Stack: Jekyll · deploy automático via GitHub Actions · galeria sincronizada com [@wisky.3dprint](https://www.instagram.com/wisky.3dprint)
 
@@ -31,7 +31,7 @@ que:
 - remove imagens órfãs (posts que saíram do feed), com trava de segurança que
   evita apagar em massa se a API falhar
 - gera `assets/img/og-image.jpg` (1200×630) com grid 3×2 das primeiras fotos
-  e título do site sobreposto — usada como preview ao compartilhar o link
+  e título do site sobreposto, usada como preview ao compartilhar o link
 
 ### Exibição
 
@@ -54,7 +54,7 @@ gallery:
 ## Loja
 
 A vitrine em `/loja` lista as peças cadastradas em `_data/estoque.yml`. Para
-adicionar, editar ou remover uma peça, edite esse arquivo — o próprio arquivo
+adicionar, editar ou remover uma peça, edite esse arquivo: o próprio arquivo
 tem instruções de uso (categoria, preço, fotos, selo de "Pronta entrega" etc.)
 em comentários no topo. As fotos ficam em `assets/img/estoque/` e podem ser
 convertidas para `.webp` com `cwebp -q 85 origem.jpg -o destino.webp`.
