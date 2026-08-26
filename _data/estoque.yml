@@ -190,7 +190,7 @@ pecas:
 
   - nome: "Luminária Rosa Encantada"
     categorias: ["Decoração"]
-    pronta_entrega: true
+    pronta_entrega: false
     imagens:
       - "/assets/img/estoque/luminaria-rosa-2.webp"
       - "/assets/img/estoque/luminaria-rosa-1.webp"
@@ -200,7 +200,7 @@ pecas:
 
   - nome: "Arc Reactor MK1 (Homem de Ferro)"
     categorias: ["Marvel", "Decoração"]
-    pronta_entrega: true
+    pronta_entrega: false
     imagens:
       - "/assets/img/estoque/arc-reactor-mk1-3.webp"
       - "/assets/img/estoque/arc-reactor-mk1-2.webp"
