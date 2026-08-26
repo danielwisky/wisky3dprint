@@ -16,6 +16,7 @@ gallery:
   batch: 8      # quantos posts cada clique revela
 
 makerworld_url: "https://makerworld.com/en"
+mercadolivre_url: "https://lista.mercadolivre.com.br/_CustId_70520171"
 
 sass:
   style: compressed
