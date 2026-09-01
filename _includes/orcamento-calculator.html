@@ -5,6 +5,7 @@
   data-margem-pct="{{ site.calculadora.margem_pct }}"
   data-perda-pct="{{ site.calculadora.perda_pct }}"
   data-infill-pct="{{ site.calculadora.infill_pct }}"
+  data-paredes="{{ site.calculadora.paredes }}"
   data-altura-camada-mm="{{ site.calculadora.altura_camada_mm }}"
   data-velocidade-mm-s="{{ site.calculadora.velocidade_mm_s }}"
   data-largura-extrusao-mm="{{ site.calculadora.largura_extrusao_mm }}"
@@ -201,6 +202,10 @@
           <input type="text" id="orcamento-calc-infill" name="infill" inputmode="decimal" autocomplete="off" value="{{ site.calculadora.infill_pct }}">
         </div>
         <div class="calc-field">
+          <label for="orcamento-calc-paredes">Paredes (nº de perímetros)</label>
+          <input type="text" id="orcamento-calc-paredes" name="paredes" inputmode="numeric" autocomplete="off" value="{{ site.calculadora.paredes }}">
+        </div>
+        <div class="calc-field">
           <label for="orcamento-calc-altura-camada">Altura de camada (mm)</label>
           <input type="text" id="orcamento-calc-altura-camada" name="alturaCamada" inputmode="decimal" autocomplete="off" value="{{ site.calculadora.altura_camada_mm }}">
         </div>
@@ -210,12 +215,24 @@
         </div>
       </div>
       <div class="calc-modelo-preview" id="orcamento-calc-modelo-preview" hidden>
-        <span id="orcamento-calc-modelo-nome">—</span>
-        <span id="orcamento-calc-modelo-dims">—</span>
-        <span id="orcamento-calc-modelo-volume">—</span>
-        <span id="orcamento-calc-modelo-densidade" hidden>—</span>
+        <strong id="orcamento-calc-modelo-nome" class="calc-modelo-preview-nome">—</strong>
+        <div class="calc-modelo-preview-row">
+          <span>Dimensões</span>
+          <span id="orcamento-calc-modelo-dims">—</span>
+        </div>
+        <div class="calc-modelo-preview-row">
+          <span>Volume</span>
+          <span id="orcamento-calc-modelo-volume">—</span>
+        </div>
+        <div class="calc-modelo-preview-row" id="orcamento-calc-modelo-densidade-row" hidden>
+          <span>Densidade do arquivo</span>
+          <span id="orcamento-calc-modelo-densidade">—</span>
+        </div>
       </div>
       <p class="calc-modelo-erro" id="orcamento-calc-modelo-erro" hidden></p>
+      <div class="calc-modelo-concluir" id="orcamento-calc-modelo-concluir-wrap" hidden>
+        <button type="button" id="orcamento-calc-modelo-concluir" class="btn btn-gradient">Concluir</button>
+      </div>
     </div>
   </div>
 </div>

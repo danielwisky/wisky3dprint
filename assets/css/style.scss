@@ -2401,9 +2401,9 @@ body.gallery-modal-open {
 }
 .calc-modelo-preview {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 1rem;
-  padding: 0.6rem 0.9rem;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.7rem 0.9rem;
   background: var(--surface-soft);
   border-radius: 12px;
   font-size: 0.85rem;
@@ -2413,9 +2413,33 @@ body.gallery-modal-open {
     display: none;
   }
 }
+.calc-modelo-preview-nome {
+  color: var(--text);
+  font-size: 0.9rem;
+  word-break: break-word;
+}
+.calc-modelo-preview-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+
+  span:last-child {
+    color: var(--text);
+    font-weight: 600;
+    text-align: right;
+  }
+}
 .calc-modelo-erro {
   font-size: 0.85rem;
   color: #e05656;
+}
+.calc-modelo-concluir {
+  display: flex;
+  justify-content: flex-end;
+
+  &[hidden] {
+    display: none;
+  }
 }
 .calc-modelo-trigger {
   display: flex;

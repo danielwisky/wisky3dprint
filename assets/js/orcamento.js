@@ -19,6 +19,27 @@
     return Math.abs(total);
   }
 
+  function triangleAreaMm2(p1, p2, p3) {
+    var ux = p2[0] - p1[0], uy = p2[1] - p1[1], uz = p2[2] - p1[2];
+    var vx = p3[0] - p1[0], vy = p3[1] - p1[1], vz = p3[2] - p1[2];
+    var cx = uy * vz - uz * vy;
+    var cy = uz * vx - ux * vz;
+    var cz = ux * vy - uy * vx;
+    return 0.5 * Math.sqrt(cx * cx + cy * cy + cz * cz);
+  }
+
+  // Área de superfície da malha (soma das áreas dos triângulos) — usada pra
+  // estimar o volume das paredes (casca), já que o volume total sozinho não
+  // diferencia "parede sólida" de "miolo em infill".
+  function computeMeshAreaMm2(triangulos) {
+    var total = 0;
+    for (var i = 0; i < triangulos.length; i++) {
+      var t = triangulos[i];
+      total += triangleAreaMm2(t[0], t[1], t[2]);
+    }
+    return total;
+  }
+
   function computeBoundingBox(triangulos) {
     var min = [Infinity, Infinity, Infinity];
     var max = [-Infinity, -Infinity, -Infinity];
@@ -188,11 +209,12 @@
   // memória no navegador sem necessidade (só usamos os agregados).
   function resolveObjectGeometry(zip, docCache, doc, objectId, accumTransform) {
     var objectEl = findObjectElement(doc, objectId);
-    if (!objectEl) return Promise.resolve({ triangleCount: 0, volumeMm3: 0, bbox: bboxVazio() });
+    if (!objectEl) return Promise.resolve({ triangleCount: 0, volumeMm3: 0, areaMm2: 0, bbox: bboxVazio() });
 
     var meshEl = directChild(objectEl, "mesh");
     var triangleCount = 0;
     var volumeMm3 = 0;
+    var areaMm2 = 0;
     var bbox = bboxVazio();
 
     if (meshEl) {
@@ -220,12 +242,13 @@
       });
       if (leafTriangles.length) {
         volumeMm3 += computeMeshVolumeMm3(leafTriangles);
+        areaMm2 += computeMeshAreaMm2(leafTriangles);
         triangleCount += leafTriangles.length;
       }
     }
 
     var componentsEl = directChild(objectEl, "components");
-    if (!componentsEl) return Promise.resolve({ triangleCount: triangleCount, volumeMm3: volumeMm3, bbox: bbox });
+    if (!componentsEl) return Promise.resolve({ triangleCount: triangleCount, volumeMm3: volumeMm3, areaMm2: areaMm2, bbox: bbox });
 
     var promises = directChildren(componentsEl, "component").map(function (comp) {
       var childObjectId = comp.getAttribute("objectid");
@@ -238,7 +261,7 @@
         var docPromise = docCache[normalizedPath];
         if (!docPromise) {
           var zipEntry = zip.file(normalizedPath);
-          if (!zipEntry) return Promise.resolve({ triangleCount: 0, volumeMm3: 0, bbox: bboxVazio() });
+          if (!zipEntry) return Promise.resolve({ triangleCount: 0, volumeMm3: 0, areaMm2: 0, bbox: bboxVazio() });
           docPromise = zipEntry.async("text").then(parseXmlDoc);
           docCache[normalizedPath] = docPromise;
         }
@@ -253,9 +276,10 @@
       results.forEach(function (r) {
         triangleCount += r.triangleCount;
         volumeMm3 += r.volumeMm3;
+        areaMm2 += r.areaMm2;
         bbox = mergeBBox(bbox, r.bbox);
       });
-      return { triangleCount: triangleCount, volumeMm3: volumeMm3, bbox: bbox };
+      return { triangleCount: triangleCount, volumeMm3: volumeMm3, areaMm2: areaMm2, bbox: bbox };
     });
   }
 
@@ -283,21 +307,27 @@
     return Promise.all(promises).then(function (results) {
       var triangleCount = 0;
       var volumeMm3 = 0;
+      var areaMm2 = 0;
       var bbox = bboxVazio();
       results.forEach(function (r) {
         triangleCount += r.triangleCount;
+        areaMm2 += r.areaMm2;
         volumeMm3 += r.volumeMm3;
         bbox = mergeBBox(bbox, r.bbox);
       });
-      return { triangleCount: triangleCount, volumeMm3: volumeMm3, bbox: bbox };
+      return { triangleCount: triangleCount, volumeMm3: volumeMm3, areaMm2: areaMm2, bbox: bbox };
     });
   }
 
-  function parse3MFDensidade(configText) {
+  function parse3MFPerfil(configText) {
     var densidadeMatch = configText.match(/"filament_density"\s*:\s*\[\s*"([\d.]+)"/);
     var diametroMatch = configText.match(/"filament_diameter"\s*:\s*\[\s*"([\d.]+)"/);
+    var paredesMatch = configText.match(/"wall_loops"\s*:\s*"?(\d+)"?/);
+    var infillMatch = configText.match(/"sparse_infill_density"\s*:\s*"?(\d+(?:\.\d+)?)%?"?/);
     if (!densidadeMatch) return null;
     return {
+      paredes: paredesMatch ? parseInt(paredesMatch[1], 10) : null,
+      infillPct: infillMatch ? parseFloat(infillMatch[1]) : null,
       densidade: parseFloat(densidadeMatch[1]),
       diametro: diametroMatch ? parseFloat(diametroMatch[1]) : null
     };
@@ -354,11 +384,15 @@
     var modeloDimsOut = document.getElementById("orcamento-calc-modelo-dims");
     var modeloVolumeOut = document.getElementById("orcamento-calc-modelo-volume");
     var modeloDensidadeOut = document.getElementById("orcamento-calc-modelo-densidade");
+    var modeloDensidadeRow = document.getElementById("orcamento-calc-modelo-densidade-row");
     var modeloErro = document.getElementById("orcamento-calc-modelo-erro");
+    var modeloConcluirWrap = document.getElementById("orcamento-calc-modelo-concluir-wrap");
+    var modeloConcluirBtn = document.getElementById("orcamento-calc-modelo-concluir");
     var materialSelect = document.getElementById("orcamento-calc-material");
     var densidadeWrap = document.getElementById("orcamento-calc-densidade-wrap");
     var densidadeInput = document.getElementById("orcamento-calc-densidade");
     var infillInput = document.getElementById("orcamento-calc-infill");
+    var paredesInput = document.getElementById("orcamento-calc-paredes");
     var alturaCamadaInput = document.getElementById("orcamento-calc-altura-camada");
     var velocidadeInput = document.getElementById("orcamento-calc-velocidade");
     var tempoHint = document.getElementById("orcamento-calc-tempo-hint");
@@ -570,7 +604,7 @@
       pesoAutoTag.hidden = true;
       tempoAutoTag.hidden = true;
       lastMeshStats = null;
-      densidadeDoArquivo = null;
+      perfilDoArquivo = null;
       current = null;
       out.textContent = "Preencha os campos";
       out.classList.remove("has-value");
@@ -747,10 +781,10 @@
     var MODELO_MAX_BYTES = 60 * 1024 * 1024;
     var MODELO_MAX_TRIANGULOS = 6000000;
     var lastMeshStats = null;
-    var densidadeDoArquivo = null;
+    var perfilDoArquivo = null;
 
     function densidadeAtual() {
-      if (densidadeDoArquivo) return densidadeDoArquivo.densidade;
+      if (perfilDoArquivo) return perfilDoArquivo.densidade;
       if (materialSelect.value === "outro") {
         return parseFloat(String(densidadeInput.value).replace(",", "."));
       }
@@ -773,6 +807,7 @@
 
       var densidade = densidadeAtual();
       var infillPct = parseFloat(String(infillInput.value).replace(",", ".")) || 0;
+      var paredes = parseInt(String(paredesInput.value).replace(",", "."), 10) || parseInt(d.paredes, 10) || 0;
 
       if (!isFinite(densidade) || densidade <= 0) {
         mostrarErroModelo("Não encontramos a densidade do material nesse arquivo. Selecione o material (ou informe a densidade manualmente) para calcular o peso.");
@@ -781,20 +816,31 @@
       }
       limparErroModelo();
 
-      var volumeCm3 = lastMeshStats.volumeMm3 / 1000;
-      peso.value = (volumeCm3 * densidade * (infillPct / 100)).toFixed(1);
+      var larguraExtrusao = parseFloat(d.larguraExtrusaoMm) || 0.4;
+
+      // Volume "real" de material: a peça não é só infill uniforme — as
+      // paredes (perímetros sólidos) ficam por cima do infill e, em modelos
+      // com muitas peças pequenas/finas, costumam pesar mais que o miolo.
+      // Aproxima a casca como área de superfície × espessura de parede
+      // (nº de paredes × largura de extrusão) e trata só o volume restante
+      // (o "miolo") como preenchido a infill_pct.
+      var espessuraParede = paredes * larguraExtrusao;
+      var volumeCascaMm3 = Math.min(lastMeshStats.areaMm2 * espessuraParede, lastMeshStats.volumeMm3);
+      var volumeMiologMm3 = lastMeshStats.volumeMm3 - volumeCascaMm3;
+      var volumeMaterialMm3 = volumeCascaMm3 + volumeMiologMm3 * (infillPct / 100);
+
+      var volumeCm3 = volumeMaterialMm3 / 1000;
+      peso.value = (volumeCm3 * densidade).toFixed(1);
 
       var alturaCamada = parseFloat(String(alturaCamadaInput.value).replace(",", ".")) || parseFloat(d.alturaCamadaMm) || 0.2;
       var velocidade = parseFloat(String(velocidadeInput.value).replace(",", ".")) || parseFloat(d.velocidadeMmS) || 50;
-      var larguraExtrusao = parseFloat(d.larguraExtrusaoMm) || 0.4;
       var overheadPorCamada = parseFloat(d.overheadCamadaS) || 2;
 
       var alturaModelo = lastMeshStats.bbox.maxZ - lastMeshStats.bbox.minZ;
       var nCamadas = Math.ceil(alturaModelo / alturaCamada);
-      var volumeEfetivoMm3 = lastMeshStats.volumeMm3 * (infillPct / 100);
       var vazaoMm3S = velocidade * alturaCamada * larguraExtrusao;
       var tempoTotalMin = vazaoMm3S > 0
-        ? (volumeEfetivoMm3 / vazaoMm3S + nCamadas * overheadPorCamada) / 60
+        ? (volumeMaterialMm3 / vazaoMm3S + nCamadas * overheadPorCamada) / 60
         : 0;
 
       horas.value = Math.floor(tempoTotalMin / 60);
@@ -816,7 +862,7 @@
       });
     });
 
-    function processarStats(stats, nomeArquivo, densidadeArquivo) {
+    function processarStats(stats, nomeArquivo, perfilArquivo) {
       var triangleCount = stats.triangleCount;
       var bbox = stats.bbox;
       var volumeMm3 = stats.volumeMm3;
@@ -834,8 +880,8 @@
         return;
       }
 
-      lastMeshStats = { volumeMm3: volumeMm3, bbox: bbox };
-      densidadeDoArquivo = densidadeArquivo || null;
+      lastMeshStats = { volumeMm3: volumeMm3, areaMm2: stats.areaMm2 || 0, bbox: bbox };
+      perfilDoArquivo = perfilArquivo || null;
       limparErroModelo();
 
       nome.value = nomeArquivo.replace(/\.(stl|3mf)$/i, "");
@@ -846,18 +892,27 @@
         (bbox.maxY - bbox.minY).toFixed(1) + " × " +
         (bbox.maxZ - bbox.minZ).toFixed(1) + " mm";
       modeloVolumeOut.textContent = (volumeMm3 / 1000).toFixed(2) + " cm³";
-      if (densidadeDoArquivo) {
-        modeloDensidadeOut.textContent = "Densidade lida do arquivo: " + densidadeDoArquivo.densidade + " g/cm³";
-        modeloDensidadeOut.hidden = false;
+      if (perfilDoArquivo) {
+        modeloDensidadeOut.textContent = perfilDoArquivo.densidade + " g/cm³";
+        modeloDensidadeRow.hidden = false;
+        // Perfil do fatiador embutido no 3MF (Bambu/Orca): usa como ponto de
+        // partida quando disponível, mas continua editável — o usuário pode
+        // ajustar antes de calcular.
+        if (perfilDoArquivo.paredes) paredesInput.value = perfilDoArquivo.paredes;
+        if (perfilDoArquivo.infillPct != null) infillInput.value = perfilDoArquivo.infillPct;
       } else {
-        modeloDensidadeOut.hidden = true;
+        modeloDensidadeRow.hidden = true;
       }
       modeloPreview.hidden = false;
 
       modeloBadgeNome.textContent = nomeArquivo;
       modeloBadge.hidden = false;
       modeloAbrirBtn.hidden = true;
-      fecharModeloModal();
+      // Não fecha o modal sozinho: o usuário pode querer ajustar material,
+      // infill, paredes, altura de camada ou velocidade antes de fechar —
+      // fechar automaticamente escondia esses campos logo após o cálculo.
+      // O botão "Concluir" deixa esse fechamento explícito.
+      modeloConcluirWrap.hidden = false;
 
       aplicarEstimativas();
     }
@@ -883,15 +938,25 @@
     modeloRemoverBtn.addEventListener("click", function () {
       modeloUpload.value = "";
       lastMeshStats = null;
-      densidadeDoArquivo = null;
+      perfilDoArquivo = null;
       modeloPreview.hidden = true;
       limparErroModelo();
       modeloBadge.hidden = true;
       modeloAbrirBtn.hidden = false;
+      modeloConcluirWrap.hidden = true;
       tempoHint.hidden = true;
       pesoAutoTag.hidden = true;
       tempoAutoTag.hidden = true;
+
+      // Peso/tempo vieram do modelo removido — sem ele deixam de fazer
+      // sentido, então volta pro estado de preenchimento manual.
+      peso.value = "";
+      horas.value = "";
+      minutos.value = "";
+      calc();
     });
+
+    modeloConcluirBtn.addEventListener("click", fecharModeloModal);
 
     function mostrarCarregandoModelo(ativo) {
       modeloLoading.hidden = !ativo;
@@ -919,8 +984,13 @@
           try {
             var triangulos = parseSTL(reader.result);
             var stats = triangulos.length
-              ? { triangleCount: triangulos.length, bbox: computeBoundingBox(triangulos), volumeMm3: computeMeshVolumeMm3(triangulos) }
-              : { triangleCount: 0, bbox: bboxVazio(), volumeMm3: 0 };
+              ? {
+                triangleCount: triangulos.length,
+                bbox: computeBoundingBox(triangulos),
+                volumeMm3: computeMeshVolumeMm3(triangulos),
+                areaMm2: computeMeshAreaMm2(triangulos)
+              }
+              : { triangleCount: 0, bbox: bboxVazio(), volumeMm3: 0, areaMm2: 0 };
             processarStats(stats, file.name, null);
           } catch (e) {
             mostrarErroModelo("Não foi possível ler esse arquivo STL.");
@@ -955,9 +1025,9 @@
           .then(function (resultados) {
             var xmlText = resultados[0];
             var configText = resultados[1];
-            var densidadeArquivo = configText ? parse3MFDensidade(configText) : null;
+            var perfilArquivo = configText ? parse3MFPerfil(configText) : null;
             return parse3MFPackage(zipRef, xmlText).then(function (resultado) {
-              processarStats(resultado, file.name, densidadeArquivo);
+              processarStats(resultado, file.name, perfilArquivo);
             });
           })
           .catch(function () {
@@ -996,11 +1066,11 @@
 
     materialSelect.addEventListener("change", function () {
       densidadeWrap.hidden = materialSelect.value !== "outro";
-      densidadeDoArquivo = null;
-      modeloDensidadeOut.hidden = true;
+      perfilDoArquivo = null;
+      modeloDensidadeRow.hidden = true;
       aplicarEstimativas();
     });
-    [infillInput, alturaCamadaInput, velocidadeInput, densidadeInput].forEach(function (el) {
+    [infillInput, paredesInput, alturaCamadaInput, velocidadeInput, densidadeInput].forEach(function (el) {
       el.addEventListener("input", aplicarEstimativas);
     });
 
