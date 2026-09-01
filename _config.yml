@@ -30,7 +30,7 @@ plugins:
   - jekyll-sitemap
   - jekyll-minifier
 
-# Minifica só o .js (assets/js/main.js). HTML, CSS e XML ficam de fora do
+# Minifica só os .js de assets/js/. HTML, CSS e XML ficam de fora do
 # escopo — CSS já sai comprimido pelo Sass e minificar HTML tem mais risco.
 jekyll-minifier:
   exclude:
