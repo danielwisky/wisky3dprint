@@ -2263,6 +2263,23 @@ body.gallery-modal-open {
   border-radius: 20px;
   box-shadow: 0 20px 40px -30px var(--shadow-soft);
 }
+@media (max-width: 520px) {
+  .calc { padding: 1.25rem; }
+  .calc-modal-body { padding: 1.1rem; gap: 1rem; }
+  .calc-modal-header { padding: 1rem 1.1rem; }
+  .calc-modal-backdrop { padding: 0.75rem; }
+}
+.calc-section + .calc-section {
+  margin-top: 1.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+.calc-section-title {
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+}
 .calc-fields {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -2271,7 +2288,24 @@ body.gallery-modal-open {
 @media (max-width: 520px) {
   .calc-fields { grid-template-columns: 1fr; }
 }
+.calc-auto-tag {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--cyan) 18%, transparent);
+  color: var(--cyan);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: none;
+  vertical-align: middle;
+
+  &[hidden] {
+    display: none;
+  }
+}
 .calc-field { display: flex; flex-direction: column; gap: 0.4rem; }
+.calc-field[hidden] { display: none; }
 .calc-field-full { grid-column: 1 / -1; }
 .calc-field label { font-size: 0.85rem; color: var(--muted); font-weight: 600; }
 .calc-field input {
@@ -2288,6 +2322,196 @@ body.gallery-modal-open {
 }
 .calc-fields-time {
   gap: 0.6rem;
+}
+.calc-field select {
+  padding: 0.7rem 0.9rem;
+  background: var(--surface-soft);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  color: var(--text);
+  font: inherit;
+}
+.calc-field select:focus-visible {
+  outline: none;
+  border-color: var(--cyan);
+}
+.calc-field-hint {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.calc-field-upload {
+  position: relative;
+}
+.calc-field-label-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+.calc-field-upload input[type="file"] {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  opacity: 0;
+}
+.calc-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 96px;
+  padding: 1rem;
+  text-align: center;
+  border: 1.5px dashed var(--border-strong);
+  border-radius: 14px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+
+  &:hover,
+  &:focus-within {
+    border-color: var(--cyan);
+  }
+
+  &.is-dragover {
+    border-color: var(--cyan);
+    background: color-mix(in srgb, var(--cyan) 10%, var(--surface-soft));
+  }
+}
+.calc-dropzone-link {
+  color: var(--cyan);
+  font-weight: 700;
+}
+.calc-dropzone-loading {
+  color: var(--cyan);
+  font-weight: 600;
+
+  &[hidden] {
+    display: none;
+  }
+}
+.calc-modelo-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  padding: 0.6rem 0.9rem;
+  background: var(--surface-soft);
+  border-radius: 12px;
+  font-size: 0.85rem;
+  color: var(--muted);
+
+  &[hidden] {
+    display: none;
+  }
+}
+.calc-modelo-erro {
+  font-size: 0.85rem;
+  color: #e05656;
+}
+.calc-modelo-trigger {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.calc-modelo-badge {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.8rem;
+  padding: 0.5rem 0.9rem;
+  background: var(--surface-soft);
+  border-radius: 12px;
+  font-size: 0.85rem;
+  color: var(--text);
+
+  &[hidden] {
+    display: none;
+  }
+}
+.calc-modelo-badge-btn {
+  border: none;
+  background: none;
+  padding: 0.5rem 0.2rem;
+  margin: -0.5rem -0.2rem;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--cyan);
+  cursor: pointer;
+}
+.calc-modelo-badge-remover {
+  color: #e05656;
+}
+.calc-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: var(--modal-backdrop);
+  backdrop-filter: blur(8px);
+
+  &[hidden] {
+    display: none;
+  }
+}
+.calc-modal {
+  width: min(100%, 560px);
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: $radius-lg;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  box-shadow: 0 24px 64px var(--shadow-strong);
+  animation: modalIn 0.25s ease;
+}
+.calc-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+
+  h3 {
+    margin: 0;
+    font-size: 1.1rem;
+  }
+}
+.calc-modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  border: none;
+  background: none;
+  border-radius: 999px;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+}
+.calc-modal-close:hover {
+  background: var(--surface-soft);
+  color: var(--text);
+}
+.calc-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.5rem;
 }
 .calc-breakdown {
   margin-top: 1.5rem;
@@ -2407,18 +2631,24 @@ body.gallery-modal-open {
   background: var(--surface-soft);
   border-radius: 10px;
 }
-.calc-item-info { flex: 1; font-size: 0.85rem; }
-.calc-item-valor { font-weight: 600; font-size: 0.85rem; }
+.calc-item-info { flex: 1; display: flex; flex-direction: column; gap: 0.15rem; font-size: 0.85rem; }
+.calc-item-meta { font-size: 0.75rem; color: var(--muted); }
+.calc-item-valor { font-weight: 600; font-size: 0.85rem; white-space: nowrap; }
 .calc-item-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  min-height: 40px;
   border: none;
   background: none;
+  border-radius: 999px;
   color: var(--muted);
   cursor: pointer;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   line-height: 1;
-  padding: 0.1rem 0.3rem;
 }
-.calc-item-remove:hover { color: var(--text); }
+.calc-item-remove:hover { color: var(--text); background: var(--surface); }
 .calc-desconto {
   margin-bottom: 1rem;
 }

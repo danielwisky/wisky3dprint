@@ -48,6 +48,17 @@ calculadora:
   margem_pct: 100
   perda_pct: 10
   montagem: 20
+  infill_pct: 10
+  altura_camada_mm: 0.2
+  velocidade_mm_s: 50
+  largura_extrusao_mm: 0.4
+  overhead_camada_s: 2
+  densidades_g_cm3:
+    pla: 1.24
+    petg: 1.27
+    abs: 1.04
+    tpu: 1.21
+    asa: 1.07
 
 exclude:
   - Gemfile
