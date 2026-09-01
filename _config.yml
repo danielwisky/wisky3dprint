@@ -49,6 +49,7 @@ calculadora:
   perda_pct: 10
   montagem: 20
   infill_pct: 10
+  paredes: 2
   altura_camada_mm: 0.2
   velocidade_mm_s: 50
   largura_extrusao_mm: 0.4
