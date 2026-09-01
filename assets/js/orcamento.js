@@ -307,7 +307,6 @@
 // BLOCO: Calculadora de orçamento: itens, custos, upload de modelo, PDF/CSV
 // ---------------------------------------------------------------------------
 
-
   (function () {
     var form = document.getElementById("orcamento-calc");
     if (!form) return;

@@ -43,7 +43,6 @@
     });
   })();
 
-
 // ---------------------------------------------------------------------------
 // BLOCO: Botão "Quero essa peça" (copia mensagem para o Instagram)
 // ---------------------------------------------------------------------------
@@ -64,8 +63,6 @@
       });
     });
   })();
-
-  // Filtro (chips) + ordenação + estado na URL da vitrine da loja.
 
 // ---------------------------------------------------------------------------
 // BLOCO: Filtro por categoria, busca e ordenação da vitrine
