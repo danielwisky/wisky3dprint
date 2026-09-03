@@ -12,9 +12,15 @@ permalink: /orcamento/
     </header>
     {% include orcamento-calculator.html %}
 
-    <div class="section-cta reveal" style="text-align:center; margin-top: 2.5rem;">
-      <p>Gostou da calculadora? Ela é livre pra todo mundo usar. Como forma de agradecimento, que tal me seguir no Instagram? Isso ajuda demais! ✨</p>
-      <a class="btn btn-gradient btn-lg" href="{{ site.instagram.profile_url }}" target="_blank" rel="noopener noreferrer">
+    <div class="instagram-follow reveal">
+      <svg class="instagram-follow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3" y="3" width="18" height="18" rx="5"></rect>
+        <circle cx="12" cy="12" r="4"></circle>
+        <circle cx="17.5" cy="6.5" r="0.75" fill="currentColor" stroke="none"></circle>
+      </svg>
+      <p class="instagram-follow-title">Gostou da calculadora? ✨</p>
+      <p class="instagram-follow-subtitle">Ela é livre pra todo mundo usar. Como forma de agradecimento, que tal me seguir no Instagram?</p>
+      <a class="instagram-follow-link" href="{{ site.instagram.profile_url }}" target="_blank" rel="noopener noreferrer">
         Seguir @{{ site.instagram.username }}
       </a>
     </div>
