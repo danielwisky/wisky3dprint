@@ -209,6 +209,16 @@ pecas:
     preco: 110
     descricao: "Réplica do reator arc Mark 1 do Homem de Ferro, com luz LED e base de apoio. Peça de decoração pronta para exibir."
 
+  - nome: "Capivara Dormindo"
+    categorias: ["Decoração", "Animais"]
+    pronta_entrega: true
+    imagens:
+      - "/assets/img/estoque/capivara-dormindo-1.webp"
+      - "/assets/img/estoque/capivara-dormindo-2.webp"
+      - "/assets/img/estoque/capivara-dormindo-3.webp"
+    preco: 50
+    descricao: "Capivara fofa dormindo enrolada em sua casquinha azul de bolinhas. Peça de decoração pronta para presentear."
+
   - nome: "Kid Goku"
     categorias: ["Personagens", "Dragon Ball"]
     pronta_entrega: true
