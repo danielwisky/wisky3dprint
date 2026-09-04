@@ -179,7 +179,7 @@ pecas:
 
   - nome: "Hulk"
     categorias: ["Personagens", "Marvel"]
-    pronta_entrega: true
+    pronta_entrega: false
     imagens:
       - "/assets/img/estoque/hulk-1.webp"
       - "/assets/img/estoque/hulk-2.webp"
