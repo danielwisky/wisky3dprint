@@ -233,9 +233,9 @@ pecas:
     pronta_entrega: true
     imagens:
       - "/assets/img/estoque/barco-1.webp"
-      - "/assets/img/estoque/barco-2.webp"
       - "/assets/img/estoque/barco-3.webp"
       - "/assets/img/estoque/barco-4.webp"
+      - "/assets/img/estoque/barco-2.webp"
     preco: 150
     tamanho_cm: 10
     descricao: "Barquinho funcional que boia e navega sozinho, com motor a pilha. Cerca de 19 cm de comprimento e 10 cm de altura."
