@@ -219,6 +219,27 @@ pecas:
     preco: 50
     descricao: "Capivara fofa dormindo enrolada em sua casquinha azul de bolinhas. Peça de decoração pronta para presentear."
 
+  - nome: "Dado do Mário Party"
+    categorias: ["Jogos", "Acessórios"]
+    pronta_entrega: true
+    imagens:
+      - "/assets/img/estoque/dado-mario-party-1.webp"
+      - "/assets/img/estoque/dado-mario-party-2.webp"
+    preco: 5
+    descricao: "Dado temático do Mário Party, com números dourados em relevo. Vendido individualmente."
+
+  - nome: "Barco Funcional com Motor"
+    categorias: ["Brinquedos", "Decoração"]
+    pronta_entrega: true
+    imagens:
+      - "/assets/img/estoque/barco-1.webp"
+      - "/assets/img/estoque/barco-2.webp"
+      - "/assets/img/estoque/barco-3.webp"
+      - "/assets/img/estoque/barco-4.webp"
+    preco: 150
+    tamanho_cm: 10
+    descricao: "Barquinho funcional que boia e navega sozinho, com motor a pilha. Cerca de 19 cm de comprimento e 10 cm de altura."
+
   - nome: "Kid Goku"
     categorias: ["Personagens", "Dragon Ball"]
     pronta_entrega: true
