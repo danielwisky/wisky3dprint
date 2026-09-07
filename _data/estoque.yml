@@ -161,7 +161,7 @@ pecas:
 
   - nome: "Earthworm Jim"
     categoria: "Personagens"
-    pronta_entrega: true
+    pronta_entrega: false
     imagens:
       - "/assets/img/estoque/earthworm-jim-2.webp"
       - "/assets/img/estoque/earthworm-jim-1.webp"
@@ -221,7 +221,7 @@ pecas:
 
   - nome: "Dado do Mário Party"
     categorias: ["Jogos", "Acessórios"]
-    pronta_entrega: true
+    pronta_entrega: false
     imagens:
       - "/assets/img/estoque/dado-mario-party-1.webp"
       - "/assets/img/estoque/dado-mario-party-2.webp"
@@ -239,6 +239,13 @@ pecas:
     preco: 150
     tamanho_cm: 10
     descricao: "Barquinho funcional que boia e navega sozinho, com motor a pilha. Cerca de 19 cm de comprimento e 10 cm de altura."
+
+  - nome: "Caixa de Música Bailarina"
+    categorias: ["Decoração"]
+    pronta_entrega: false
+    imagem: "/assets/img/estoque/caixa-musica-bailarina-1.webp"
+    preco: 55
+    descricao: "Caixinha de música com bailarina giratória sobre base rosa em espiral. Peça decorativa delicada."
 
   - nome: "Kid Goku"
     categorias: ["Personagens", "Dragon Ball"]
