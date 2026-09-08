@@ -213,6 +213,11 @@
         var desabilita = filtro !== "todos" && !ativo && n === 0;
         chip.classList.toggle("is-disabled", desabilita);
         chip.disabled = desabilita;
+        if (desabilita) {
+          chip.setAttribute("aria-label", filtro + ", indisponível com os filtros atuais");
+        } else {
+          chip.removeAttribute("aria-label");
+        }
       });
     }
 
