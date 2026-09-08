@@ -6,9 +6,9 @@
 <div class="gallery-grid reveal-stagger">
   {% for post in posts limit: max_posts %}
     {% if forloop.index0 >= initial %}
-      {% include instagram-post.html id=post.id type=post.type image=post.image caption=post.caption hidden=true %}
+      {% include instagram-post.html id=post.id type=post.type image=post.image caption=post.caption hidden=true index=forloop.index0 %}
     {% else %}
-      {% include instagram-post.html id=post.id type=post.type image=post.image caption=post.caption %}
+      {% include instagram-post.html id=post.id type=post.type image=post.image caption=post.caption index=forloop.index0 %}
     {% endif %}
   {% endfor %}
 </div>

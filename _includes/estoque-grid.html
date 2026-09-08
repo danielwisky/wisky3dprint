@@ -77,6 +77,8 @@
 {%- endif -%}
 <div class="estoque-grid reveal-stagger">
   {%- for peca in pecas -%}
+  {%- comment -%} Guardado antes do for de fotos abaixo, que tem seu próprio forloop. {%- endcomment -%}
+  {%- assign card_index0 = forloop.index0 -%}
   {%- comment -%} Monta a lista de fotos: usa "imagens" (lista) ou cai para "imagem" (única). {%- endcomment -%}
   {%- assign fotos = peca.imagens -%}
   {%- if fotos == nil and peca.imagem and peca.imagem != "" -%}
@@ -108,11 +110,12 @@
       {%- for foto in fotos -%}
       {%- assign foto_thumb = foto | replace: ".webp", "-thumb.webp" -%}
       <button type="button" class="img-zoom estoque-slide{% if forloop.first %} is-active{% endif %}" data-full="{{ foto | relative_url }}" aria-label="Ampliar foto {{ forloop.index }} de {{ peca.nome }}"{% unless forloop.first %} tabindex="-1"{% endunless %}>
+        {%- comment -%} 1ª foto do 1º card ganha fetchpriority (candidata a LCP); 1ª fileira (3 colunas) carrega sem lazy; carrossel (fotos além da 1ª) fica sempre lazy, já que só aparece ao navegar. {%- endcomment -%}
         <img
           class="estoque-card-image"
           src="{{ foto_thumb | relative_url }}"
           alt="{{ peca.nome }}, foto {{ forloop.index }}"
-          loading="lazy"
+          {% if forloop.first and card_index0 == 0 %}fetchpriority="high"{% elsif forloop.first == false or card_index0 >= 3 %}loading="lazy"{% endif %}
           decoding="async"
         >
       </button>
