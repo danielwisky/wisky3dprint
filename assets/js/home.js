@@ -91,7 +91,8 @@
             src: t.dataset.galleryImage,
             alt: t.querySelector("img").alt,
             url: t.dataset.galleryUrl,
-            caption: t.dataset.galleryCaption
+            caption: t.dataset.galleryCaption,
+            trigger: t
           };
         });
         var startIndex = visiveis.indexOf(trigger);

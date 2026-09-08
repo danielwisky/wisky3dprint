@@ -126,6 +126,10 @@
 
     function showAt(i) {
       idx = (i + items.length) % items.length;
+      // Só itens que carregam sua própria referência de trigger (ex.: galeria
+      // do Instagram) atualizam o foco de retorno ao navegar; sem isso, o
+      // foco ao fechar sempre volta pro elemento que abriu o lightbox.
+      if (items[idx] && items[idx].trigger) lastTrigger = items[idx].trigger;
       config.onShow(items[idx], idx, items.length);
     }
 

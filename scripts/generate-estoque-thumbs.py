@@ -47,7 +47,8 @@ def main():
             continue
 
         with Image.open(origem) as im:
-            im = im.convert("RGB")
+            tem_alpha = im.mode in ("RGBA", "LA") or (im.mode == "P" and "transparency" in im.info)
+            im = im.convert("RGBA" if tem_alpha else "RGB")
             w, h = im.size
             thumb_w = min(w, THUMB_WIDTH)  # nunca faz upscale
             thumb_h = round(h * thumb_w / w)
