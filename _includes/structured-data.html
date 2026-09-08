@@ -39,13 +39,7 @@
     {%- assign fotos = peca.imagens -%}
     {%- if fotos == nil and peca.imagem and peca.imagem != "" -%}{%- assign fotos = peca.imagem | split: "§" -%}{%- endif -%}
     {%- assign categoria_principal = peca.categorias[0] | default: peca.categoria -%}
-    {%- if peca.oferta -%}
-      {%- assign desconto_pct = peca.desconto_pct | default: 20 -%}
-      {%- assign valor_desconto = peca.preco | times: desconto_pct | divided_by: 100.0 -%}
-      {%- assign preco_final = peca.preco | minus: valor_desconto | round -%}
-    {%- else -%}
-      {%- assign preco_final = peca.preco -%}
-    {%- endif -%}
+    {%- include calc-preco-final.html peca=peca -%}
     {
       "@type": "ListItem",
       "position": {{ forloop.index }},

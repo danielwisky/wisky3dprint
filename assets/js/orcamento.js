@@ -378,6 +378,7 @@
     var logoHideInput = document.getElementById("orcamento-calc-logo-hide");
     var logoUploadInput = document.getElementById("orcamento-calc-logo-upload");
     var logoResetBtn = document.getElementById("orcamento-calc-logo-reset");
+    var logoErro = document.getElementById("orcamento-calc-logo-erro");
     var modeloUpload = document.getElementById("orcamento-calc-modelo-upload");
     var modeloPreview = document.getElementById("orcamento-calc-modelo-preview");
     var modeloNomeOut = document.getElementById("orcamento-calc-modelo-nome");
@@ -409,7 +410,7 @@
     var modeloLoading = document.getElementById("orcamento-calc-modelo-loading");
     var modeloDropzoneTexto = document.getElementById("orcamento-calc-dropzone-texto");
     var d = form.dataset;
-    var fmt = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+    var fmt = window.Wisky3D.formatarMoeda;
 
     var rows = {
       filamento: document.getElementById("orcamento-calc-b-filamento"),
@@ -444,10 +445,18 @@
         return null;
       }
 
-      var custoFilamento = (g / 1000) * filamentoKg;
-      var energia = (parseFloat(d.potenciaW) * h / 1000) * parseFloat(d.tarifaKwh);
-      var desgaste = parseFloat(d.desgaste);
-      var subtotal = custoFilamento + energia + desgaste;
+      var base = window.Wisky3D.calcularSubtotalBase({
+        pesoG: g,
+        horas: h,
+        filamentoKg: filamentoKg,
+        potenciaW: parseFloat(d.potenciaW),
+        tarifaKwh: parseFloat(d.tarifaKwh),
+        desgaste: parseFloat(d.desgaste)
+      });
+      var custoFilamento = base.custoFilamento;
+      var energia = base.energia;
+      var desgaste = base.desgaste;
+      var subtotal = base.subtotal;
       var perda = subtotal * (perdaPct / 100);
       var subtotalComPerda = subtotal + perda;
       var margem = subtotalComPerda * (margemPct / 100);
@@ -745,21 +754,34 @@
       applyLogoState();
     });
 
+    function mostrarErroLogo(msg) {
+      if (!logoErro) return;
+      logoErro.textContent = msg;
+      logoErro.hidden = false;
+    }
+
+    function limparErroLogo() {
+      if (!logoErro) return;
+      logoErro.hidden = true;
+      logoErro.textContent = "";
+    }
+
     logoUploadInput.addEventListener("change", function () {
       var file = logoUploadInput.files && logoUploadInput.files[0];
       if (!file) return;
 
       if (!/^image\//.test(file.type)) {
-        alert("Escolha um arquivo de imagem.");
+        mostrarErroLogo("Escolha um arquivo de imagem.");
         logoUploadInput.value = "";
         return;
       }
       if (file.size > LOGO_MAX_BYTES) {
-        alert("A imagem é muito grande. Escolha uma imagem de até 500KB.");
+        mostrarErroLogo("A imagem é muito grande. Escolha uma imagem de até 500KB.");
         logoUploadInput.value = "";
         return;
       }
 
+      limparErroLogo();
       var reader = new FileReader();
       reader.onload = function () {
         localStorage.setItem(LOGO_CUSTOM_KEY, reader.result);
@@ -773,6 +795,7 @@
       localStorage.removeItem(LOGO_HIDDEN_KEY);
       localStorage.removeItem(LOGO_CUSTOM_KEY);
       logoUploadInput.value = "";
+      limparErroLogo();
       applyLogoState();
     });
 

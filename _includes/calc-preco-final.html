@@ -1,0 +1,14 @@
+{%- comment -%}
+  Calcula o preço final de uma peça, aplicando o desconto quando "oferta: true".
+  Parâmetro: peca. Define (no escopo do template que chamou este include,
+  já que {% include %} no Jekyll compartilha escopo): desconto_pct, preco_final.
+{%- endcomment -%}
+{%- assign peca = include.peca -%}
+{%- if peca.oferta -%}
+  {%- assign desconto_pct = peca.desconto_pct | default: 20 -%}
+  {%- assign valor_desconto = peca.preco | times: desconto_pct | divided_by: 100.0 -%}
+  {%- assign preco_final = peca.preco | minus: valor_desconto | round -%}
+{%- else -%}
+  {%- assign desconto_pct = nil -%}
+  {%- assign preco_final = peca.preco -%}
+{%- endif -%}
