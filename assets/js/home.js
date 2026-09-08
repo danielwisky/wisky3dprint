@@ -10,21 +10,25 @@
     var tempo = document.getElementById("calc-tempo");
     var out = document.getElementById("calc-result");
     var d = form.dataset;
-    var fmt = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+    var fmt = window.Wisky3D.formatarMoeda;
 
     function calc() {
-      var g = parseFloat(String(peso.value).replace(",", "."));
-      var h = parseFloat(String(tempo.value).replace(",", "."));
+      var g = window.Wisky3D.parseNumeroPtBr(peso.value);
+      var h = window.Wisky3D.parseNumeroPtBr(tempo.value);
       if (!isFinite(g) || !isFinite(h) || g <= 0 || h <= 0) {
         out.textContent = "Preencha os campos";
         out.classList.remove("has-value");
         return;
       }
-      var filamento = (g / 1000) * parseFloat(d.filamentoKg);
-      var energia = (parseFloat(d.potenciaW) * h / 1000) * parseFloat(d.tarifaKwh);
-      var desgaste = parseFloat(d.desgaste);
-      var subtotal = filamento + energia + desgaste;
-      var total = subtotal * (1 + parseFloat(d.margemPct) / 100) + parseFloat(d.montagem);
+      var base = window.Wisky3D.calcularSubtotalBase({
+        pesoG: g,
+        horas: h,
+        filamentoKg: parseFloat(d.filamentoKg),
+        potenciaW: parseFloat(d.potenciaW),
+        tarifaKwh: parseFloat(d.tarifaKwh),
+        desgaste: parseFloat(d.desgaste)
+      });
+      var total = base.subtotal * (1 + parseFloat(d.margemPct) / 100) + parseFloat(d.montagem);
       out.textContent = fmt.format(total);
       out.classList.add("has-value");
     }
@@ -49,95 +53,51 @@
     var modalTitle = document.getElementById("gallery-modal-title");
     var prevBtn = modal.querySelector(".gallery-modal-prev");
     var nextBtn = modal.querySelector(".gallery-modal-next");
-    var triggers = allTriggers;
-    var currentIndex = 0;
-    var lastTrigger = null;
 
     function isVisible(trigger) {
       var item = trigger.closest(".gallery-item");
       return item && !item.hidden;
     }
 
-    function refreshTriggers() {
-      triggers = allTriggers.filter(isVisible);
-    }
-
-    function showAt(index) {
-      var total = triggers.length;
-      currentIndex = (index + total) % total;
-      var trigger = triggers[currentIndex];
-
-      modalImage.src = trigger.dataset.galleryImage;
-      modalImage.alt = trigger.querySelector("img").alt;
-      modalLink.href = trigger.dataset.galleryUrl;
-      var caption = trigger.dataset.galleryCaption;
-      if (caption && caption.length) {
-        modalTitle.textContent = caption;
-        modalTitle.hidden = false;
-      } else {
-        modalTitle.textContent = "";
-        modalTitle.hidden = true;
-      }
-
-      var hideNav = total <= 1;
-      prevBtn.hidden = hideNav;
-      nextBtn.hidden = hideNav;
-    }
-
-    function openModal(trigger) {
-      refreshTriggers();
-      lastTrigger = trigger;
-      currentIndex = triggers.indexOf(trigger);
-      if (currentIndex < 0) currentIndex = 0;
-
-      showAt(currentIndex);
-      modal.hidden = false;
-      modal.setAttribute("aria-hidden", "false");
-      document.body.classList.add("gallery-modal-open");
-      modal.querySelector(".gallery-modal-close").focus();
-    }
-
-    function closeModal() {
-      modal.hidden = true;
-      modal.setAttribute("aria-hidden", "true");
-      document.body.classList.remove("gallery-modal-open");
-      modalImage.src = "";
-      if (lastTrigger) lastTrigger.focus();
-    }
-
-    function goNext() {
-      showAt(currentIndex + 1);
-      lastTrigger = triggers[currentIndex];
-    }
-
-    function goPrev() {
-      showAt(currentIndex - 1);
-      lastTrigger = triggers[currentIndex];
-    }
+    var lightbox = window.Wisky3D.criarLightbox({
+      box: modal,
+      prevBtn: prevBtn,
+      nextBtn: nextBtn,
+      openClass: "gallery-modal-open",
+      onShow: function (item, idx, total) {
+        modalImage.src = item.src;
+        modalImage.alt = item.alt;
+        modalLink.href = item.url;
+        if (item.caption && item.caption.length) {
+          modalTitle.textContent = item.caption;
+          modalTitle.hidden = false;
+        } else {
+          modalTitle.textContent = "";
+          modalTitle.hidden = true;
+        }
+        var hideNav = total <= 1;
+        prevBtn.hidden = hideNav;
+        nextBtn.hidden = hideNav;
+      },
+      onClose: function () { modalImage.src = ""; }
+    });
 
     allTriggers.forEach(function (trigger) {
       trigger.addEventListener("click", function () {
-        openModal(trigger);
+        // Só as fotos já reveladas (ver "carregar mais", abaixo) entram na navegação.
+        var visiveis = allTriggers.filter(isVisible);
+        var items = visiveis.map(function (t) {
+          return {
+            src: t.dataset.galleryImage,
+            alt: t.querySelector("img").alt,
+            url: t.dataset.galleryUrl,
+            caption: t.dataset.galleryCaption,
+            trigger: t
+          };
+        });
+        var startIndex = visiveis.indexOf(trigger);
+        lightbox.open(items, startIndex < 0 ? 0 : startIndex, trigger);
       });
-    });
-
-    prevBtn.addEventListener("click", goPrev);
-    nextBtn.addEventListener("click", goNext);
-
-    modal.querySelectorAll("[data-gallery-close]").forEach(function (el) {
-      el.addEventListener("click", closeModal);
-    });
-
-    document.addEventListener("keydown", function (event) {
-      if (modal.hidden) return;
-
-      if (event.key === "Escape") {
-        closeModal();
-      } else if (event.key === "ArrowRight") {
-        goNext();
-      } else if (event.key === "ArrowLeft") {
-        goPrev();
-      }
     });
   })();
 

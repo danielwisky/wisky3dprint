@@ -37,6 +37,8 @@
 #   - Várias fotos:  use o campo  imagens:  (lista) — vira um carrossel no card.
 #     A primeira da lista é a capa. Coloque os arquivos em /assets/img/estoque/.
 #     Sem foto, o card mostra "Foto em breve".
+#     Depois de adicionar fotos novas, rode ./scripts/generate-estoque-thumbs.sh
+#     pra gerar a versão leve (thumb) usada no grid da loja.
 #   - Vendeu? Apague o bloco da peça e ela some do site.
 #   - Para deixar a vitrine vazia, deixe apenas:  pecas: []
 

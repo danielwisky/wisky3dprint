@@ -109,6 +109,82 @@
   })();
 
 // ---------------------------------------------------------------------------
+// Motor genérico de lightbox: abrir/fechar, teclado, swipe, navegação
+// circular, foco. Reaproveitado pelo zoom de imagem (.img-zoom, abaixo) e
+// pela galeria do Instagram (gallery-modal, em home.js) — só o HTML/o que
+// cada um exibe (contador de fotos vs. legenda+link) muda entre os dois.
+// ---------------------------------------------------------------------------
+
+  window.Wisky3D = window.Wisky3D || {};
+
+  window.Wisky3D.criarLightbox = function (config) {
+    var box = config.box;
+    var items = [];
+    var idx = 0;
+    var lastTrigger = null;
+    var x0 = null;
+
+    function showAt(i) {
+      idx = (i + items.length) % items.length;
+      // Só itens que carregam sua própria referência de trigger (ex.: galeria
+      // do Instagram) atualizam o foco de retorno ao navegar; sem isso, o
+      // foco ao fechar sempre volta pro elemento que abriu o lightbox.
+      if (items[idx] && items[idx].trigger) lastTrigger = items[idx].trigger;
+      config.onShow(items[idx], idx, items.length);
+    }
+
+    function open(novosItens, startIndex, trigger) {
+      items = novosItens;
+      lastTrigger = trigger || null;
+      showAt(startIndex || 0);
+      box.hidden = false;
+      box.setAttribute("aria-hidden", "false");
+      if (config.openClass) document.body.classList.add(config.openClass);
+      var closeBtn = box.querySelector("[data-lightbox-close], [data-gallery-close]");
+      if (closeBtn) closeBtn.focus();
+    }
+
+    function close() {
+      box.hidden = true;
+      box.setAttribute("aria-hidden", "true");
+      if (config.openClass) document.body.classList.remove(config.openClass);
+      if (config.onClose) config.onClose();
+      if (lastTrigger) lastTrigger.focus();
+    }
+
+    function next() { showAt(idx + 1); }
+    function prev() { showAt(idx - 1); }
+
+    if (config.prevBtn) config.prevBtn.addEventListener("click", prev);
+    if (config.nextBtn) config.nextBtn.addEventListener("click", next);
+
+    box.querySelectorAll("[data-lightbox-close], [data-gallery-close]").forEach(function (el) {
+      el.addEventListener("click", close);
+    });
+
+    box.addEventListener("click", function (event) {
+      if (event.target === box) close();
+    });
+
+    box.addEventListener("touchstart", function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+    box.addEventListener("touchend", function (e) {
+      if (x0 === null) return;
+      var dx = e.changedTouches[0].clientX - x0;
+      if (Math.abs(dx) > 40) showAt(idx + (dx < 0 ? 1 : -1));
+      x0 = null;
+    });
+
+    document.addEventListener("keydown", function (event) {
+      if (box.hidden) return;
+      if (event.key === "Escape") close();
+      else if (event.key === "ArrowRight") next();
+      else if (event.key === "ArrowLeft") prev();
+    });
+
+    return { open: open, close: close, next: next, prev: prev };
+  };
+
+// ---------------------------------------------------------------------------
 // BLOCO: Zoom de imagem em modal (lightbox global)
 // ---------------------------------------------------------------------------
 
@@ -123,85 +199,46 @@
     var prevBtn = box.querySelector(".img-lightbox-prev");
     var nextBtn = box.querySelector(".img-lightbox-next");
     var counter = box.querySelector(".img-lightbox-counter");
-    var lastTrigger = null;
-    var images = [];
-    var idx = 0;
-    var x0 = null;
 
-    function showAt(i) {
-      idx = (i + images.length) % images.length;
-      boxImg.src = images[idx].src;
-      boxImg.alt = images[idx].alt;
-      var multiple = images.length > 1;
-      if (prevBtn) prevBtn.hidden = !multiple;
-      if (nextBtn) nextBtn.hidden = !multiple;
-      if (counter) {
-        counter.hidden = !multiple;
-        counter.textContent = multiple ? (idx + 1) + " / " + images.length : "";
-      }
-    }
-
-    function openBox(trigger) {
-      var img = trigger.querySelector("img");
-      if (!img) return;
-
-      var carousel = trigger.closest("[data-carousel]");
-      if (carousel) {
-        var slides = Array.prototype.slice.call(carousel.querySelectorAll(".estoque-slide"));
-        images = slides.map(function (s) {
-          var si = s.querySelector("img");
-          return { src: si ? (si.currentSrc || si.src) : "", alt: si ? si.alt : "" };
-        });
-        idx = slides.indexOf(trigger);
-        if (idx < 0) idx = 0;
-      } else {
-        images = [{ src: img.currentSrc || img.src, alt: img.alt }];
-        idx = 0;
-      }
-
-      lastTrigger = trigger;
-      showAt(idx);
-      box.hidden = false;
-      box.setAttribute("aria-hidden", "false");
-      document.body.classList.add("img-lightbox-open");
-      box.querySelector(".img-lightbox-close").focus();
-    }
-
-    function closeBox() {
-      box.hidden = true;
-      box.setAttribute("aria-hidden", "true");
-      document.body.classList.remove("img-lightbox-open");
-      boxImg.src = "";
-      if (lastTrigger) lastTrigger.focus();
-    }
+    var lightbox = window.Wisky3D.criarLightbox({
+      box: box,
+      prevBtn: prevBtn,
+      nextBtn: nextBtn,
+      openClass: "img-lightbox-open",
+      onShow: function (item, idx, total) {
+        boxImg.src = item.src;
+        boxImg.alt = item.alt;
+        var multiple = total > 1;
+        prevBtn.hidden = !multiple;
+        nextBtn.hidden = !multiple;
+        if (counter) {
+          counter.hidden = !multiple;
+          counter.textContent = multiple ? (idx + 1) + " / " + total : "";
+        }
+      },
+      onClose: function () { boxImg.src = ""; }
+    });
 
     triggers.forEach(function (trigger) {
-      trigger.addEventListener("click", function () { openBox(trigger); });
-    });
+      trigger.addEventListener("click", function () {
+        var img = trigger.querySelector("img");
+        if (!img) return;
 
-    if (prevBtn) prevBtn.addEventListener("click", function () { showAt(idx - 1); });
-    if (nextBtn) nextBtn.addEventListener("click", function () { showAt(idx + 1); });
-
-    box.querySelectorAll("[data-lightbox-close]").forEach(function (el) {
-      el.addEventListener("click", closeBox);
-    });
-
-    box.addEventListener("click", function (event) {
-      if (event.target === box) closeBox();
-    });
-
-    box.addEventListener("touchstart", function (e) { x0 = e.touches[0].clientX; }, { passive: true });
-    box.addEventListener("touchend", function (e) {
-      if (x0 === null) return;
-      var dx = e.changedTouches[0].clientX - x0;
-      if (Math.abs(dx) > 40) showAt(idx + (dx < 0 ? 1 : -1));
-      x0 = null;
-    });
-
-    document.addEventListener("keydown", function (event) {
-      if (box.hidden) return;
-      if (event.key === "Escape") closeBox();
-      else if (event.key === "ArrowRight") showAt(idx + 1);
-      else if (event.key === "ArrowLeft") showAt(idx - 1);
+        var items, startIndex;
+        var carousel = trigger.closest("[data-carousel]");
+        if (carousel) {
+          var slides = Array.prototype.slice.call(carousel.querySelectorAll(".estoque-slide"));
+          items = slides.map(function (s) {
+            var si = s.querySelector("img");
+            // O card exibe um thumb leve; o zoom usa a foto original (data-full) quando disponível.
+            return { src: s.dataset.full || (si ? (si.currentSrc || si.src) : ""), alt: si ? si.alt : "" };
+          });
+          startIndex = slides.indexOf(trigger);
+        } else {
+          items = [{ src: trigger.dataset.full || img.currentSrc || img.src, alt: img.alt }];
+          startIndex = 0;
+        }
+        lightbox.open(items, startIndex < 0 ? 0 : startIndex, trigger);
+      });
     });
   })();

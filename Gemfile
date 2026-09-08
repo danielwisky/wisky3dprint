@@ -15,3 +15,7 @@ end
 
 gem "wdm", platforms: [:mingw, :x64_mingw, :mswin]
 gem "http_parser.rb", platforms: [:jruby]
+
+group :test do
+  gem "html-proofer"
+end

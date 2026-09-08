@@ -1,0 +1,18 @@
+{%- comment -%}
+  Selos do card da loja (oferta / pronta entrega / tamanho).
+  Parâmetros: peca, desconto_pct (já calculado pelo chamador via calc-preco-final.html).
+{%- endcomment -%}
+{%- assign peca = include.peca -%}
+{%- if peca.pronta_entrega or peca.tamanho_cm or peca.oferta -%}
+<div class="estoque-badges">
+  {%- if peca.oferta -%}
+  <span class="estoque-badge estoque-badge--oferta">-{{ include.desconto_pct }}%</span>
+  {%- endif -%}
+  {%- if peca.pronta_entrega -%}
+  <span class="estoque-badge">Pronta entrega</span>
+  {%- endif -%}
+  {%- if peca.tamanho_cm -%}
+  <span class="estoque-badge estoque-badge--tamanho">{{ peca.tamanho_cm }} cm</span>
+  {%- endif -%}
+</div>
+{%- endif -%}

@@ -59,6 +59,11 @@ tem instruções de uso (categoria, preço, fotos, selo de "Pronta entrega" etc.
 em comentários no topo. As fotos ficam em `assets/img/estoque/` e podem ser
 convertidas para `.webp` com `cwebp -q 85 origem.jpg -o destino.webp`.
 
+Depois de adicionar fotos novas, rode `./scripts/generate-estoque-thumbs.sh`
+para gerar a versão leve (`*-thumb.webp`) usada no grid — o clique na foto
+(zoom) continua abrindo a imagem original em alta resolução. O script pula
+fotos que já têm thumb atualizado, então é seguro rodar sempre.
+
 ## SEO / Analytics
 
 - `google_analytics` em `_config.yml` tem o Measurement ID do GA4 (mesma
