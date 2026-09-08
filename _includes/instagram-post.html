@@ -14,11 +14,12 @@
     aria-label="Ampliar publicação do Instagram"
   >
     {%- assign img_alt = caption_title | default: "Trabalho impresso em 3D por @" | append: site.instagram.username -%}
+    {%- comment -%} Primeira fileira (visível sem rolar) carrega sem lazy; a 1ª foto ganha fetchpriority para ajudar o LCP. {%- endcomment -%}
     <img
       class="gallery-image"
       src="{{ thumb | relative_url }}"
       alt="{{ img_alt }}"
-      loading="lazy"
+      {% if include.index == 0 %}fetchpriority="high"{% elsif include.index >= 4 %}loading="lazy"{% endif %}
       decoding="async"
     >
     <span class="gallery-overlay" aria-hidden="true">
