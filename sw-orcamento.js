@@ -10,6 +10,7 @@ var URLS_TO_CACHE = [
   "{{ '/orcamento/' | relative_url }}",
   "{{ '/assets/css/style.css' | relative_url }}?v={{ '/assets/css/style.scss' | asset_hash }}",
   "{{ '/assets/js/price-formula.js' | relative_url }}?v={{ '/assets/js/price-formula.js' | asset_hash }}",
+  "{{ '/assets/js/model-parser.js' | relative_url }}?v={{ '/assets/js/model-parser.js' | asset_hash }}",
   "{{ '/assets/js/orcamento.js' | relative_url }}?v={{ '/assets/js/orcamento.js' | asset_hash }}",
   "{{ '/assets/img/icon-orcamento-192.png' | relative_url }}",
   "{{ '/assets/img/icon-orcamento-512.png' | relative_url }}"
