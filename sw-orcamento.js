@@ -5,7 +5,12 @@ permalink: /sw-orcamento.js
 // Service worker do app "Orçamento" — cache só do essencial pra abrir
 // offline depois de instalado. Escopo limitado a /orcamento/ (ver
 // registro em orcamento.js), não afeta o resto do site.
-var CACHE_NAME = "orcamento-app-v1";
+//
+// O nome do cache incorpora os asset_hash do JS/CSS: assim, sempre que
+// esses arquivos mudarem de conteúdo, o cache muda de nome e a limpeza
+// no "activate" descarta a versão anterior — sem isso, entradas com
+// ?v=hash antigo ficariam acumuladas pra sempre no mesmo cache.
+var CACHE_NAME = "orcamento-app-{{ '/assets/js/orcamento.js' | asset_hash }}-{{ '/assets/css/style.scss' | asset_hash }}";
 var URLS_TO_CACHE = [
   "{{ '/orcamento/' | relative_url }}",
   "{{ '/assets/css/style.css' | relative_url }}?v={{ '/assets/css/style.scss' | asset_hash }}",

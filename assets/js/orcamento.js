@@ -927,10 +927,11 @@
     });
 
     // Registra o service worker do app instalável, escopo restrito a
-    // /orcamento/ — não afeta o resto do site.
-    if ("serviceWorker" in navigator) {
+    // /orcamento/ — não afeta o resto do site. URL/escopo vêm do dataset
+    // (renderizados via Liquid) pra respeitar site.baseurl.
+    if ("serviceWorker" in navigator && d.swUrl) {
       window.addEventListener("load", function () {
-        navigator.serviceWorker.register("/sw-orcamento.js", { scope: "/orcamento/" }).catch(function () {});
+        navigator.serviceWorker.register(d.swUrl, { scope: d.swScope }).catch(function () {});
       });
     }
   })();
