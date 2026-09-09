@@ -972,8 +972,10 @@
   // o código embaixo dos pés de quem já está no meio de um orçamento.
   if ("serviceWorker" in navigator && d.swUrl) {
     window.addEventListener("load", function () {
+      var toastAtivo = false;
       function mostrarToastAtualizacao(worker) {
-        if (!worker || !updateToast || !updateToastBtn) return;
+        if (!worker || !updateToast || !updateToastBtn || toastAtivo) return;
+        toastAtivo = true;
         updateToast.hidden = false;
         updateToastBtn.addEventListener("click", function () {
           worker.postMessage("skipWaiting");
