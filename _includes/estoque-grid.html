@@ -115,6 +115,8 @@
           class="estoque-card-image"
           src="{{ foto_thumb | relative_url }}"
           alt="{{ peca.nome }}, foto {{ forloop.index }}"
+          width="600"
+          height="800"
           {% if forloop.first and card_index0 == 0 %}fetchpriority="high"{% elsif forloop.first == false or card_index0 >= 3 %}loading="lazy"{% endif %}
           decoding="async"
         >
@@ -155,7 +157,7 @@
         {%- endfor -%}
       </div>
       {%- endif -%}
-      <h3 class="estoque-card-title">{{ peca.nome }}</h3>
+      <h2 class="estoque-card-title">{{ peca.nome }}</h2>
       {%- if peca.descricao -%}
       <p class="estoque-card-desc">{{ peca.descricao }}</p>
       {%- endif -%}

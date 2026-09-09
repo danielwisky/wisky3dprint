@@ -19,6 +19,8 @@
       class="gallery-image"
       src="{{ thumb | relative_url }}"
       alt="{{ img_alt }}"
+      width="600"
+      height="800"
       {% if include.index == 0 %}fetchpriority="high"{% elsif include.index >= 4 %}loading="lazy"{% endif %}
       decoding="async"
     >

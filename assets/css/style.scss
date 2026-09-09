@@ -19,7 +19,8 @@ $nav-h: 72px;
   --bg-soft: #0c121c;
   --text: #eef2f8;
   --muted: #8d98ab;
-  --muted-soft: rgba(141, 152, 171, 0.7);
+  // Opacidade em 0.85 (não 0.7) pra manter contraste ≥ 4.5:1 (WCAG AA) sobre --bg.
+  --muted-soft: rgba(141, 152, 171, 0.85);
 
   --cyan: #00e5cc;
   --coral: #ff6b4a;
@@ -56,7 +57,9 @@ $nav-h: 72px;
   --bg-soft: #f1ebe2;
   --text: #1a1f2b;
   --muted: #5c6477;
-  --muted-soft: rgba(92, 100, 119, 0.7);
+  // Opacidade mais alta que no tema escuro porque o fundo claro exige mais
+  // contraste pra manter ≥ 4.5:1 (WCAG AA) com essa mesma cor de base.
+  --muted-soft: rgba(92, 100, 119, 0.92);
 
   --cyan: #009b8a;
   --coral: #e0492b;
@@ -117,6 +120,25 @@ body {
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
+}
+
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  z-index: 1000;
+  padding: 0.7rem 1.2rem;
+  background: var(--surface, #0c121c);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: $radius-sm;
+  text-decoration: none;
+
+  &:focus-visible {
+    top: 1rem;
+    outline: 2px solid var(--cyan);
+    outline-offset: 2px;
+  }
 }
 
 // Smooth theme transition: applied briefly on toggle via JS, then removed
@@ -988,10 +1010,14 @@ code {
     color: var(--muted);
   }
 
-  &:hover,
-  &:focus {
+  &:hover {
     border-color: color-mix(in srgb, var(--cyan) 45%, transparent);
-    outline: none;
+  }
+
+  &:focus-visible {
+    border-color: color-mix(in srgb, var(--cyan) 45%, transparent);
+    outline: 2px solid var(--cyan);
+    outline-offset: 2px;
   }
 }
 
@@ -1207,10 +1233,14 @@ code {
   background-size: 1rem;
   transition: border-color 0.2s ease;
 
-  &:hover,
-  &:focus {
+  &:hover {
     border-color: color-mix(in srgb, var(--cyan) 45%, transparent);
-    outline: none;
+  }
+
+  &:focus-visible {
+    border-color: color-mix(in srgb, var(--cyan) 45%, transparent);
+    outline: 2px solid var(--cyan);
+    outline-offset: 2px;
   }
 }
 
@@ -2377,7 +2407,8 @@ body.gallery-modal-open {
   font: inherit;
 }
 .calc-field input:focus-visible {
-  outline: none;
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
   border-color: var(--cyan);
 }
 .calc-fields-time {
@@ -2392,7 +2423,8 @@ body.gallery-modal-open {
   font: inherit;
 }
 .calc-field select:focus-visible {
-  outline: none;
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
   border-color: var(--cyan);
 }
 .calc-field-hint {
@@ -2698,7 +2730,7 @@ body.gallery-modal-open {
   padding-top: 1.5rem;
   border-top: 1px solid var(--border);
 }
-.calc-itens h3 { margin: 0 0 0.75rem; font-size: 0.95rem; }
+.calc-itens h2 { margin: 0 0 0.75rem; font-size: 0.95rem; }
 .calc-itens-list {
   list-style: none;
   margin: 0 0 1rem;
@@ -2758,7 +2790,8 @@ body.gallery-modal-open {
 }
 .calc-desconto-fields input:focus-visible,
 .calc-desconto-fields select:focus-visible {
-  outline: none;
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
   border-color: var(--cyan);
 }
 #orcamento-calc-desconto-valor { width: 5rem; flex: none; }
@@ -2799,7 +2832,7 @@ body.gallery-modal-open {
   padding-top: 1.25rem;
   border-top: 1px solid var(--border);
 }
-.calc-logo-options h3 { font-size: 1rem; margin-bottom: 0.4rem; }
+.calc-logo-options h2 { font-size: 1rem; margin-bottom: 0.4rem; }
 .calc-logo-options-hint { font-size: 0.85rem; color: var(--muted); margin-bottom: 0.75rem; }
 .calc-logo-option-checkbox {
   display: flex;

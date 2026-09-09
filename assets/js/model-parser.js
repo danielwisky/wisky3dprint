@@ -106,6 +106,12 @@ window.Wisky3D = window.Wisky3D || {};
 
   var TRANSFORM_IDENTIDADE = { M: [[1, 0, 0], [0, 1, 0], [0, 0, 1]], t: [0, 0, 0] };
 
+  // Fator pra converter a unidade declarada no <model unit="..."> pra mm.
+  // Fatiadores (Bambu/Orca) sempre gravam em mm, mas o padrão 3MF permite
+  // outras unidades — sem isso, um arquivo em "centimeter" sairia com
+  // volume/peso 1000x menor que o real.
+  var UNIDADE_PARA_MM = { micron: 0.001, millimeter: 1, centimeter: 10, inch: 25.4, foot: 304.8, meter: 1000 };
+
   function parseTransformAttr(str) {
     if (!str) return TRANSFORM_IDENTIDADE;
     var n = str.trim().split(/\s+/).map(Number);
@@ -288,6 +294,8 @@ window.Wisky3D = window.Wisky3D || {};
 
   function parse3MFPackage(zip, rootXmlText) {
     var doc = parseXmlDoc(rootXmlText);
+    var unidadeAttr = doc.documentElement.getAttribute("unit");
+    var escala = UNIDADE_PARA_MM[unidadeAttr] || 1;
     var docCache = {};
     var buildEl = doc.getElementsByTagName("build")[0];
     var itemEls = buildEl ? directChildren(buildEl, "item") : [];
@@ -318,7 +326,15 @@ window.Wisky3D = window.Wisky3D || {};
         volumeMm3 += r.volumeMm3;
         bbox = mergeBBox(bbox, r.bbox);
       });
-      return { triangleCount: triangleCount, volumeMm3: volumeMm3, areaMm2: areaMm2, bbox: bbox };
+      return {
+        triangleCount: triangleCount,
+        volumeMm3: volumeMm3 * escala * escala * escala,
+        areaMm2: areaMm2 * escala * escala,
+        bbox: {
+          minX: bbox.minX * escala, minY: bbox.minY * escala, minZ: bbox.minZ * escala,
+          maxX: bbox.maxX * escala, maxY: bbox.maxY * escala, maxZ: bbox.maxZ * escala
+        }
+      };
     });
   }
 
