@@ -947,10 +947,10 @@
 
     if (!jaInstalado && lsGet(INSTALL_TIP_DISMISSED_KEY) !== "1") {
       if (isIOS) {
-        installTipTexto.textContent = "Instale esta calculadora como app: toque em Compartilhar (⬆️) na barra do Safari e depois em \"Adicionar à Tela de Início\".";
+        installTipTexto.textContent = "📲 Adicione esta calculadora à tela de início e use como app, até offline: toque em Compartilhar na barra do Safari e depois em \"Adicionar à Tela de Início\".";
         installTip.hidden = false;
       } else if (isAndroid) {
-        installTipTexto.textContent = "Instale esta calculadora como app: toque no menu (⋮) do navegador e depois em \"Instalar app\" ou \"Adicionar à tela inicial\".";
+        installTipTexto.textContent = "📲 Adicione esta calculadora à tela de início e use como app, até offline: toque no menu (⋮) do navegador e depois em \"Instalar app\" ou \"Adicionar à tela inicial\".";
         installTip.hidden = false;
       }
     }
