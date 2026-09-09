@@ -45,15 +45,19 @@ self.addEventListener("activate", function (event) {
 self.addEventListener("fetch", function (event) {
   if (event.request.method !== "GET") return;
   event.respondWith(
-    caches.match(event.request).then(function (cached) {
-      var network = fetch(event.request).then(function (response) {
-        if (response && response.ok) {
-          var clone = response.clone();
-          caches.open(CACHE_NAME).then(function (cache) { cache.put(event.request, clone); });
-        }
-        return response;
-      }).catch(function () { return cached; });
-      return cached || network;
+    caches.open(CACHE_NAME).then(function (cache) {
+      // Busca só no cache DESTA versão (CACHE_NAME) — caches.match() global
+      // buscaria em qualquer cache do site, inclusive versões antigas ainda
+      // não limpas, servindo conteúdo desatualizado mesmo depois de um deploy.
+      return cache.match(event.request).then(function (cached) {
+        var network = fetch(event.request).then(function (response) {
+          if (response && response.ok) {
+            cache.put(event.request, response.clone());
+          }
+          return response;
+        }).catch(function () { return cached; });
+        return cached || network;
+      });
     })
   );
 });
