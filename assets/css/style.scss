@@ -1819,6 +1819,19 @@ body.gallery-modal-open {
   border-top: 1px solid var(--border);
 }
 
+// Rodando como app instalado (só possível em /orcamento/, pelo escopo do
+// manifest): esconde a navegação do site, que levaria pra fora do app.
+@media (display-mode: standalone) {
+  .site-nav,
+  .site-footer {
+    display: none;
+  }
+
+  .section-calc {
+    padding-top: calc(2.5rem + env(safe-area-inset-top, 0px)) !important;
+  }
+}
+
 .footer-row {
   display: flex;
   flex-wrap: wrap;
@@ -2796,6 +2809,30 @@ body.gallery-modal-open {
 }
 .calc-logo-option-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
 .calc-logo-upload-btn { cursor: pointer; }
+
+.calc-install-tip {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  max-width: 640px;
+  margin: 0 auto 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 0.85rem;
+}
+.calc-install-tip[hidden] { display: none; }
+.calc-install-tip p { margin: 0; flex: 1; line-height: 1.4; }
+.calc-install-tip-fechar {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.15rem 0.35rem;
+}
 
 .calc-modo-toggle {
   display: flex;
