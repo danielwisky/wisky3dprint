@@ -1819,6 +1819,19 @@ body.gallery-modal-open {
   border-top: 1px solid var(--border);
 }
 
+// Rodando como app instalado (só possível em /orcamento/, pelo escopo do
+// manifest): esconde a navegação do site, que levaria pra fora do app.
+@media (display-mode: standalone) {
+  .site-nav,
+  .site-footer {
+    display: none;
+  }
+
+  .section-calc {
+    padding-top: calc(2.5rem + env(safe-area-inset-top, 0px)) !important;
+  }
+}
+
 .footer-row {
   display: flex;
   flex-wrap: wrap;
