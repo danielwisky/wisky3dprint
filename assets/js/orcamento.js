@@ -1,3 +1,4 @@
+(function () {
 // ---------------------------------------------------------------------------
 // BLOCO: Parsing de modelos 3D (STL/3MF): volume, bounding box e densidade
 // ---------------------------------------------------------------------------
@@ -337,7 +338,6 @@
 // BLOCO: Calculadora de orçamento: itens, custos, upload de modelo, PDF/CSV
 // ---------------------------------------------------------------------------
 
-  (function () {
     var form = document.getElementById("orcamento-calc");
     if (!form) return;
 
@@ -584,7 +584,9 @@
         col.type = "button";
         col.className = "calc-faixa";
         col.setAttribute("aria-label", "Usar margem de " + margemPct + "% (" + (labels[i] || "") + ")");
-        if (margemPct === item.margemPct) col.classList.add("is-active");
+        var isActive = margemPct === item.margemPct;
+        col.classList.toggle("is-active", isActive);
+        col.setAttribute("aria-pressed", String(isActive));
         col.addEventListener("click", function () {
           margemInput.value = margemPct;
           calc();
@@ -836,9 +838,21 @@
       URL.revokeObjectURL(url);
     });
 
+    // Safari em modo privado (e storage desabilitado) lança ao acessar
+    // localStorage — protege igual ao padrão já usado em main.js.
+    function lsGet(key) {
+      try { return localStorage.getItem(key); } catch (e) { return null; }
+    }
+    function lsSet(key, value) {
+      try { localStorage.setItem(key, value); } catch (e) {}
+    }
+    function lsRemove(key) {
+      try { localStorage.removeItem(key); } catch (e) {}
+    }
+
     var MODO_COMPLETO_KEY = "orcamentoCalc:modoCompleto";
     var camposAvancados = document.querySelectorAll(".calc-field-avancado");
-    var modoCompleto = localStorage.getItem(MODO_COMPLETO_KEY) === "1";
+    var modoCompleto = lsGet(MODO_COMPLETO_KEY) === "1";
 
     function aplicarModo() {
       camposAvancados.forEach(function (el) {
@@ -856,12 +870,12 @@
     if (modoSimplesBtn && modoCompletoBtn) {
       modoSimplesBtn.addEventListener("click", function () {
         modoCompleto = false;
-        localStorage.removeItem(MODO_COMPLETO_KEY);
+        lsRemove(MODO_COMPLETO_KEY);
         aplicarModo();
       });
       modoCompletoBtn.addEventListener("click", function () {
         modoCompleto = true;
-        localStorage.setItem(MODO_COMPLETO_KEY, "1");
+        lsSet(MODO_COMPLETO_KEY, "1");
         aplicarModo();
       });
     }
@@ -874,8 +888,8 @@
 
     function applyLogoState() {
       if (!printLogo) return;
-      var hidden = localStorage.getItem(LOGO_HIDDEN_KEY) === "1";
-      var custom = localStorage.getItem(LOGO_CUSTOM_KEY);
+      var hidden = lsGet(LOGO_HIDDEN_KEY) === "1";
+      var custom = lsGet(LOGO_CUSTOM_KEY);
       var hasCustom = !!custom;
 
       // Com logo própria, a marca Wisky 3D Print (texto) fica sempre oculta.
@@ -889,9 +903,9 @@
 
     logoHideInput.addEventListener("change", function () {
       if (logoHideInput.checked) {
-        localStorage.setItem(LOGO_HIDDEN_KEY, "1");
+        lsSet(LOGO_HIDDEN_KEY, "1");
       } else {
-        localStorage.removeItem(LOGO_HIDDEN_KEY);
+        lsRemove(LOGO_HIDDEN_KEY);
       }
       applyLogoState();
     });
@@ -926,16 +940,16 @@
       limparErroLogo();
       var reader = new FileReader();
       reader.onload = function () {
-        localStorage.setItem(LOGO_CUSTOM_KEY, reader.result);
-        localStorage.setItem(LOGO_HIDDEN_KEY, "1");
+        lsSet(LOGO_CUSTOM_KEY, reader.result);
+        lsSet(LOGO_HIDDEN_KEY, "1");
         applyLogoState();
       };
       reader.readAsDataURL(file);
     });
 
     logoResetBtn.addEventListener("click", function () {
-      localStorage.removeItem(LOGO_HIDDEN_KEY);
-      localStorage.removeItem(LOGO_CUSTOM_KEY);
+      lsRemove(LOGO_HIDDEN_KEY);
+      lsRemove(LOGO_CUSTOM_KEY);
       logoUploadInput.value = "";
       limparErroLogo();
       applyLogoState();
@@ -972,7 +986,7 @@
 
       var densidade = densidadeAtual();
       var infillPct = parseNum(infillInput.value) || 0;
-      var paredes = parseInt(String(paredesInput.value).replace(",", "."), 10) || parseInt(d.paredes, 10) || 0;
+      var paredes = parseInt(paredesInput.value, 10) || parseInt(d.paredes, 10) || 0;
 
       if (!isFinite(densidade) || densidade <= 0) {
         mostrarErroModelo("Não encontramos a densidade do material nesse arquivo. Selecione o material (ou informe a densidade manualmente) para calcular o peso.");
@@ -1244,5 +1258,13 @@
       e.preventDefault();
       if (current) addBtn.click();
     });
+
+    // Registra o service worker do app instalável, escopo restrito a
+    // /orcamento/ — não afeta o resto do site.
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("/sw-orcamento.js", { scope: "/orcamento/" }).catch(function () {});
+      });
+    }
   })();
 

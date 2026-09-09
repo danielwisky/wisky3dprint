@@ -1,0 +1,41 @@
+---
+layout: null
+permalink: /manifest-orcamento.webmanifest
+---
+{
+  "name": "Orçamento - Wisky 3D Print",
+  "short_name": "Orçamento 3D",
+  "description": "Calculadora de orçamento para impressão 3D.",
+  "start_url": "{{ '/orcamento/' | relative_url }}",
+  "scope": "{{ '/orcamento/' | relative_url }}",
+  "display": "standalone",
+  "background_color": "#070b12",
+  "theme_color": "#070b12",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "{{ '/assets/img/icon-orcamento-192.png' | relative_url }}",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "{{ '/assets/img/icon-orcamento-512.png' | relative_url }}",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "{{ '/assets/img/icon-orcamento-192.png' | relative_url }}",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "{{ '/assets/img/icon-orcamento-512.png' | relative_url }}",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

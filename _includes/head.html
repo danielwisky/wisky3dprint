@@ -37,4 +37,11 @@
   <link rel="icon" type="image/svg+xml" href="{{ '/assets/img/favicon.svg' | relative_url }}?v={{ '/assets/img/favicon.svg' | asset_hash }}">
   <link rel="shortcut icon" type="image/x-icon" href="{{ '/assets/img/favicon.ico' | relative_url }}?v={{ '/assets/img/favicon.ico' | asset_hash }}">
   <link rel="apple-touch-icon" href="{{ '/assets/img/apple-touch-icon.png' | relative_url }}?v={{ '/assets/img/apple-touch-icon.png' | asset_hash }}">
+
+  {%- if page.pwa %}
+  <link rel="manifest" href="{{ '/manifest-orcamento.webmanifest' | relative_url }}">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Orçamento 3D">
+  {%- endif %}
 </head>
