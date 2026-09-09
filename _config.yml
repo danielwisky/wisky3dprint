@@ -45,6 +45,10 @@ calculadora:
   potencia_w: 80
   tarifa_kwh: 0.80
   desgaste: 2.00
+  valor_maquina: 0
+  vida_util_h: 0
+  hora_trabalho: 20
+  faixas_margem_pct: [50, 100, 150]
   margem_pct: 100
   perda_pct: 10
   montagem: 20
