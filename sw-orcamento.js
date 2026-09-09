@@ -22,12 +22,21 @@ var URLS_TO_CACHE = [
 ];
 
 self.addEventListener("install", function (event) {
-  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then(function (cache) {
       return cache.addAll(URLS_TO_CACHE);
     })
   );
+});
+
+// Fica em espera (sem ativar) até a página pedir explicitamente — é o que
+// dispara o aviso de "nova versão disponível" em orcamento.js. Sem isso
+// (com skipWaiting automático no install), a troca de versão seria
+// silenciosa e o usuário não saberia que atualizou.
+self.addEventListener("message", function (event) {
+  if (event.data === "skipWaiting") {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener("activate", function (event) {

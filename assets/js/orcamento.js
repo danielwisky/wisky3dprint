@@ -52,6 +52,8 @@
   var logoUploadInput = document.getElementById("orcamento-calc-logo-upload");
   var logoResetBtn = document.getElementById("orcamento-calc-logo-reset");
   var logoErro = document.getElementById("orcamento-calc-logo-erro");
+  var updateToast = document.getElementById("orcamento-calc-update-toast");
+  var updateToastBtn = document.getElementById("orcamento-calc-update-btn");
   var installTip = document.getElementById("orcamento-calc-install-tip");
   var installTipTexto = document.getElementById("orcamento-calc-install-tip-texto");
   var installTipFechar = document.getElementById("orcamento-calc-install-tip-fechar");
@@ -964,9 +966,43 @@
   // Registra o service worker do app instalável, escopo restrito a
   // /orcamento/ — não afeta o resto do site. URL/escopo vêm do dataset
   // (renderizados via Liquid) pra respeitar site.baseurl.
+  //
+  // O service worker fica em espera (não ativa sozinho) quando detecta uma
+  // versão nova — só ativa se o usuário tocar em "Atualizar", pra não trocar
+  // o código embaixo dos pés de quem já está no meio de um orçamento.
   if ("serviceWorker" in navigator && d.swUrl) {
     window.addEventListener("load", function () {
-      navigator.serviceWorker.register(d.swUrl, { scope: d.swScope }).catch(function () {});
+      function mostrarToastAtualizacao(worker) {
+        if (!worker || !updateToast || !updateToastBtn) return;
+        updateToast.hidden = false;
+        updateToastBtn.addEventListener("click", function () {
+          worker.postMessage("skipWaiting");
+        }, { once: true });
+      }
+
+      navigator.serviceWorker.register(d.swUrl, { scope: d.swScope }).then(function (reg) {
+        // reg.waiting já está pronto (instalado numa aba anterior) — mostra
+        // o aviso na hora, sem esperar um "statechange" que não vai ocorrer.
+        if (reg.waiting && navigator.serviceWorker.controller) {
+          mostrarToastAtualizacao(reg.waiting);
+        }
+        reg.addEventListener("updatefound", function () {
+          var worker = reg.installing;
+          if (!worker) return;
+          worker.addEventListener("statechange", function () {
+            if (worker.state === "installed" && navigator.serviceWorker.controller) {
+              mostrarToastAtualizacao(worker);
+            }
+          });
+        });
+      }).catch(function () {});
+
+      var recarregando = false;
+      navigator.serviceWorker.addEventListener("controllerchange", function () {
+        if (recarregando) return;
+        recarregando = true;
+        window.location.reload();
+      });
     });
   }
 })();
