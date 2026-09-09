@@ -972,14 +972,20 @@
   // o código embaixo dos pés de quem já está no meio de um orçamento.
   if ("serviceWorker" in navigator && d.swUrl) {
     window.addEventListener("load", function () {
-      var toastAtivo = false;
+      // Aponta sempre pro worker mais recente: se uma segunda versão chegar
+      // enquanto o toast da primeira ainda está esperando o clique, o
+      // navegador descarta o worker antigo — sem isso, o clique em
+      // "Atualizar" ficaria mandando mensagem pra um worker morto.
+      var workerAtual = null;
       function mostrarToastAtualizacao(worker) {
-        if (!worker || !updateToast || !updateToastBtn || toastAtivo) return;
-        toastAtivo = true;
+        if (!worker || !updateToast || !updateToastBtn) return;
+        workerAtual = worker;
         updateToast.hidden = false;
+      }
+      if (updateToastBtn) {
         updateToastBtn.addEventListener("click", function () {
-          worker.postMessage("skipWaiting");
-        }, { once: true });
+          if (workerAtual) workerAtual.postMessage("skipWaiting");
+        });
       }
 
       navigator.serviceWorker.register(d.swUrl, { scope: d.swScope }).then(function (reg) {
@@ -1009,6 +1015,9 @@
           if (document.visibilityState === "visible") verificarAtualizacao();
         });
         window.addEventListener("online", verificarAtualizacao);
+        // Reforço pra quem deixa o app aberto e em primeiro plano por muito
+        // tempo (ex.: numa recepção), sem nunca sair de foco ou reconectar.
+        setInterval(verificarAtualizacao, 60 * 60 * 1000);
       }).catch(function () {});
 
       var recarregando = false;
