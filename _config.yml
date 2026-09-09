@@ -70,3 +70,4 @@ exclude:
   - Gemfile.lock
   - README.md
   - scripts
+  - test
