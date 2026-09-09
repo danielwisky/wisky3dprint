@@ -1820,15 +1820,16 @@ body.gallery-modal-open {
 }
 
 // Rodando como app instalado (só possível em /orcamento/, pelo escopo do
-// manifest): esconde a navegação do site, que levaria pra fora do app.
+// manifest): mantém logo e rodapé, mas esconde os links que levariam pra
+// fora do app (menu hambúrguer e ícones do rodapé).
 @media (display-mode: standalone) {
-  .site-nav,
-  .site-footer {
-    display: none;
+  .site-nav-toggle,
+  .site-nav-menu {
+    display: none !important;
   }
 
-  .section-calc {
-    padding-top: calc(2.5rem + env(safe-area-inset-top, 0px)) !important;
+  .footer-links {
+    display: none !important;
   }
 }
 
