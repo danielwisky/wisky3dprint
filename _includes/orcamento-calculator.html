@@ -1,7 +1,16 @@
+<div class="calc-modo-toggle" id="orcamento-calc-modo-toggle" role="group" aria-label="Modo da calculadora">
+  <button type="button" id="orcamento-calc-modo-simples" class="calc-modo-btn is-active" aria-pressed="true">Simples</button>
+  <button type="button" id="orcamento-calc-modo-completo" class="calc-modo-btn" aria-pressed="false">Completo</button>
+</div>
+
 <form id="orcamento-calc" class="calc reveal"
   data-potencia-w="{{ site.calculadora.potencia_w }}"
   data-tarifa-kwh="{{ site.calculadora.tarifa_kwh }}"
   data-desgaste="{{ site.calculadora.desgaste }}"
+  data-valor-maquina="{{ site.calculadora.valor_maquina }}"
+  data-vida-util-h="{{ site.calculadora.vida_util_h }}"
+  data-hora-trabalho="{{ site.calculadora.hora_trabalho }}"
+  data-faixas-margem-pct="{{ site.calculadora.faixas_margem_pct | join: ',' }}"
   data-margem-pct="{{ site.calculadora.margem_pct }}"
   data-perda-pct="{{ site.calculadora.perda_pct }}"
   data-infill-pct="{{ site.calculadora.infill_pct }}"
@@ -63,8 +72,15 @@
         <input type="text" id="orcamento-calc-filamento" name="filamento" inputmode="decimal" autocomplete="off" placeholder="ex: {{ site.calculadora.custo_filamento_kg }}">
       </div>
       <div class="calc-field">
-        <label for="orcamento-calc-mao-de-obra">Mão de obra (R$)</label>
-        <input type="text" id="orcamento-calc-mao-de-obra" name="maoDeObra" inputmode="decimal" autocomplete="off" placeholder="ex: 20">
+        <label for="orcamento-calc-horas-manuais">Horas manuais (setup/acabamento)</label>
+        <div class="calc-fields calc-fields-time">
+          <input type="number" id="orcamento-calc-horas-manuais" name="horasManuais" min="0" inputmode="numeric" autocomplete="off" placeholder="Horas">
+          <input type="number" id="orcamento-calc-minutos-manuais" name="minutosManuais" min="0" max="59" inputmode="numeric" autocomplete="off" placeholder="Min">
+        </div>
+      </div>
+      <div class="calc-field">
+        <label for="orcamento-calc-valor-hora">Valor da hora (R$/h)</label>
+        <input type="text" id="orcamento-calc-valor-hora" name="valorHora" inputmode="decimal" autocomplete="off" placeholder="ex: {{ site.calculadora.hora_trabalho }}" value="{{ site.calculadora.hora_trabalho }}">
       </div>
       <div class="calc-field">
         <label for="orcamento-calc-margem">Margem (%)</label>
@@ -73,6 +89,30 @@
       <div class="calc-field">
         <label for="orcamento-calc-perda">Perda / retrabalho (%)</label>
         <input type="text" id="orcamento-calc-perda" name="perda" inputmode="decimal" autocomplete="off" value="{{ site.calculadora.perda_pct }}">
+      </div>
+      <div class="calc-field calc-field-avancado">
+        <label for="orcamento-calc-hardware">Peças e insumos (R$)</label>
+        <input type="text" id="orcamento-calc-hardware" name="hardware" inputmode="decimal" autocomplete="off" placeholder="ex: 15">
+      </div>
+      <div class="calc-field calc-field-avancado">
+        <label for="orcamento-calc-embalagem">Embalagem (R$)</label>
+        <input type="text" id="orcamento-calc-embalagem" name="embalagem" inputmode="decimal" autocomplete="off" placeholder="ex: 5">
+      </div>
+      <p class="calc-field-hint calc-field-hint-full calc-field-avancado">Peças e insumos: parafusos, ímãs, insertos etc. Embalagem: caixa, plástico bolha etc.</p>
+    </div>
+  </div>
+
+  <div class="calc-section calc-field-avancado">
+    <h3 class="calc-section-title">Desgaste da impressora (avançado)</h3>
+    <p class="calc-field-hint">Preencha os dois campos abaixo pra calcular o desgaste proporcional ao tempo de impressão. Deixe em branco pra usar um valor fixo por impressão.</p>
+    <div class="calc-fields">
+      <div class="calc-field">
+        <label for="orcamento-calc-valor-maquina">Valor da máquina (R$)</label>
+        <input type="text" id="orcamento-calc-valor-maquina" name="valorMaquina" inputmode="decimal" autocomplete="off" placeholder="ex: 3000">
+      </div>
+      <div class="calc-field">
+        <label for="orcamento-calc-vida-util">Vida útil (h)</label>
+        <input type="text" id="orcamento-calc-vida-util" name="vidaUtil" inputmode="decimal" autocomplete="off" placeholder="ex: 8000">
       </div>
     </div>
   </div>
@@ -89,6 +129,14 @@
     <div class="calc-breakdown-row">
       <span>Desgaste da impressora</span>
       <span id="orcamento-calc-b-desgaste">—</span>
+    </div>
+    <div class="calc-breakdown-row" id="orcamento-calc-b-hardware-row" hidden>
+      <span>Peças e insumos</span>
+      <span id="orcamento-calc-b-hardware">—</span>
+    </div>
+    <div class="calc-breakdown-row" id="orcamento-calc-b-embalagem-row" hidden>
+      <span>Embalagem</span>
+      <span id="orcamento-calc-b-embalagem">—</span>
     </div>
     <div class="calc-breakdown-row">
       <span>Subtotal</span>
@@ -108,9 +156,14 @@
     </div>
   </div>
 
+  <div class="calc-faixas calc-field-avancado" id="orcamento-calc-faixas" hidden>
+    <h3 class="calc-section-title">Faixas de preço sugerido</h3>
+    <div class="calc-faixas-cols" id="orcamento-calc-faixas-cols"></div>
+  </div>
+
   <div class="calc-result-box">
     <span class="calc-result-label">Total do item</span>
-    <output id="orcamento-calc-result" class="calc-result" for="orcamento-calc-peso orcamento-calc-horas orcamento-calc-minutos orcamento-calc-filamento orcamento-calc-mao-de-obra orcamento-calc-margem orcamento-calc-perda orcamento-calc-quantidade" aria-live="polite">Preencha os campos</output>
+    <output id="orcamento-calc-result" class="calc-result" for="orcamento-calc-peso orcamento-calc-horas orcamento-calc-minutos orcamento-calc-filamento orcamento-calc-horas-manuais orcamento-calc-minutos-manuais orcamento-calc-valor-hora orcamento-calc-margem orcamento-calc-perda orcamento-calc-quantidade" aria-live="polite">Preencha os campos</output>
   </div>
 
   <button type="button" id="orcamento-calc-add" class="btn btn-gradient calc-add-btn" disabled>Adicionar ao orçamento</button>

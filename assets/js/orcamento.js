@@ -347,7 +347,13 @@
     var horas = document.getElementById("orcamento-calc-horas");
     var minutos = document.getElementById("orcamento-calc-minutos");
     var filamento = document.getElementById("orcamento-calc-filamento");
-    var maoDeObra = document.getElementById("orcamento-calc-mao-de-obra");
+    var horasManuaisInput = document.getElementById("orcamento-calc-horas-manuais");
+    var minutosManuaisInput = document.getElementById("orcamento-calc-minutos-manuais");
+    var valorHoraInput = document.getElementById("orcamento-calc-valor-hora");
+    var hardwareInput = document.getElementById("orcamento-calc-hardware");
+    var embalagemInput = document.getElementById("orcamento-calc-embalagem");
+    var valorMaquinaInput = document.getElementById("orcamento-calc-valor-maquina");
+    var vidaUtilInput = document.getElementById("orcamento-calc-vida-util");
     var margemInput = document.getElementById("orcamento-calc-margem");
     var perdaInput = document.getElementById("orcamento-calc-perda");
     var out = document.getElementById("orcamento-calc-result");
@@ -409,13 +415,22 @@
     var modeloDropzone = document.getElementById("orcamento-calc-dropzone");
     var modeloLoading = document.getElementById("orcamento-calc-modelo-loading");
     var modeloDropzoneTexto = document.getElementById("orcamento-calc-dropzone-texto");
+    var modoSimplesBtn = document.getElementById("orcamento-calc-modo-simples");
+    var modoCompletoBtn = document.getElementById("orcamento-calc-modo-completo");
+    var faixasBox = document.getElementById("orcamento-calc-faixas");
+    var faixasCols = document.getElementById("orcamento-calc-faixas-cols");
     var d = form.dataset;
     var fmt = window.Wisky3D.formatarMoeda;
+    var parseNum = window.Wisky3D.parseNumeroPtBr;
 
     var rows = {
       filamento: document.getElementById("orcamento-calc-b-filamento"),
       energia: document.getElementById("orcamento-calc-b-energia"),
       desgaste: document.getElementById("orcamento-calc-b-desgaste"),
+      hardwareRow: document.getElementById("orcamento-calc-b-hardware-row"),
+      hardware: document.getElementById("orcamento-calc-b-hardware"),
+      embalagemRow: document.getElementById("orcamento-calc-b-embalagem-row"),
+      embalagem: document.getElementById("orcamento-calc-b-embalagem"),
       subtotal: document.getElementById("orcamento-calc-b-subtotal"),
       perda: document.getElementById("orcamento-calc-b-perda"),
       perdaLabel: document.getElementById("orcamento-calc-b-perda-label"),
@@ -427,16 +442,38 @@
     var itens = [];
     var current = null;
 
+    // Se valor da máquina + vida útil forem informados, o desgaste é
+    // proporcional ao tempo de impressão (valor/vida útil × horas); senão
+    // cai no valor fixo por impressão configurado em _config.yml.
+    function computeDesgaste(h) {
+      var valorMaquina = parseNum(valorMaquinaInput.value);
+      var vidaUtilH = parseNum(vidaUtilInput.value);
+      if (isFinite(valorMaquina) && valorMaquina > 0 && isFinite(vidaUtilH) && vidaUtilH > 0) {
+        return (valorMaquina / vidaUtilH) * h;
+      }
+      return parseFloat(d.desgaste);
+    }
+
+    function unitTotalComMargem(subtotalComPerda, margemPct, maoDeObraVal) {
+      return subtotalComPerda + subtotalComPerda * (margemPct / 100) + maoDeObraVal;
+    }
+
     // A perda/retrabalho é aplicada sobre o subtotal (filamento + energia +
-    // desgaste): equivale a reimprimir essa fração das peças do item.
+    // desgaste + hardware + embalagem): equivale a reimprimir essa fração
+    // das peças do item.
     function computeItem() {
-      var g = parseFloat(String(peso.value).replace(",", "."));
+      var g = parseNum(peso.value);
       var h = (parseFloat(horas.value) || 0) + (parseFloat(minutos.value) || 0) / 60;
-      var filamentoKg = parseFloat(String(filamento.value).replace(",", "."));
-      var maoDeObraVal = parseFloat(String(maoDeObra.value).replace(",", ".")) || 0;
-      var margemPct = parseFloat(String(margemInput.value).replace(",", "."));
+      var filamentoKg = parseNum(filamento.value);
+      var horasManuais = (parseFloat(horasManuaisInput.value) || 0) + (parseFloat(minutosManuaisInput.value) || 0) / 60;
+      var valorHora = parseNum(valorHoraInput.value);
+      if (!isFinite(valorHora)) valorHora = parseFloat(d.horaTrabalho) || 0;
+      var maoDeObraVal = horasManuais * valorHora;
+      var hardwareVal = parseNum(hardwareInput.value) || 0;
+      var embalagemVal = parseNum(embalagemInput.value) || 0;
+      var margemPct = parseNum(margemInput.value);
       if (!isFinite(margemPct)) margemPct = parseFloat(d.margemPct) || 0;
-      var perdaPct = parseFloat(String(perdaInput.value).replace(",", "."));
+      var perdaPct = parseNum(perdaInput.value);
       if (!isFinite(perdaPct)) perdaPct = parseFloat(d.perdaPct) || 0;
       var qtd = parseInt(quantidade.value, 10);
       if (!isFinite(qtd) || qtd < 1) qtd = 1;
@@ -451,16 +488,16 @@
         filamentoKg: filamentoKg,
         potenciaW: parseFloat(d.potenciaW),
         tarifaKwh: parseFloat(d.tarifaKwh),
-        desgaste: parseFloat(d.desgaste)
+        desgaste: computeDesgaste(h)
       });
       var custoFilamento = base.custoFilamento;
       var energia = base.energia;
       var desgaste = base.desgaste;
-      var subtotal = base.subtotal;
+      var subtotal = base.subtotal + hardwareVal + embalagemVal;
       var perda = subtotal * (perdaPct / 100);
       var subtotalComPerda = subtotal + perda;
       var margem = subtotalComPerda * (margemPct / 100);
-      var unitTotal = subtotalComPerda + margem + maoDeObraVal;
+      var unitTotal = unitTotalComMargem(subtotalComPerda, margemPct, maoDeObraVal);
 
       return {
         nome: (nome.value || "").trim(),
@@ -470,12 +507,17 @@
         custoFilamento: custoFilamento,
         energia: energia,
         desgaste: desgaste,
+        hardware: hardwareVal,
+        embalagem: embalagemVal,
         subtotal: subtotal,
         perda: perda,
         perdaPct: perdaPct,
         margem: margem,
         margemPct: margemPct,
+        horasManuais: horasManuais,
+        valorHora: valorHora,
         maoDeObra: maoDeObraVal,
+        subtotalComPerda: subtotalComPerda,
         unitTotal: unitTotal,
         itemTotal: unitTotal * qtd
       };
@@ -496,6 +538,10 @@
       rows.filamento.textContent = fmt.format(item.custoFilamento);
       rows.energia.textContent = fmt.format(item.energia);
       rows.desgaste.textContent = fmt.format(item.desgaste);
+      rows.hardwareRow.hidden = item.hardware <= 0;
+      rows.hardware.textContent = fmt.format(item.hardware);
+      rows.embalagemRow.hidden = item.embalagem <= 0;
+      rows.embalagem.textContent = fmt.format(item.embalagem);
       rows.subtotal.textContent = fmt.format(item.subtotal);
       rows.perdaLabel.textContent = "Perda (" + item.perdaPct + "%)";
       rows.perda.textContent = fmt.format(item.perda);
@@ -504,11 +550,65 @@
       rows.maoDeObra.textContent = fmt.format(item.maoDeObra);
       breakdown.hidden = false;
 
+      renderFaixas(item);
+
       out.textContent = item.qtd > 1
         ? fmt.format(item.itemTotal) + " (" + item.qtd + " × " + fmt.format(item.unitTotal) + ")"
         : fmt.format(item.itemTotal);
       out.classList.add("has-value");
       addBtn.disabled = false;
+    }
+
+    // Faixas de preço sugerido: mesmos custos e mão de obra do item atual,
+    // recalculados só trocando a margem, pra comparar cenários de
+    // precificação sem alterar o item que será de fato adicionado.
+    function renderFaixas(item) {
+      if (!faixasCols) return;
+
+      var faixas = String(d.faixasMargemPct || "")
+        .split(",")
+        .map(function (s) { return parseFloat(s); })
+        .filter(function (n) { return isFinite(n); });
+
+      if (!faixas.length || !modoCompleto) {
+        faixasBox.hidden = true;
+        return;
+      }
+
+      var labels = ["Competitivo", "Padrão", "Premium"];
+      faixasCols.innerHTML = "";
+
+      faixas.forEach(function (margemPct, i) {
+        var unit = unitTotalComMargem(item.subtotalComPerda, margemPct, item.maoDeObra);
+        var col = document.createElement("button");
+        col.type = "button";
+        col.className = "calc-faixa";
+        col.setAttribute("aria-label", "Usar margem de " + margemPct + "% (" + (labels[i] || "") + ")");
+        if (margemPct === item.margemPct) col.classList.add("is-active");
+        col.addEventListener("click", function () {
+          margemInput.value = margemPct;
+          calc();
+        });
+
+        var label = document.createElement("span");
+        label.className = "calc-faixa-label";
+        label.textContent = labels[i] || (margemPct + "%");
+
+        var pct = document.createElement("span");
+        pct.className = "calc-faixa-pct";
+        pct.textContent = margemPct + "%";
+
+        var valor = document.createElement("span");
+        valor.className = "calc-faixa-valor";
+        valor.textContent = fmt.format(unit);
+
+        col.appendChild(label);
+        col.appendChild(pct);
+        col.appendChild(valor);
+        faixasCols.appendChild(col);
+      });
+
+      faixasBox.hidden = false;
     }
 
     function setDescontoLabel(el) {
@@ -524,7 +624,7 @@
     }
 
     function computeDesconto(subtotal) {
-      var valor = parseFloat(String(descontoValorInput.value).replace(",", "."));
+      var valor = parseNum(descontoValorInput.value);
       if (!isFinite(valor) || valor <= 0) return 0;
       var desconto = descontoTipoInput.value === "pct" ? subtotal * (valor / 100) : valor;
       return Math.min(desconto, subtotal);
@@ -602,6 +702,11 @@
       peso.value = "";
       horas.value = "";
       minutos.value = "";
+      horasManuaisInput.value = "";
+      minutosManuaisInput.value = "";
+      valorHoraInput.value = d.horaTrabalho || "";
+      hardwareInput.value = "";
+      embalagemInput.value = "";
       margemInput.value = d.margemPct || "";
       perdaInput.value = d.perdaPct || "";
       modeloUpload.value = "";
@@ -685,7 +790,8 @@
 
       var linhas = [[
         "Peça", "Quantidade", "Filamento", "Energia", "Desgaste da impressora",
-        "Subtotal", "Perda (%)", "Perda", "Margem (%)", "Margem", "Mão de obra",
+        "Peças e insumos", "Embalagem", "Subtotal", "Perda (%)", "Perda",
+        "Margem (%)", "Margem", "Horas manuais", "Valor da hora", "Mão de obra",
         "Valor unitário", "Valor total"
       ]];
       var total = 0;
@@ -698,18 +804,22 @@
           csvNum(item.custoFilamento),
           csvNum(item.energia),
           csvNum(item.desgaste),
+          csvNum(item.hardware),
+          csvNum(item.embalagem),
           csvNum(item.subtotal),
           csvNum(item.perdaPct),
           csvNum(item.perda),
           csvNum(item.margemPct),
           csvNum(item.margem),
+          csvNum(item.horasManuais),
+          csvNum(item.valorHora),
           csvNum(item.maoDeObra),
           csvNum(item.unitTotal),
           csvNum(item.itemTotal)
         ]);
       });
 
-      linhas.push(["Total geral", "", "", "", "", "", "", "", "", "", "", "", csvNum(total)]);
+      linhas.push(["Total geral", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", csvNum(total)]);
 
       var csv = linhas.map(function (linha) {
         return linha.map(csvField).join(";");
@@ -725,6 +835,38 @@
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     });
+
+    var MODO_COMPLETO_KEY = "orcamentoCalc:modoCompleto";
+    var camposAvancados = document.querySelectorAll(".calc-field-avancado");
+    var modoCompleto = localStorage.getItem(MODO_COMPLETO_KEY) === "1";
+
+    function aplicarModo() {
+      camposAvancados.forEach(function (el) {
+        el.hidden = !modoCompleto;
+      });
+      if (modoSimplesBtn && modoCompletoBtn) {
+        modoSimplesBtn.classList.toggle("is-active", !modoCompleto);
+        modoSimplesBtn.setAttribute("aria-pressed", String(!modoCompleto));
+        modoCompletoBtn.classList.toggle("is-active", modoCompleto);
+        modoCompletoBtn.setAttribute("aria-pressed", String(modoCompleto));
+      }
+      calc();
+    }
+
+    if (modoSimplesBtn && modoCompletoBtn) {
+      modoSimplesBtn.addEventListener("click", function () {
+        modoCompleto = false;
+        localStorage.removeItem(MODO_COMPLETO_KEY);
+        aplicarModo();
+      });
+      modoCompletoBtn.addEventListener("click", function () {
+        modoCompleto = true;
+        localStorage.setItem(MODO_COMPLETO_KEY, "1");
+        aplicarModo();
+      });
+    }
+
+    aplicarModo();
 
     var LOGO_HIDDEN_KEY = "orcamentoCalc:logoHidden";
     var LOGO_CUSTOM_KEY = "orcamentoCalc:logoCustom";
@@ -809,7 +951,7 @@
     function densidadeAtual() {
       if (perfilDoArquivo) return perfilDoArquivo.densidade;
       if (materialSelect.value === "outro") {
-        return parseFloat(String(densidadeInput.value).replace(",", "."));
+        return parseNum(densidadeInput.value);
       }
       var opt = materialSelect.options[materialSelect.selectedIndex];
       return parseFloat(opt.dataset.densidade);
@@ -829,7 +971,7 @@
       if (!lastMeshStats) return;
 
       var densidade = densidadeAtual();
-      var infillPct = parseFloat(String(infillInput.value).replace(",", ".")) || 0;
+      var infillPct = parseNum(infillInput.value) || 0;
       var paredes = parseInt(String(paredesInput.value).replace(",", "."), 10) || parseInt(d.paredes, 10) || 0;
 
       if (!isFinite(densidade) || densidade <= 0) {
@@ -855,8 +997,8 @@
       var volumeCm3 = volumeMaterialMm3 / 1000;
       peso.value = (volumeCm3 * densidade).toFixed(1);
 
-      var alturaCamada = parseFloat(String(alturaCamadaInput.value).replace(",", ".")) || parseFloat(d.alturaCamadaMm) || 0.2;
-      var velocidade = parseFloat(String(velocidadeInput.value).replace(",", ".")) || parseFloat(d.velocidadeMmS) || 50;
+      var alturaCamada = parseNum(alturaCamadaInput.value) || parseFloat(d.alturaCamadaMm) || 0.2;
+      var velocidade = parseNum(velocidadeInput.value) || parseFloat(d.velocidadeMmS) || 50;
       var overheadPorCamada = parseFloat(d.overheadCamadaS) || 2;
 
       var alturaModelo = lastMeshStats.bbox.maxZ - lastMeshStats.bbox.minZ;
