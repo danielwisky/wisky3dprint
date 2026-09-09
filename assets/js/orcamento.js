@@ -52,6 +52,9 @@
   var logoUploadInput = document.getElementById("orcamento-calc-logo-upload");
   var logoResetBtn = document.getElementById("orcamento-calc-logo-reset");
   var logoErro = document.getElementById("orcamento-calc-logo-erro");
+  var installTip = document.getElementById("orcamento-calc-install-tip");
+  var installTipTexto = document.getElementById("orcamento-calc-install-tip-texto");
+  var installTipFechar = document.getElementById("orcamento-calc-install-tip-fechar");
   var modeloUpload = document.getElementById("orcamento-calc-modelo-upload");
   var modeloPreview = document.getElementById("orcamento-calc-modelo-preview");
   var modeloNomeOut = document.getElementById("orcamento-calc-modelo-nome");
@@ -925,6 +928,35 @@
     e.preventDefault();
     if (current) addBtn.click();
   });
+
+  // Dica de instalação (Adicionar à Tela de Início): iOS não expõe evento
+  // de instalação, então o único jeito é orientar o passo a passo manual.
+  // Android tem o prompt nativo do Chrome, mas nem todo navegador/versão
+  // mostra automaticamente — a dica cobre esse caso também.
+  var INSTALL_TIP_DISMISSED_KEY = "orcamentoCalc:installTipFechada";
+  if (installTip && installTipTexto && installTipFechar) {
+    var jaInstalado =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      window.navigator.standalone === true;
+    var ua = window.navigator.userAgent || "";
+    var isIOS = /iPad|iPhone|iPod/.test(ua);
+    var isAndroid = /Android/.test(ua);
+
+    if (!jaInstalado && lsGet(INSTALL_TIP_DISMISSED_KEY) !== "1") {
+      if (isIOS) {
+        installTipTexto.textContent = "Instale esta calculadora como app: toque em Compartilhar (⬆️) na barra do Safari e depois em \"Adicionar à Tela de Início\".";
+        installTip.hidden = false;
+      } else if (isAndroid) {
+        installTipTexto.textContent = "Instale esta calculadora como app: toque no menu (⋮) do navegador e depois em \"Instalar app\" ou \"Adicionar à tela inicial\".";
+        installTip.hidden = false;
+      }
+    }
+
+    installTipFechar.addEventListener("click", function () {
+      installTip.hidden = true;
+      lsSet(INSTALL_TIP_DISMISSED_KEY, "1");
+    });
+  }
 
   // Registra o service worker do app instalável, escopo restrito a
   // /orcamento/ — não afeta o resto do site. URL/escopo vêm do dataset
