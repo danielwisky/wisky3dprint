@@ -2816,7 +2816,9 @@ body.gallery-modal-open {
   left: 50%;
   bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
   transform: translateX(-50%);
-  z-index: 200;
+  // Acima dos backdrops de modal (z-index: 200) — o aviso de atualização
+  // precisa ficar visível mesmo com o modal de upload de modelo aberto.
+  z-index: 210;
   display: flex;
   align-items: center;
   gap: 0.75rem;
