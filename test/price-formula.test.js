@@ -45,3 +45,9 @@ test("parseNumeroPtBr converte vírgula decimal", () => {
   assert.equal(window.Wisky3D.parseNumeroPtBr("12,5"), 12.5);
   assert.equal(window.Wisky3D.parseNumeroPtBr("100"), 100);
 });
+
+test("parseNumeroPtBr remove separador de milhar antes da vírgula decimal", () => {
+  assert.equal(window.Wisky3D.parseNumeroPtBr("3.000"), 3000);
+  assert.equal(window.Wisky3D.parseNumeroPtBr("3.000,50"), 3000.5);
+  assert.equal(window.Wisky3D.parseNumeroPtBr("1.250"), 1250);
+});

@@ -32,7 +32,7 @@
   data-sw-url="{{ '/sw-orcamento.js' | relative_url }}"
   data-sw-scope="{{ '/orcamento/' | relative_url }}">
   <div class="calc-section">
-    <h3 class="calc-section-title">Peça</h3>
+    <h2 class="calc-section-title">Peça</h2>
     <div class="calc-fields">
       <div class="calc-field calc-field-full">
         <label for="orcamento-calc-nome">Nome da peça</label>
@@ -59,7 +59,7 @@
   </div>
 
   <div class="calc-section">
-    <h3 class="calc-section-title">Impressão</h3>
+    <h2 class="calc-section-title">Impressão</h2>
     <div class="calc-fields">
       <div class="calc-field">
         <label for="orcamento-calc-peso">Peso da peça (g) <span class="calc-auto-tag" id="orcamento-calc-peso-auto-tag" hidden>calculado do modelo</span></label>
@@ -77,7 +77,7 @@
   </div>
 
   <div class="calc-section">
-    <h3 class="calc-section-title">Custos e margem</h3>
+    <h2 class="calc-section-title">Custos e margem</h2>
     <div class="calc-fields">
       <div class="calc-field">
         <label for="orcamento-calc-filamento">Preço do filamento (R$/kg)</label>
@@ -115,7 +115,7 @@
   </div>
 
   <div class="calc-section calc-field-avancado">
-    <h3 class="calc-section-title">Desgaste da impressora (avançado)</h3>
+    <h2 class="calc-section-title">Desgaste da impressora (avançado)</h2>
     <p class="calc-field-hint">Preencha os dois campos abaixo pra calcular o desgaste proporcional ao tempo de impressão. Deixe em branco pra usar um valor fixo por impressão.</p>
     <div class="calc-fields">
       <div class="calc-field">
@@ -169,7 +169,7 @@
   </div>
 
   <div class="calc-faixas calc-field-avancado" id="orcamento-calc-faixas" hidden>
-    <h3 class="calc-section-title">Faixas de preço sugerido</h3>
+    <h2 class="calc-section-title">Faixas de preço sugerido</h2>
     <div class="calc-faixas-cols" id="orcamento-calc-faixas-cols"></div>
   </div>
 
@@ -181,7 +181,7 @@
   <button type="button" id="orcamento-calc-add" class="btn btn-gradient calc-add-btn" disabled>Adicionar ao orçamento</button>
 
   <div class="calc-itens" id="orcamento-calc-itens" hidden>
-    <h3>Itens do orçamento</h3>
+    <h2>Itens do orçamento</h2>
     <ul class="calc-itens-list" id="orcamento-calc-itens-list"></ul>
 
     <div class="calc-desconto">
@@ -217,7 +217,7 @@
     </div>
 
     <div class="calc-logo-options">
-      <h3>Personalizar orçamento</h3>
+      <h2>Personalizar orçamento</h2>
       <p class="calc-logo-options-hint">Vai usar esta calculadora para o seu próprio negócio? Oculte o logotipo da Wisky 3D Print ou coloque o seu.</p>
       <label class="calc-logo-option-checkbox" id="orcamento-calc-logo-hide-label" title="Marcado automaticamente enquanto você estiver usando uma logo própria">
         <input type="checkbox" id="orcamento-calc-logo-hide">

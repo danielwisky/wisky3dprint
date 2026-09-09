@@ -694,8 +694,11 @@
       ? (volumeMaterialMm3 / vazaoMm3S + nCamadas * overheadPorCamada) / 60
       : 0;
 
-    horas.value = Math.floor(tempoTotalMin / 60);
-    minutos.value = Math.round(tempoTotalMin % 60);
+    // Arredonda o total antes de separar em horas/minutos — arredondar cada
+    // parte isoladamente pode gerar "60min" (ex.: 179.6min viraria 2h 60min).
+    var tempoTotalMinArred = Math.round(tempoTotalMin);
+    horas.value = Math.floor(tempoTotalMinArred / 60);
+    minutos.value = tempoTotalMinArred % 60;
     tempoHint.hidden = false;
 
     pesoAutoTag.hidden = false;
@@ -768,12 +771,27 @@
     aplicarEstimativas();
   }
 
+  var modeloModalDialog = modeloModal.querySelector(".calc-modal");
+  var modeloUltimoFoco = null;
+
+  function focaveisDoModal() {
+    return Array.prototype.slice.call(
+      modeloModalDialog.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')
+    ).filter(function (el) { return el.offsetParent !== null; });
+  }
+
   function abrirModeloModal() {
+    modeloUltimoFoco = document.activeElement;
     modeloModal.hidden = false;
+    modeloFecharBtn.focus();
   }
 
   function fecharModeloModal() {
     modeloModal.hidden = true;
+    if (modeloUltimoFoco && typeof modeloUltimoFoco.focus === "function") {
+      modeloUltimoFoco.focus();
+    }
+    modeloUltimoFoco = null;
   }
 
   modeloAbrirBtn.addEventListener("click", abrirModeloModal);
@@ -783,7 +801,24 @@
     if (e.target === modeloModal) fecharModeloModal();
   });
   document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape" && !modeloModal.hidden) fecharModeloModal();
+    if (modeloModal.hidden) return;
+    if (e.key === "Escape") {
+      fecharModeloModal();
+      return;
+    }
+    if (e.key !== "Tab") return;
+    // Focus trap: mantém o Tab circulando dentro do modal enquanto aberto.
+    var focaveis = focaveisDoModal();
+    if (!focaveis.length) return;
+    var primeiro = focaveis[0];
+    var ultimo = focaveis[focaveis.length - 1];
+    if (e.shiftKey && document.activeElement === primeiro) {
+      e.preventDefault();
+      ultimo.focus();
+    } else if (!e.shiftKey && document.activeElement === ultimo) {
+      e.preventDefault();
+      primeiro.focus();
+    }
   });
 
   modeloRemoverBtn.addEventListener("click", function () {
@@ -938,7 +973,7 @@
   var INSTALL_TIP_DISMISSED_KEY = "orcamentoCalc:installTipFechada";
   if (installTip && installTipTexto && installTipFechar) {
     var jaInstalado =
-      window.matchMedia("(display-mode: standalone)").matches ||
+      (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) ||
       window.navigator.standalone === true;
     var ua = window.navigator.userAgent || "";
     // Desde o iPadOS 13, o Safari do iPad manda UA de desktop ("Macintosh"),

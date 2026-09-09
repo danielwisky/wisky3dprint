@@ -30,6 +30,15 @@ plugins:
   - jekyll-sitemap
   - jekyll-minifier
 
+# jekyll-seo-tag só lê "image" via front matter da página (page.image),
+# não o "image" no topo deste arquivo — precisa desse defaults pra virar
+# og:image/twitter:image em todas as páginas que não definem o próprio.
+defaults:
+  - scope:
+      path: ""
+    values:
+      image: "/assets/img/og-image.jpg"
+
 # Minifica só os .js de assets/js/. HTML, CSS e XML ficam de fora do
 # escopo — CSS já sai comprimido pelo Sass e minificar HTML tem mais risco.
 jekyll-minifier:
