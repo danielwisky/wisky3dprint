@@ -997,6 +997,18 @@
             }
           });
         });
+
+        // No iPhone, reabrir o app pelo ícone costuma só retomar a aba
+        // suspensa em segundo plano, sem navegação nova — e é só numa
+        // navegação que o navegador checa atualização sozinho. Forçamos a
+        // checagem quando o app volta ao primeiro plano ou a conexão volta.
+        function verificarAtualizacao() {
+          reg.update().catch(function () {});
+        }
+        document.addEventListener("visibilitychange", function () {
+          if (document.visibilityState === "visible") verificarAtualizacao();
+        });
+        window.addEventListener("online", verificarAtualizacao);
       }).catch(function () {});
 
       var recarregando = false;
