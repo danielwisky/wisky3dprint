@@ -939,7 +939,10 @@
       window.matchMedia("(display-mode: standalone)").matches ||
       window.navigator.standalone === true;
     var ua = window.navigator.userAgent || "";
-    var isIOS = /iPad|iPhone|iPod/.test(ua);
+    // Desde o iPadOS 13, o Safari do iPad manda UA de desktop ("Macintosh"),
+    // sem "iPad" — só dá pra distinguir de um Mac de verdade pelo touch.
+    var isIPadOS13Mais = window.navigator.platform === "MacIntel" && window.navigator.maxTouchPoints > 1;
+    var isIOS = /iPad|iPhone|iPod/.test(ua) || isIPadOS13Mais;
     var isAndroid = /Android/.test(ua);
 
     if (!jaInstalado && lsGet(INSTALL_TIP_DISMISSED_KEY) !== "1") {
