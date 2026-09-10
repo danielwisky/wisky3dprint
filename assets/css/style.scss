@@ -1915,12 +1915,6 @@ body.gallery-modal-open {
     }
   }
 }
-.footer-links-divider {
-  width: 1px;
-  height: 0.9rem;
-  background: var(--border-strong);
-}
-
 .footer-copy {
   font-size: 0.85rem;
   color: var(--muted-soft);
@@ -3301,6 +3295,26 @@ body.img-lightbox-open { overflow: hidden; }
 // ---------------------------------------------------------------------------
 // BLOCO: Conversor 3MF
 // ---------------------------------------------------------------------------
+.conv3mf-privacidade {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.9rem;
+  padding: 0.4rem 0.9rem;
+  background: color-mix(in srgb, var(--cyan) 10%, var(--surface-soft));
+  border: 1px solid color-mix(in srgb, var(--cyan) 30%, transparent);
+  border-radius: 999px;
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 600;
+
+  svg {
+    flex-shrink: 0;
+    width: 1rem;
+    height: 1rem;
+    color: var(--cyan);
+  }
+}
 #conv3mf-painel {
   margin-top: 1.75rem;
   padding-top: 1.5rem;

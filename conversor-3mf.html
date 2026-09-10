@@ -12,9 +12,14 @@ pwa: true
       <h1>Conversor 3MF</h1>
       <p>
         Envie um projeto 3MF já fatiado (Bambu Studio, Orca Slicer etc.) e converta pra rodar em outra impressora.
-        <br>
-        Tudo roda no seu navegador, nenhum arquivo é enviado a um servidor.
       </p>
+      <div class="conv3mf-privacidade">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="4" y="10" width="16" height="10" rx="2"></rect>
+          <path d="M8 10V7a4 4 0 0 1 8 0v3"></path>
+        </svg>
+        <span>Tudo roda no seu navegador. Nenhum arquivo é enviado a um servidor.</span>
+      </div>
     </header>
     {% include pwa-toast.html %}
     {% include conversor-3mf-tool.html %}
