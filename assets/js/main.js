@@ -30,6 +30,40 @@
   })();
 
 // ---------------------------------------------------------------------------
+// BLOCO: Dropdown "Ferramentas" (navbar)
+// ---------------------------------------------------------------------------
+
+  (function () {
+    var item = document.getElementById("nav-ferramentas");
+    if (!item) return;
+
+    var btn = item.querySelector(".nav-link-dropdown");
+
+    function fechar() {
+      item.classList.remove("is-open");
+      btn.setAttribute("aria-expanded", "false");
+    }
+
+    function abrir() {
+      item.classList.add("is-open");
+      btn.setAttribute("aria-expanded", "true");
+    }
+
+    btn.addEventListener("click", function (event) {
+      event.stopPropagation();
+      if (item.classList.contains("is-open")) fechar(); else abrir();
+    });
+
+    document.addEventListener("click", function (event) {
+      if (!item.contains(event.target)) fechar();
+    });
+
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") fechar();
+    });
+  })();
+
+// ---------------------------------------------------------------------------
 // BLOCO: Revelar ao rolar (scroll reveal)
 // ---------------------------------------------------------------------------
 

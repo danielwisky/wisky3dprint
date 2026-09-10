@@ -309,10 +309,10 @@ window.Wisky3D = window.Wisky3D || {};
       }
     );
 
+    var objectIds = items.map(function (item) { return item.getAttribute("objectid"); });
     var promises = items.map(function (item) {
-      var objectId = item.getAttribute("objectid");
       var transform = parseTransformAttr(item.getAttribute("transform"));
-      return resolveObjectGeometry(zip, docCache, doc, objectId, transform);
+      return resolveObjectGeometry(zip, docCache, doc, item.getAttribute("objectid"), transform);
     });
 
     return Promise.all(promises).then(function (results) {
@@ -326,14 +326,24 @@ window.Wisky3D = window.Wisky3D || {};
         volumeMm3 += r.volumeMm3;
         bbox = mergeBBox(bbox, r.bbox);
       });
+      function escalarBBox(b) {
+        return {
+          minX: b.minX * escala, minY: b.minY * escala, minZ: b.minZ * escala,
+          maxX: b.maxX * escala, maxY: b.maxY * escala, maxZ: b.maxZ * escala
+        };
+      }
       return {
         triangleCount: triangleCount,
         volumeMm3: volumeMm3 * escala * escala * escala,
         areaMm2: areaMm2 * escala * escala,
-        bbox: {
-          minX: bbox.minX * escala, minY: bbox.minY * escala, minZ: bbox.minZ * escala,
-          maxX: bbox.maxX * escala, maxY: bbox.maxY * escala, maxZ: bbox.maxZ * escala
-        }
+        bbox: escalarBBox(bbox),
+        // bbox de cada item de nível topo (build item), na ordem de `items` —
+        // usado pra separar por chapa/plate em arquivos multi-plate (ver
+        // conversor-3mf.js), já que o bbox combinado acima soma objetos que
+        // na real impressora nunca ficam juntos na mesma mesa.
+        itens: results.map(function (r, i) {
+          return { objectId: objectIds[i], bbox: escalarBBox(r.bbox) };
+        })
       };
     });
   }

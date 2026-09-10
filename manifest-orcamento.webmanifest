@@ -3,11 +3,11 @@ layout: null
 permalink: /manifest-orcamento.webmanifest
 ---
 {
-  "name": "Orçamento - Wisky 3D Print",
-  "short_name": "Orçamento 3D",
-  "description": "Calculadora de orçamento para impressão 3D.",
+  "name": "Ferramentas Wisky 3D Print",
+  "short_name": "Wisky 3D",
+  "description": "Calculadora de orçamento e conversor de projetos 3MF para impressão 3D.",
   "start_url": "{{ '/orcamento/' | relative_url }}",
-  "scope": "{{ '/orcamento/' | relative_url }}",
+  "scope": "{{ '/' | relative_url }}",
   "display": "standalone",
   "background_color": "#070b12",
   "theme_color": "#070b12",

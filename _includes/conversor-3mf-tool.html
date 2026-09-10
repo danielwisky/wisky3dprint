@@ -1,0 +1,38 @@
+<div class="conv3mf calc" id="conv3mf" data-profiles-url="{{ '/assets/data/printer-profiles.json' | relative_url }}">
+  <div class="calc-field calc-field-upload">
+    <span class="calc-field-label-sr" id="conv3mf-upload-label">Arquivo do projeto (3MF)</span>
+    <label for="conv3mf-upload" class="calc-dropzone" id="conv3mf-dropzone">
+      <span class="calc-dropzone-texto" id="conv3mf-dropzone-texto">Arraste o arquivo .3mf aqui ou <span class="calc-dropzone-link">escolha um arquivo</span></span>
+      <span class="calc-dropzone-loading" id="conv3mf-loading" hidden>Lendo o arquivo, aguarde...</span>
+    </label>
+    <input type="file" id="conv3mf-upload" accept=".3mf" aria-labelledby="conv3mf-upload-label">
+  </div>
+  <p class="calc-modelo-erro" id="conv3mf-erro" hidden></p>
+
+  <div id="conv3mf-painel" hidden>
+    <div class="calc-section">
+      <h2 class="calc-section-title">Detectado no arquivo</h2>
+      <div class="conv3mf-de-nome" id="conv3mf-de-nome">—</div>
+      <div class="conv3mf-de-sub" id="conv3mf-de-sub"></div>
+      <div class="conv3mf-paleta" id="conv3mf-de-paleta"></div>
+    </div>
+
+    <div class="calc-section">
+      <div class="conv3mf-destinos-topo">
+        <h2 class="calc-section-title" id="conv3mf-destinos-lab">Converter para</h2>
+        <span class="conv3mf-destinos-contagem" id="conv3mf-destinos-contagem"></span>
+      </div>
+      <input type="search" class="conv3mf-busca" id="conv3mf-busca" placeholder="Buscar por nome ou marca..." aria-label="Buscar impressora de destino">
+      <div class="conv3mf-grid" id="conv3mf-destinos" role="listbox" aria-multiselectable="true" aria-labelledby="conv3mf-destinos-lab"></div>
+      <p class="conv3mf-sem-resultado" id="conv3mf-sem-resultado" hidden>Nenhuma impressora encontrada com esse termo.</p>
+    </div>
+
+    <p class="conv3mf-aviso" id="conv3mf-aviso" hidden></p>
+
+    <div class="calc-result-box conv3mf-resultado">
+      <p class="conv3mf-selecionado" id="conv3mf-selecionado" hidden></p>
+      <button type="button" class="btn btn-gradient calc-add-btn conv3mf-gerar-btn" id="conv3mf-gerar" disabled>Gerar projeto convertido</button>
+      <p class="conv3mf-out" id="conv3mf-out" aria-live="polite"></p>
+    </div>
+  </div>
+</div>

@@ -1,18 +1,23 @@
 ---
 layout: default
-title: "Orçamento"
-description: "Calculadora gratuita de orçamento para impressão 3D. Some peso, tempo e valores de cada peça e monte o orçamento completo do cliente em segundos."
-permalink: /orcamento/
+title: "Conversor 3MF"
+description: "Converta um projeto 3MF já fatiado para rodar em outra impressora: envie o arquivo, escolha o destino e baixe o projeto adaptado, direto no navegador."
+permalink: /conversor-3mf/
 pwa: true
 ---
 
 <section class="section section-calc">
   <div class="container">
     <header class="section-header section-header-center reveal">
-      <h1>Orçamento</h1>
-      <p>Adicione cada peça do pedido com peso, tempo de impressão e valores para montar o orçamento completo do cliente.</p>
+      <h1>Conversor 3MF</h1>
+      <p>
+        Envie um projeto 3MF já fatiado (Bambu Studio, Orca Slicer etc.) e converta pra rodar em outra impressora.
+        <br>
+        Tudo roda no seu navegador, nenhum arquivo é enviado a um servidor.
+      </p>
     </header>
-    {% include orcamento-calculator.html %}
+    {% include pwa-toast.html %}
+    {% include conversor-3mf-tool.html %}
 
     <div class="instagram-follow reveal">
       <svg class="instagram-follow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -20,8 +25,8 @@ pwa: true
         <circle cx="12" cy="12" r="4"></circle>
         <circle cx="17.5" cy="6.5" r="0.75" fill="currentColor" stroke="none"></circle>
       </svg>
-      <p class="instagram-follow-title">Gostou da calculadora? ✨</p>
-      <p class="instagram-follow-subtitle">Ela é livre pra todo mundo usar. Como forma de agradecimento, que tal me seguir no Instagram?</p>
+      <p class="instagram-follow-title">Gostou do conversor? ✨</p>
+      <p class="instagram-follow-subtitle">Ele é livre pra todo mundo usar. Como forma de agradecimento, que tal me seguir no Instagram?</p>
       <a class="instagram-follow-link" href="{{ site.instagram.profile_url }}" target="_blank" rel="noopener noreferrer">
         Seguir @{{ site.instagram.username }}
       </a>
@@ -30,7 +35,6 @@ pwa: true
 </section>
 
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.2/dist/jszip.min.js" integrity="sha384-DdGlNq+wVXAn83gXqwyeFHB7iyXy6L0rLrNzgDmhKWPjiJLg9vj6qosYmZmkMfQ+" crossorigin="anonymous" defer></script>
-<script src="{{ '/assets/js/price-formula.js' | relative_url }}?v={{ '/assets/js/price-formula.js' | asset_hash }}" defer></script>
 <script src="{{ '/assets/js/model-parser.js' | relative_url }}?v={{ '/assets/js/model-parser.js' | asset_hash }}" defer></script>
-<script src="{{ '/assets/js/orcamento.js' | relative_url }}?v={{ '/assets/js/orcamento.js' | asset_hash }}" defer></script>
+<script src="{{ '/assets/js/conversor-3mf.js' | relative_url }}?v={{ '/assets/js/conversor-3mf.js' | asset_hash }}" defer></script>
 <script src="{{ '/assets/js/pwa.js' | relative_url }}?v={{ '/assets/js/pwa.js' | asset_hash }}" defer></script>

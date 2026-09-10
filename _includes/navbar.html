@@ -11,12 +11,28 @@
     <button class="site-nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav-menu" aria-label="Abrir menu">
       <span></span><span></span><span></span>
     </button>
+    <div class="site-nav-standalone" id="site-nav-standalone" aria-label="Ferramentas">
+      <a href="{{ '/orcamento/' | relative_url }}"{% if page.url == '/orcamento/' %} class="is-active"{% endif %}>Orçamento</a>
+      <a href="{{ '/conversor-3mf/' | relative_url }}"{% if page.url == '/conversor-3mf/' %} class="is-active"{% endif %}>Conversor 3MF</a>
+    </div>
     <ul class="site-nav-menu" id="site-nav-menu">
       <li><a href="{{ anchor_base }}#como-funciona">Como funciona</a></li>
       <li><a href="{{ anchor_base }}#galeria">Galeria</a></li>
       <li><a href="{{ anchor_base }}#faq">Dúvidas</a></li>
       <li><a href="{{ anchor_base }}#contato">Orçamento</a></li>
       <li class="site-nav-sep"><a class="nav-link-page" href="{{ '/loja/' | relative_url }}">Loja</a></li>
+      <li class="site-nav-sep site-nav-dropdown" id="nav-ferramentas">
+        <button class="nav-link-dropdown" type="button" aria-expanded="false" aria-controls="nav-ferramentas-menu">
+          Ferramentas
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6 9l6 6 6-6"/>
+          </svg>
+        </button>
+        <ul class="nav-dropdown-menu" id="nav-ferramentas-menu">
+          <li><a href="{{ '/orcamento/' | relative_url }}">Orçamento</a></li>
+          <li><a href="{{ '/conversor-3mf/' | relative_url }}">Conversor 3MF</a></li>
+        </ul>
+      </li>
       <li>
         <button class="theme-toggle" type="button" aria-label="Alternar tema">
           <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
