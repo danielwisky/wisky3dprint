@@ -341,7 +341,10 @@ code {
   border-left: 1px solid var(--border);
 }
 
-.site-nav-menu .nav-link-page {
+// "a.nav-link-page" (não só ".nav-link-page") pra empatar em especificidade
+// com ".site-nav-menu a:not(.nav-cta)" — sem o "a", aquela regra ganhava
+// (o :not() conta como classe) e a Loja ficava sempre na cor muted.
+.site-nav-menu a.nav-link-page {
   color: var(--text);
   border: 1px solid var(--border-strong);
 
@@ -2923,6 +2926,11 @@ body.gallery-modal-open {
   display: flex;
   align-items: center;
   gap: 0.65rem;
+  // Sem "width", um elemento fixed com left:50%+transform calcula a largura
+  // "shrink-to-fit" considerando só a metade direita da viewport como espaço
+  // disponível, encolhendo o texto e quebrando em várias linhas em telas
+  // estreitas mesmo sobrando espaço visual. width:max-content evita isso.
+  width: max-content;
   max-width: calc(100vw - 2rem);
   padding: 0.7rem 0.7rem 0.7rem 1.1rem;
   background: var(--surface-elev-strong);
