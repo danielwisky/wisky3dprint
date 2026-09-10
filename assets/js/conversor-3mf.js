@@ -1,9 +1,11 @@
 (function () {
 // ---------------------------------------------------------------------------
-// BLOCO: Conversor 3MF — troca o perfil de máquina/processo de um projeto
-// 3MF já fatiado (Bambu Studio/Orca Slicer) pelo perfil de outra impressora,
-// mantendo geometria, cores de filamento e ajustes de suporte escolhidos
-// pelo usuário. Perfis vêm de assets/data/printer-profiles.json.
+// BLOCO: Conversor 3MF — troca o perfil de máquina de um projeto 3MF já
+// fatiado (Bambu Studio/Orca Slicer) pelo de outra impressora, mantendo
+// todos os ajustes de processo escolhidos pelo usuário (suporte, preenchimento,
+// paredes, velocidades, filamento etc.) e sobrescrevendo só os campos que
+// descrevem o hardware da impressora de destino. Perfis vêm de
+// assets/data/printer-profiles.json.
 // ---------------------------------------------------------------------------
 
   var root = document.getElementById("conv3mf");
@@ -32,18 +34,34 @@
   // grid de destinos quando o usuário digita na busca, sem reler o 3MF.
   var destinosData = null; // { perfis, chaveDetectada, bbox }
 
-  // Campos que representam escolhas do usuário no projeto original (cor do
-  // filamento, ajustes de suporte/torre) — preservados por cima do perfil da
-  // impressora de destino em vez de serem sobrescritos por ele.
-  var CAMPOS_PRESERVADOS = [
-    "filament_colour",
-    "enable_support",
-    "support_on_build_plate_only",
-    "support_top_z_distance",
-    "support_interface_top_layers",
-    "support_interface_spacing",
-    "enable_prime_tower"
+  // Prefixos de campos que descrevem o hardware da impressora de destino
+  // (mesa, extrusores, gcode de máquina, AMS) — únicos sobrescritos pelo
+  // perfil de destino. Todo o resto do projeto original do usuário é mantido.
+  var PREFIXOS_CAMPOS_DESTINO = [
+    "printer_", "machine_", "extruder_", "bed_", "printable_", "ams_"
   ];
+
+  // Campos avulsos (sem prefixo comum) que também descrevem o hardware da
+  // impressora de destino: bico, mesa, gcodes de máquina e compatibilidade.
+  var CAMPOS_DESTINO = [
+    "nozzle_diameter", "nozzle_type", "nozzle_height", "nozzle_volume",
+    "nozzle_volume_type", "nozzle_hrc", "required_nozzle_HRC", "nozzle_flush_dataset",
+    "thumbnails", "thumbnails_format", "host_type", "gcode_flavor", "silent_mode",
+    "print_compatible_printers", "upward_compatible_machine",
+    "compatible_machine_expression_group", "default_filament_profile",
+    "default_print_profile", "scan_first_layer", "color_bed_exclude_area",
+    "curr_bed_type", "default_bed_type", "best_object_pos",
+    "head_wrap_detect_zone", "wrapping_exclude_area", "wrapping_detection_gcode",
+    "before_layer_change_gcode", "layer_change_gcode", "change_filament_gcode",
+    "time_lapse_gcode"
+  ];
+
+  function ehCampoDestino(campo) {
+    if (CAMPOS_DESTINO.indexOf(campo) !== -1) return true;
+    return PREFIXOS_CAMPOS_DESTINO.some(function (prefixo) {
+      return campo.indexOf(prefixo) === 0;
+    });
+  }
 
   var perfisPromise = null;
   var estado = null; // { file, zip, projectConfig, projectConfigPath, destinoKeys }
@@ -344,13 +362,11 @@
 
   function montarNovoConfig(configOriginal, perfilDestino) {
     var novo = {};
-    Object.keys(perfilDestino.base).forEach(function (k) {
-      novo[k] = perfilDestino.base[k];
+    Object.keys(configOriginal).forEach(function (k) {
+      novo[k] = configOriginal[k];
     });
-    CAMPOS_PRESERVADOS.forEach(function (campo) {
-      if (Object.prototype.hasOwnProperty.call(configOriginal, campo)) {
-        novo[campo] = configOriginal[campo];
-      }
+    Object.keys(perfilDestino.base).forEach(function (k) {
+      if (ehCampoDestino(k)) novo[k] = perfilDestino.base[k];
     });
     return novo;
   }
