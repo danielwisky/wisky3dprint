@@ -402,16 +402,17 @@
         });
       }
 
-      outEl.textContent = "Gerando " + chaves.length + " projetos...";
       var zipFinal = new JSZip();
-      return chaves.reduce(function (promessa, chave) {
+      return chaves.reduce(function (promessa, chave, indice) {
         return promessa.then(function () {
           var perfil = perfis[chave];
+          outEl.textContent = "Gerando projeto " + (indice + 1) + " de " + chaves.length + " (" + nomeBaseImpressora(perfil.nome) + ")...";
           return gerarProjetoUnico(perfil).then(function (blob) {
             zipFinal.file(nomeArquivoDestino(estado.file.name, perfil), blob);
           });
         });
       }, Promise.resolve()).then(function () {
+        outEl.textContent = "Compactando " + chaves.length + " projetos em um .zip...";
         return zipFinal.generateAsync({ type: "blob" });
       }).then(function (blob) {
         baixarBlob(blob, nomeArquivoZip(estado.file.name));

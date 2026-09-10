@@ -3429,6 +3429,10 @@ body.img-lightbox-open { overflow: hidden; }
     border-color: var(--cyan);
     background: color-mix(in srgb, var(--cyan) 10%, var(--surface));
   }
+
+  &.is-atual.is-selecionado {
+    opacity: 1;
+  }
 }
 .conv3mf-destino-nome {
   font-size: 0.9rem;
