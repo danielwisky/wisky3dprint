@@ -9,6 +9,8 @@
     var peso = document.getElementById("calc-peso");
     var tempo = document.getElementById("calc-tempo");
     var out = document.getElementById("calc-result");
+    var energiaInfo = document.getElementById("calc-result-energia");
+    var energiaValorOut = document.getElementById("calc-result-energia-valor");
     var d = form.dataset;
     var fmt = window.Wisky3D.formatarMoeda;
 
@@ -18,6 +20,7 @@
       if (!isFinite(g) || !isFinite(h) || g <= 0 || h <= 0) {
         out.textContent = "Preencha os campos";
         out.classList.remove("has-value");
+        energiaInfo.hidden = true;
         return;
       }
       var base = window.Wisky3D.calcularSubtotalBase({
@@ -31,6 +34,8 @@
       var total = base.subtotal * (1 + parseFloat(d.margemPct) / 100) + parseFloat(d.montagem);
       out.textContent = fmt.format(total);
       out.classList.add("has-value");
+      energiaValorOut.textContent = fmt.format(base.energia);
+      energiaInfo.hidden = false;
     }
 
     form.addEventListener("input", calc);
