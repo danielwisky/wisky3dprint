@@ -17,8 +17,11 @@
   var horasManuaisInput = document.getElementById("orcamento-calc-horas-manuais");
   var minutosManuaisInput = document.getElementById("orcamento-calc-minutos-manuais");
   var valorHoraInput = document.getElementById("orcamento-calc-valor-hora");
+  var potenciaInput = document.getElementById("orcamento-calc-potencia");
+  var tarifaInput = document.getElementById("orcamento-calc-tarifa");
   var hardwareInput = document.getElementById("orcamento-calc-hardware");
   var embalagemInput = document.getElementById("orcamento-calc-embalagem");
+  var desgasteInput = document.getElementById("orcamento-calc-desgaste");
   var valorMaquinaInput = document.getElementById("orcamento-calc-valor-maquina");
   var vidaUtilInput = document.getElementById("orcamento-calc-vida-util");
   var margemInput = document.getElementById("orcamento-calc-margem");
@@ -118,7 +121,8 @@
     if (isFinite(valorMaquina) && valorMaquina > 0 && isFinite(vidaUtilH) && vidaUtilH > 0) {
       return (valorMaquina / vidaUtilH) * h;
     }
-    return parseFloat(d.desgaste);
+    var desgasteFixo = parseNum(desgasteInput.value);
+    return isFinite(desgasteFixo) ? desgasteFixo : parseFloat(d.desgaste);
   }
 
   function unitTotalComMargem(subtotalComPerda, margemPct, maoDeObraVal) {
@@ -149,12 +153,17 @@
       return null;
     }
 
+    var potenciaW = parseNum(potenciaInput.value);
+    if (!isFinite(potenciaW)) potenciaW = parseFloat(d.potenciaW);
+    var tarifaKwh = parseNum(tarifaInput.value);
+    if (!isFinite(tarifaKwh)) tarifaKwh = parseFloat(d.tarifaKwh);
+
     var base = window.Wisky3D.calcularSubtotalBase({
       pesoG: g,
       horas: h,
       filamentoKg: filamentoKg,
-      potenciaW: parseFloat(d.potenciaW),
-      tarifaKwh: parseFloat(d.tarifaKwh),
+      potenciaW: potenciaW,
+      tarifaKwh: tarifaKwh,
       desgaste: computeDesgaste(h)
     });
     var custoFilamento = base.custoFilamento;
@@ -373,11 +382,8 @@
     minutos.value = "";
     horasManuaisInput.value = "";
     minutosManuaisInput.value = "";
-    valorHoraInput.value = d.horaTrabalho || "";
     hardwareInput.value = "";
     embalagemInput.value = "";
-    margemInput.value = d.margemPct || "";
-    perdaInput.value = d.perdaPct || "";
     modeloUpload.value = "";
     modeloPreview.hidden = true;
     modeloErro.hidden = true;
@@ -516,6 +522,45 @@
   function lsRemove(key) {
     try { localStorage.removeItem(key); } catch (e) {}
   }
+
+  // Valores que tendem a se repetir de peça pra peça (tarifa de energia,
+  // valor da hora etc.) ficam salvos e pré-preenchidos na próxima visita,
+  // em vez de sempre voltar ao padrão do _config.yml.
+  var PERSISTED_FIELDS = [
+    { input: filamento, key: "orcamentoCalc:filamento" },
+    { input: valorHoraInput, key: "orcamentoCalc:valorHora", fallback: d.horaTrabalho },
+    { input: potenciaInput, key: "orcamentoCalc:potencia", fallback: d.potenciaW },
+    { input: tarifaInput, key: "orcamentoCalc:tarifa", fallback: d.tarifaKwh },
+    { input: margemInput, key: "orcamentoCalc:margem", fallback: d.margemPct },
+    { input: perdaInput, key: "orcamentoCalc:perda", fallback: d.perdaPct },
+    { input: desgasteInput, key: "orcamentoCalc:desgaste", fallback: d.desgaste },
+    { input: valorMaquinaInput, key: "orcamentoCalc:valorMaquina" },
+    { input: vidaUtilInput, key: "orcamentoCalc:vidaUtil" }
+  ];
+
+  // Defaults do _config.yml chegam como float JS (ponto decimal, ex.: "0.8"),
+  // mas os campos são lidos com parseNumeroPtBr (vírgula decimal) — sem essa
+  // conversão o "0.8" seria lido como 8.
+  function paraPtBr(valor) {
+    return String(valor).replace(".", ",");
+  }
+
+  function valorPersistido(campo) {
+    var salvo = lsGet(campo.key);
+    if (salvo != null) return salvo;
+    return campo.fallback != null && campo.fallback !== "" ? paraPtBr(campo.fallback) : "";
+  }
+
+  function initPersistedFields() {
+    PERSISTED_FIELDS.forEach(function (campo) {
+      campo.input.value = valorPersistido(campo);
+      campo.input.addEventListener("input", function () {
+        lsSet(campo.key, campo.input.value);
+      });
+    });
+  }
+
+  initPersistedFields();
 
   var MODO_COMPLETO_KEY = "orcamentoCalc:modoCompleto";
   var camposAvancados = document.querySelectorAll(".calc-field-avancado");

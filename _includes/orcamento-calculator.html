@@ -105,9 +105,22 @@
   </div>
 
   <div class="calc-section calc-field-avancado">
-    <h2 class="calc-section-title">Desgaste da impressora (avançado)</h2>
-    <p class="calc-field-hint">Preencha os dois campos abaixo pra calcular o desgaste proporcional ao tempo de impressão. Deixe em branco pra usar um valor fixo por impressão.</p>
+    <h2 class="calc-section-title">Custos operacionais</h2>
     <div class="calc-fields">
+      <div class="calc-field">
+        <label for="orcamento-calc-potencia">Potência da impressora (W)</label>
+        <input type="text" id="orcamento-calc-potencia" name="potencia" inputmode="decimal" autocomplete="off" placeholder="ex: {{ site.calculadora.potencia_w }}" value="{{ site.calculadora.potencia_w }}">
+      </div>
+      <div class="calc-field">
+        <label for="orcamento-calc-tarifa">Tarifa de energia (R$/kWh)</label>
+        <input type="text" id="orcamento-calc-tarifa" name="tarifa" inputmode="decimal" autocomplete="off" placeholder="ex: {{ site.calculadora.tarifa_kwh }}" value="{{ site.calculadora.tarifa_kwh }}">
+      </div>
+      <p class="calc-field-hint calc-field-hint-full">Média Brasil: R$ 0,70 – R$ 0,90/kWh.</p>
+      <div class="calc-field">
+        <label for="orcamento-calc-desgaste">Desgaste da máquina (R$/impressão)</label>
+        <input type="text" id="orcamento-calc-desgaste" name="desgaste" inputmode="decimal" autocomplete="off" placeholder="ex: {{ site.calculadora.desgaste }}" value="{{ site.calculadora.desgaste }}">
+      </div>
+      <p class="calc-field-hint calc-field-hint-full">Valor subjetivo (típico: R$ 1–5).</p>
       <div class="calc-field">
         <label for="orcamento-calc-valor-maquina">Valor da máquina (R$)</label>
         <input type="text" id="orcamento-calc-valor-maquina" name="valorMaquina" inputmode="decimal" autocomplete="off" placeholder="ex: 3000">
@@ -116,6 +129,7 @@
         <label for="orcamento-calc-vida-util">Vida útil (h)</label>
         <input type="text" id="orcamento-calc-vida-util" name="vidaUtil" inputmode="decimal" autocomplete="off" placeholder="ex: 8000">
       </div>
+      <p class="calc-field-hint calc-field-hint-full">Se preenchido, calcula o desgaste proporcional ao tempo de impressão (valor da máquina ÷ vida útil × horas) em vez do valor de desgaste da máquina informado acima.</p>
     </div>
   </div>
 
