@@ -18,6 +18,8 @@ if (root) {
   const painel = document.getElementById("cor3mf-painel");
   const canvasEl = document.getElementById("cor3mf-canvas");
   const avisoGrandeEl = document.getElementById("cor3mf-aviso-grande");
+  const avisoGrandeTextoEl = document.getElementById("cor3mf-aviso-grande-texto");
+  const avisoGrandeFecharBtn = document.getElementById("cor3mf-aviso-grande-fechar");
   const toolBaldeBtn = document.getElementById("cor3mf-tool-balde");
   const toolMagicaBtn = document.getElementById("cor3mf-tool-magica");
   const toleranciaCampoEl = document.getElementById("cor3mf-tolerancia-campo");
@@ -346,7 +348,11 @@ if (root) {
   // origem), pra acompanhar curvaturas suaves em vez de parar assim que a
   // normal se afasta um pouco do ponto clicado.
   function floodFillByNormalTolerance(startTri, toleranceDeg, adjacency, faceNormals, triCount) {
-    const toleranceCos = Math.cos((toleranceDeg * Math.PI) / 180);
+    // Pequena margem: normais de triângulos coplanares raramente são
+    // bit-idênticas (erro de ponto flutuante do produto vetorial), então com
+    // tolerância 0° o "dot >= 1" exato quase nunca passava mesmo entre
+    // triângulos da mesma face plana.
+    const toleranceCos = Math.cos((toleranceDeg * Math.PI) / 180) - 1e-6;
     const visited = new Uint8Array(triCount);
     visited[startTri] = 1;
     const stack = [startTri];
@@ -689,7 +695,7 @@ if (root) {
     const grande = triCount >= AVISO_TRIANGULOS_GRANDE;
     avisoGrandeEl.hidden = !grande;
     if (grande) {
-      avisoGrandeEl.textContent = "Modelo com " + triCount.toLocaleString("pt-BR") + " triângulos, pintar regiões grandes pode ficar um pouco mais lento.";
+      avisoGrandeTextoEl.textContent = "Modelo com " + triCount.toLocaleString("pt-BR") + " triângulos, pintar regiões grandes pode ficar um pouco mais lento.";
     }
 
     exportBtn.disabled = false;
@@ -917,6 +923,7 @@ if (root) {
   });
 
   recentralizarBtn.addEventListener("click", () => recentralizarVista());
+  avisoGrandeFecharBtn.addEventListener("click", () => { avisoGrandeEl.hidden = true; });
 
   desfazerBtn.addEventListener("click", () => undo());
 
