@@ -1,0 +1,69 @@
+<div class="cor3mf calc" id="cor3mf">
+  <div class="calc-field calc-field-upload">
+    <span class="calc-field-label-sr" id="cor3mf-upload-label">Arquivo do modelo (STL ou 3MF)</span>
+    <label for="cor3mf-upload" class="calc-dropzone" id="cor3mf-dropzone">
+      <span class="calc-dropzone-texto" id="cor3mf-dropzone-texto">Arraste o arquivo .stl ou .3mf aqui ou <span class="calc-dropzone-link">escolha um arquivo</span></span>
+      <span class="calc-dropzone-loading" id="cor3mf-loading" hidden>Lendo o arquivo, aguarde...</span>
+    </label>
+    <input type="file" id="cor3mf-upload" accept=".stl,.3mf" aria-labelledby="cor3mf-upload-label">
+  </div>
+  <p class="calc-modelo-erro" id="cor3mf-erro" hidden></p>
+
+  <div id="cor3mf-painel" hidden>
+    <p class="cor3mf-hint">Arraste com o botão esquerdo para girar o modelo. Clique numa superfície para pintar com a ferramenta ativa.</p>
+
+    <div class="cor3mf-workspace">
+      <div class="cor3mf-canvas-wrap">
+        <canvas id="cor3mf-canvas" aria-label="Visualização 3D do modelo"></canvas>
+        <button type="button" class="cor3mf-recentralizar" id="cor3mf-recentralizar" title="Recentralizar vista" aria-label="Recentralizar vista">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 9V5a1 1 0 0 1 1-1h4"></path>
+            <path d="M20 9V5a1 1 0 0 0-1-1h-4"></path>
+            <path d="M4 15v4a1 1 0 0 0 1 1h4"></path>
+            <path d="M20 15v4a1 1 0 0 1-1 1h-4"></path>
+          </svg>
+        </button>
+        <p class="cor3mf-aviso-grande" id="cor3mf-aviso-grande" hidden></p>
+      </div>
+
+      <div class="cor3mf-toolbar">
+        <div class="cor3mf-grupo-ferramenta" role="radiogroup" aria-label="Ferramenta de pintura">
+          <button type="button" class="cor3mf-ferramenta is-ativa" id="cor3mf-tool-balde" role="radio" aria-checked="true" data-tool="balde">
+            Balde
+          </button>
+          <button type="button" class="cor3mf-ferramenta" id="cor3mf-tool-magica" role="radio" aria-checked="false" data-tool="magica">
+            Seleção mágica
+          </button>
+        </div>
+
+        <div class="cor3mf-paleta-bloco">
+          <div class="cor3mf-paleta-topo">
+            <span class="cor3mf-paleta-label" id="cor3mf-paleta-label">Cores</span>
+            <button type="button" class="cor3mf-paleta-add" id="cor3mf-paleta-add" title="Adicionar cor" aria-label="Adicionar cor">+</button>
+            <input type="color" id="cor3mf-paleta-nova-cor" class="cor3mf-paleta-nova-cor-oculto" tabindex="-1" aria-hidden="true">
+          </div>
+          <div class="cor3mf-paleta-lista" id="cor3mf-paleta-lista" role="listbox" aria-labelledby="cor3mf-paleta-label"></div>
+        </div>
+
+        <div class="calc-field" id="cor3mf-tolerancia-campo" hidden>
+          <label for="cor3mf-tolerancia">Tolerância (curvatura): <span id="cor3mf-tolerancia-valor">15°</span></label>
+          <input type="range" id="cor3mf-tolerancia" min="0" max="60" step="1" value="15">
+        </div>
+
+        <div class="cor3mf-acoes-selecao" id="cor3mf-acoes-selecao" hidden>
+          <span class="cor3mf-selecao-contagem" id="cor3mf-selecao-contagem"></span>
+          <button type="button" class="btn btn-gradient" id="cor3mf-aplicar-selecao" disabled>Aplicar cor</button>
+          <button type="button" class="btn" id="cor3mf-limpar-selecao" disabled>Limpar seleção</button>
+        </div>
+
+        <button type="button" class="btn" id="cor3mf-desfazer" disabled>Desfazer</button>
+        <button type="button" class="btn" id="cor3mf-resetar" disabled>Repintar tudo de cinza</button>
+      </div>
+    </div>
+
+    <div class="calc-result-box cor3mf-resultado">
+      <button type="button" class="btn btn-gradient calc-add-btn" id="cor3mf-exportar" disabled>Baixar 3MF colorido</button>
+      <p class="cor3mf-out" id="cor3mf-out" aria-live="polite"></p>
+    </div>
+  </div>
+</div>

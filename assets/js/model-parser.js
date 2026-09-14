@@ -348,6 +348,101 @@ window.Wisky3D = window.Wisky3D || {};
     });
   }
 
+  // Mesma travessia de <object>/<components> do resolveObjectGeometry acima,
+  // mas guardando os triângulos (com transform já aplicado) em vez de só
+  // agregados — usado pela ferramenta de colorir, que precisa da malha de
+  // verdade pra pintar, não só volume/bbox.
+  function resolveObjectTriangles(zip, docCache, doc, objectId, accumTransform, outTriangulos) {
+    var objectEl = findObjectElement(doc, objectId);
+    if (!objectEl) return Promise.resolve();
+
+    var meshEl = directChild(objectEl, "mesh");
+    if (meshEl) {
+      var verticesEl = directChild(meshEl, "vertices");
+      var trianglesEl = directChild(meshEl, "triangles");
+      var vertexEls = verticesEl ? directChildren(verticesEl, "vertex") : [];
+      var vertices = vertexEls.map(function (v) {
+        return applyTransform([
+          parseFloat(v.getAttribute("x")),
+          parseFloat(v.getAttribute("y")),
+          parseFloat(v.getAttribute("z"))
+        ], accumTransform);
+      });
+      var triEls = trianglesEl ? directChildren(trianglesEl, "triangle") : [];
+      triEls.forEach(function (t) {
+        var i1 = parseInt(t.getAttribute("v1"), 10);
+        var i2 = parseInt(t.getAttribute("v2"), 10);
+        var i3 = parseInt(t.getAttribute("v3"), 10);
+        if (vertices[i1] && vertices[i2] && vertices[i3]) {
+          outTriangulos.push([vertices[i1], vertices[i2], vertices[i3]]);
+        }
+      });
+    }
+
+    var componentsEl = directChild(objectEl, "components");
+    if (!componentsEl) return Promise.resolve();
+
+    var promises = directChildren(componentsEl, "component").map(function (comp) {
+      var childObjectId = comp.getAttribute("objectid");
+      var childTransform = parseTransformAttr(comp.getAttribute("transform"));
+      var combined = composeTransform(accumTransform, childTransform);
+      var path = comp.getAttribute("p:path");
+
+      if (path) {
+        var normalizedPath = path.replace(/^\//, "");
+        var docPromise = docCache[normalizedPath];
+        if (!docPromise) {
+          var zipEntry = zip.file(normalizedPath);
+          if (!zipEntry) return Promise.resolve();
+          docPromise = zipEntry.async("text").then(parseXmlDoc);
+          docCache[normalizedPath] = docPromise;
+        }
+        return docPromise.then(function (extDoc) {
+          return resolveObjectTriangles(zip, docCache, extDoc, childObjectId, combined, outTriangulos);
+        });
+      }
+      return resolveObjectTriangles(zip, docCache, doc, childObjectId, combined, outTriangulos);
+    });
+
+    return Promise.all(promises);
+  }
+
+  // Extrai a malha de um pacote 3MF já aberto (JSZip) como array de
+  // triângulos no mesmo formato de parseSTL — resolve build items,
+  // components aninhados e arquivos externos (p:path), e converte pra mm de
+  // acordo com o <model unit="...">.
+  function extractTriangles3MF(zip, rootXmlText) {
+    var doc = parseXmlDoc(rootXmlText);
+    var unidadeAttr = doc.documentElement.getAttribute("unit");
+    var escala = UNIDADE_PARA_MM[unidadeAttr] || 1;
+    var docCache = {};
+    var buildEl = doc.getElementsByTagName("build")[0];
+    var itemEls = buildEl ? directChildren(buildEl, "item") : [];
+    var items = itemEls.length ? itemEls : Array.prototype.map.call(
+      doc.getElementsByTagName("object"),
+      function (o) {
+        return { getAttribute: function (name) { return name === "objectid" ? o.getAttribute("id") : null; } };
+      }
+    );
+
+    var triangulos = [];
+    var promises = items.map(function (item) {
+      var transform = parseTransformAttr(item.getAttribute("transform"));
+      return resolveObjectTriangles(zip, docCache, doc, item.getAttribute("objectid"), transform, triangulos);
+    });
+
+    return Promise.all(promises).then(function () {
+      if (escala !== 1) {
+        triangulos.forEach(function (tri) {
+          tri.forEach(function (p) {
+            p[0] *= escala; p[1] *= escala; p[2] *= escala;
+          });
+        });
+      }
+      return triangulos;
+    });
+  }
+
   function parse3MFPerfil(configText) {
     var densidadeMatch = configText.match(/"filament_density"\s*:\s*\[\s*"([\d.]+)"/);
     var diametroMatch = configText.match(/"filament_diameter"\s*:\s*\[\s*"([\d.]+)"/);
@@ -369,6 +464,7 @@ window.Wisky3D = window.Wisky3D || {};
     computeMeshAreaMm2: computeMeshAreaMm2,
     bboxVazio: bboxVazio,
     parse3MFPackage: parse3MFPackage,
+    extractTriangles3MF: extractTriangles3MF,
     parse3MFPerfil: parse3MFPerfil
   };
 })();
