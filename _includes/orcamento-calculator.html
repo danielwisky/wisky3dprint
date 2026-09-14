@@ -100,7 +100,11 @@
         <label for="orcamento-calc-embalagem">Embalagem (R$)</label>
         <input type="text" id="orcamento-calc-embalagem" name="embalagem" inputmode="decimal" autocomplete="off" placeholder="ex: 5">
       </div>
-      <p class="calc-field-hint calc-field-hint-full calc-field-avancado">Peças e insumos: parafusos, ímãs, insertos etc. Embalagem: caixa, plástico bolha etc.</p>
+      <div class="calc-field calc-field-avancado">
+        <label for="orcamento-calc-frete">Frete (R$)</label>
+        <input type="text" id="orcamento-calc-frete" name="frete" inputmode="decimal" autocomplete="off" placeholder="ex: 15">
+      </div>
+      <p class="calc-field-hint calc-field-hint-full calc-field-avancado">Peças e insumos: parafusos, ímãs, insertos etc. (entram na margem de lucro, como o filamento).<br>Embalagem (caixa, plástico bolha etc.) e frete são somados ao valor final sem incidência da margem de lucro.</p>
     </div>
   </div>
 
@@ -143,16 +147,12 @@
       <span id="orcamento-calc-b-energia">—</span>
     </div>
     <div class="calc-breakdown-row">
-      <span>Desgaste da impressora</span>
+      <span>Desgaste da máquina</span>
       <span id="orcamento-calc-b-desgaste">—</span>
     </div>
     <div class="calc-breakdown-row" id="orcamento-calc-b-hardware-row" hidden>
       <span>Peças e insumos</span>
       <span id="orcamento-calc-b-hardware">—</span>
-    </div>
-    <div class="calc-breakdown-row" id="orcamento-calc-b-embalagem-row" hidden>
-      <span>Embalagem</span>
-      <span id="orcamento-calc-b-embalagem">—</span>
     </div>
     <div class="calc-breakdown-row">
       <span>Subtotal</span>
@@ -166,9 +166,17 @@
       <span id="orcamento-calc-b-margem-label">Margem</span>
       <span id="orcamento-calc-b-margem">—</span>
     </div>
-    <div class="calc-breakdown-row">
+    <div class="calc-breakdown-row calc-breakdown-row--strong">
       <span>Mão de obra</span>
       <span id="orcamento-calc-b-mao-de-obra">—</span>
+    </div>
+    <div class="calc-breakdown-row calc-breakdown-row--group-start" id="orcamento-calc-b-embalagem-row" hidden>
+      <span>Embalagem</span>
+      <span id="orcamento-calc-b-embalagem">—</span>
+    </div>
+    <div class="calc-breakdown-row" id="orcamento-calc-b-frete-row" hidden>
+      <span>Frete</span>
+      <span id="orcamento-calc-b-frete">—</span>
     </div>
   </div>
 
@@ -179,7 +187,7 @@
 
   <div class="calc-result-box">
     <span class="calc-result-label">Total do item</span>
-    <output id="orcamento-calc-result" class="calc-result" for="orcamento-calc-peso orcamento-calc-horas orcamento-calc-minutos orcamento-calc-filamento orcamento-calc-horas-manuais orcamento-calc-minutos-manuais orcamento-calc-valor-hora orcamento-calc-margem orcamento-calc-perda orcamento-calc-quantidade" aria-live="polite">Preencha os campos</output>
+    <output id="orcamento-calc-result" class="calc-result" for="orcamento-calc-peso orcamento-calc-horas orcamento-calc-minutos orcamento-calc-filamento orcamento-calc-horas-manuais orcamento-calc-minutos-manuais orcamento-calc-valor-hora orcamento-calc-margem orcamento-calc-perda orcamento-calc-quantidade orcamento-calc-embalagem orcamento-calc-frete" aria-live="polite">Preencha os campos</output>
   </div>
 
   <button type="button" id="orcamento-calc-add" class="btn btn-gradient calc-add-btn" disabled>Adicionar ao orçamento</button>
@@ -320,6 +328,8 @@
       <tr>
         <th>Peça</th>
         <th>Qtd</th>
+        <th id="orcamento-calc-print-th-embalagem" hidden>Embalagem</th>
+        <th id="orcamento-calc-print-th-frete" hidden>Frete</th>
         <th>Valor unit.</th>
         <th>Subtotal</th>
       </tr>

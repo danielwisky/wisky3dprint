@@ -2711,10 +2711,36 @@ body.gallery-modal-open {
   font-size: 0.85rem;
   color: var(--muted);
 }
+.calc-breakdown-row[hidden] {
+  display: none;
+}
 .calc-breakdown-row:last-child {
   border-bottom: none;
   color: var(--text);
   font-weight: 600;
+}
+.calc-breakdown-row--strong {
+  color: var(--text);
+  font-weight: 600;
+}
+.calc-breakdown-row--group-start {
+  margin-top: 0.4rem;
+  padding-top: 0.6rem;
+  border-top: 1px dashed var(--border);
+}
+// Se a Embalagem estiver oculta (valor 0), o Frete assume o divisor do grupo.
+#orcamento-calc-b-embalagem-row[hidden] + #orcamento-calc-b-frete-row {
+  margin-top: 0.4rem;
+  padding-top: 0.6rem;
+  border-top: 1px dashed var(--border);
+}
+// Embalagem/Frete não representam o "total antes do total" (papel da Mão de
+// obra) — mesmo virando :last-child do bloco quando um dos dois some (valor 0),
+// não devem herdar o destaque em negrito.
+#orcamento-calc-b-embalagem-row:last-child,
+#orcamento-calc-b-frete-row:last-child {
+  color: var(--muted);
+  font-weight: 400;
 }
 .calc-result-box {
   margin-top: 1.5rem;

@@ -21,6 +21,7 @@
   var tarifaInput = document.getElementById("orcamento-calc-tarifa");
   var hardwareInput = document.getElementById("orcamento-calc-hardware");
   var embalagemInput = document.getElementById("orcamento-calc-embalagem");
+  var freteInput = document.getElementById("orcamento-calc-frete");
   var desgasteInput = document.getElementById("orcamento-calc-desgaste");
   var valorMaquinaInput = document.getElementById("orcamento-calc-valor-maquina");
   var vidaUtilInput = document.getElementById("orcamento-calc-vida-util");
@@ -44,6 +45,8 @@
   var clearBtn = document.getElementById("orcamento-calc-clear");
   var printBox = document.getElementById("orcamento-calc-print");
   var printBody = document.getElementById("orcamento-calc-print-body");
+  var printThEmbalagem = document.getElementById("orcamento-calc-print-th-embalagem");
+  var printThFrete = document.getElementById("orcamento-calc-print-th-frete");
   var printDescontoBreakdown = document.getElementById("orcamento-calc-print-desconto-breakdown");
   var printSubtotalOut = document.getElementById("orcamento-calc-print-subtotal");
   var printDescontoLabel = document.getElementById("orcamento-calc-print-desconto-label");
@@ -99,14 +102,16 @@
     desgaste: document.getElementById("orcamento-calc-b-desgaste"),
     hardwareRow: document.getElementById("orcamento-calc-b-hardware-row"),
     hardware: document.getElementById("orcamento-calc-b-hardware"),
-    embalagemRow: document.getElementById("orcamento-calc-b-embalagem-row"),
-    embalagem: document.getElementById("orcamento-calc-b-embalagem"),
     subtotal: document.getElementById("orcamento-calc-b-subtotal"),
     perda: document.getElementById("orcamento-calc-b-perda"),
     perdaLabel: document.getElementById("orcamento-calc-b-perda-label"),
     margem: document.getElementById("orcamento-calc-b-margem"),
     margemLabel: document.getElementById("orcamento-calc-b-margem-label"),
-    maoDeObra: document.getElementById("orcamento-calc-b-mao-de-obra")
+    maoDeObra: document.getElementById("orcamento-calc-b-mao-de-obra"),
+    embalagemRow: document.getElementById("orcamento-calc-b-embalagem-row"),
+    embalagem: document.getElementById("orcamento-calc-b-embalagem"),
+    freteRow: document.getElementById("orcamento-calc-b-frete-row"),
+    frete: document.getElementById("orcamento-calc-b-frete")
   };
 
   var itens = [];
@@ -125,13 +130,14 @@
     return isFinite(desgasteFixo) ? desgasteFixo : parseFloat(d.desgaste);
   }
 
-  function unitTotalComMargem(subtotalComPerda, margemPct, maoDeObraVal) {
-    return subtotalComPerda + subtotalComPerda * (margemPct / 100) + maoDeObraVal;
+  function unitTotalComMargem(subtotalComPerda, margemPct, maoDeObraVal, embalagemVal, freteVal) {
+    return subtotalComPerda + subtotalComPerda * (margemPct / 100) + maoDeObraVal + embalagemVal + freteVal;
   }
 
   // A perda/retrabalho é aplicada sobre o subtotal (filamento + energia +
-  // desgaste + hardware + embalagem): equivale a reimprimir essa fração
-  // das peças do item.
+  // desgaste + hardware): equivale a reimprimir essa fração das peças do
+  // item. Embalagem e frete são valores de repasse — entram só no total
+  // final, sem incidência de perda nem de margem de lucro.
   function computeItem() {
     var g = parseNum(peso.value);
     var h = (parseFloat(horas.value) || 0) + (parseFloat(minutos.value) || 0) / 60;
@@ -142,6 +148,7 @@
     var maoDeObraVal = horasManuais * valorHora;
     var hardwareVal = parseNum(hardwareInput.value) || 0;
     var embalagemVal = parseNum(embalagemInput.value) || 0;
+    var freteVal = parseNum(freteInput.value) || 0;
     var margemPct = parseNum(margemInput.value);
     if (!isFinite(margemPct)) margemPct = parseFloat(d.margemPct) || 0;
     var perdaPct = parseNum(perdaInput.value);
@@ -169,11 +176,11 @@
     var custoFilamento = base.custoFilamento;
     var energia = base.energia;
     var desgaste = base.desgaste;
-    var subtotal = base.subtotal + hardwareVal + embalagemVal;
+    var subtotal = base.subtotal + hardwareVal;
     var perda = subtotal * (perdaPct / 100);
     var subtotalComPerda = subtotal + perda;
     var margem = subtotalComPerda * (margemPct / 100);
-    var unitTotal = unitTotalComMargem(subtotalComPerda, margemPct, maoDeObraVal);
+    var unitTotal = unitTotalComMargem(subtotalComPerda, margemPct, maoDeObraVal, embalagemVal, freteVal);
 
     return {
       nome: (nome.value || "").trim(),
@@ -185,6 +192,7 @@
       desgaste: desgaste,
       hardware: hardwareVal,
       embalagem: embalagemVal,
+      frete: freteVal,
       subtotal: subtotal,
       perda: perda,
       perdaPct: perdaPct,
@@ -216,14 +224,16 @@
     rows.desgaste.textContent = fmt.format(item.desgaste);
     rows.hardwareRow.hidden = item.hardware <= 0;
     rows.hardware.textContent = fmt.format(item.hardware);
-    rows.embalagemRow.hidden = item.embalagem <= 0;
-    rows.embalagem.textContent = fmt.format(item.embalagem);
     rows.subtotal.textContent = fmt.format(item.subtotal);
     rows.perdaLabel.textContent = "Perda (" + item.perdaPct + "%)";
     rows.perda.textContent = fmt.format(item.perda);
     rows.margemLabel.textContent = "Margem (" + item.margemPct + "%)";
     rows.margem.textContent = fmt.format(item.margem);
     rows.maoDeObra.textContent = fmt.format(item.maoDeObra);
+    rows.embalagemRow.hidden = item.embalagem <= 0;
+    rows.embalagem.textContent = fmt.format(item.embalagem);
+    rows.freteRow.hidden = item.frete <= 0;
+    rows.frete.textContent = fmt.format(item.frete);
     breakdown.hidden = false;
 
     renderFaixas(item);
@@ -255,7 +265,7 @@
     faixasCols.innerHTML = "";
 
     faixas.forEach(function (margemPct, i) {
-      var unit = unitTotalComMargem(item.subtotalComPerda, margemPct, item.maoDeObra);
+      var unit = unitTotalComMargem(item.subtotalComPerda, margemPct, item.maoDeObra, item.embalagem, item.frete);
       var col = document.createElement("button");
       col.type = "button";
       col.className = "calc-faixa";
@@ -383,7 +393,6 @@
     horasManuaisInput.value = "";
     minutosManuaisInput.value = "";
     hardwareInput.value = "";
-    embalagemInput.value = "";
     modeloUpload.value = "";
     modeloPreview.hidden = true;
     modeloErro.hidden = true;
@@ -416,13 +425,27 @@
     printBody.innerHTML = "";
     var total = 0;
 
+    // Colunas de Embalagem/Frete só aparecem no orçamento impresso se algum
+    // item do orçamento de fato usa esses valores — evita poluir a tabela
+    // com colunas zeradas.
+    var temEmbalagem = itens.some(function (item) { return item.embalagem > 0; });
+    var temFrete = itens.some(function (item) { return item.frete > 0; });
+    printThEmbalagem.hidden = !temEmbalagem;
+    printThFrete.hidden = !temFrete;
+
     itens.forEach(function (item, i) {
       total += item.itemTotal;
       var tr = document.createElement("tr");
-      ["nome", "qtd", "unit", "subtotal"].forEach(function (col) {
+      var cols = ["nome", "qtd"];
+      if (temEmbalagem) cols.push("embalagem");
+      if (temFrete) cols.push("frete");
+      cols.push("unit", "subtotal");
+      cols.forEach(function (col) {
         var td = document.createElement("td");
         if (col === "nome") td.textContent = item.nome || "Peça " + (i + 1);
         else if (col === "qtd") td.textContent = item.qtd;
+        else if (col === "embalagem") td.textContent = fmt.format(item.embalagem);
+        else if (col === "frete") td.textContent = fmt.format(item.frete);
         else if (col === "unit") td.textContent = fmt.format(item.unitTotal);
         else td.textContent = fmt.format(item.itemTotal);
         tr.appendChild(td);
@@ -464,10 +487,10 @@
     if (!itens.length) return;
 
     var linhas = [[
-      "Peça", "Quantidade", "Filamento", "Energia", "Desgaste da impressora",
-      "Peças e insumos", "Embalagem", "Subtotal", "Perda (%)", "Perda",
+      "Peça", "Quantidade", "Filamento", "Energia", "Desgaste da máquina",
+      "Peças e insumos", "Subtotal", "Perda (%)", "Perda",
       "Margem (%)", "Margem", "Horas manuais", "Valor da hora", "Mão de obra",
-      "Valor unitário", "Valor total"
+      "Embalagem", "Frete", "Valor unitário", "Valor total"
     ]];
     var total = 0;
 
@@ -480,7 +503,6 @@
         csvNum(item.energia),
         csvNum(item.desgaste),
         csvNum(item.hardware),
-        csvNum(item.embalagem),
         csvNum(item.subtotal),
         csvNum(item.perdaPct),
         csvNum(item.perda),
@@ -489,12 +511,14 @@
         csvNum(item.horasManuais),
         csvNum(item.valorHora),
         csvNum(item.maoDeObra),
+        csvNum(item.embalagem),
+        csvNum(item.frete),
         csvNum(item.unitTotal),
         csvNum(item.itemTotal)
       ]);
     });
 
-    linhas.push(["Total geral", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", csvNum(total)]);
+    linhas.push(["Total geral", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", csvNum(total)]);
 
     var csv = linhas.map(function (linha) {
       return linha.map(csvField).join(";");
@@ -535,7 +559,9 @@
     { input: perdaInput, key: "orcamentoCalc:perda", fallback: d.perdaPct },
     { input: desgasteInput, key: "orcamentoCalc:desgaste", fallback: d.desgaste },
     { input: valorMaquinaInput, key: "orcamentoCalc:valorMaquina" },
-    { input: vidaUtilInput, key: "orcamentoCalc:vidaUtil" }
+    { input: vidaUtilInput, key: "orcamentoCalc:vidaUtil" },
+    { input: embalagemInput, key: "orcamentoCalc:embalagem" },
+    { input: freteInput, key: "orcamentoCalc:frete" }
   ];
 
   // Defaults do _config.yml chegam como float JS (ponto decimal, ex.: "0.8"),
