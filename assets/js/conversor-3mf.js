@@ -396,12 +396,15 @@
     return nomeOriginal.replace(/\.3mf$/i, "") + "-convertidos.zip";
   }
 
-  function gerarProjetoUnico(perfilDestino) {
+  function gerarProjetoUnico(perfilDestino, nivelCompressao) {
     var novoConfig = montarNovoConfig(estado.projectConfig, perfilDestino);
     estado.zip.file(estado.projectConfigPath, JSON.stringify(novoConfig, null, 4));
     // Sem compression:"DEFLATE" o JSZip descompacta o conteúdo original e
     // regrava sem compactar, inflando um 3MF de dezenas de MB pra centenas.
-    return estado.zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } });
+    // O nível é reduzido quando há vários destinos: a malha (que não muda
+    // entre eles) seria recompactada do zero a cada um, e nível baixo é
+    // bem mais rápido com perda pequena de compactação.
+    return estado.zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: nivelCompressao } });
   }
 
   function gerarProjeto() {
@@ -412,18 +415,21 @@
       if (chaves.length === 1) {
         var perfilDestino = perfis[chaves[0]];
         outEl.textContent = "Gerando arquivo...";
-        return gerarProjetoUnico(perfilDestino).then(function (blob) {
+        return gerarProjetoUnico(perfilDestino, 6).then(function (blob) {
           baixarBlob(blob, nomeArquivoDestino(estado.file.name, perfilDestino));
           outEl.textContent = "Projeto convertido para " + nomeBaseImpressora(perfilDestino.nome) + " baixado.";
         });
       }
 
+      // Com vários destinos, a malha (idêntica em todos) seria recompactada
+      // do zero em cada um: nível baixo mantém a geração rápida às custas de
+      // um .3mf um pouco maior.
       var zipFinal = new JSZip();
       return chaves.reduce(function (promessa, chave, indice) {
         return promessa.then(function () {
           var perfil = perfis[chave];
           outEl.textContent = "Gerando projeto " + (indice + 1) + " de " + chaves.length + " (" + nomeBaseImpressora(perfil.nome) + ")...";
-          return gerarProjetoUnico(perfil).then(function (blob) {
+          return gerarProjetoUnico(perfil, 1).then(function (blob) {
             zipFinal.file(nomeArquivoDestino(estado.file.name, perfil), blob);
           });
         });
