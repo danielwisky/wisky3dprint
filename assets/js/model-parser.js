@@ -352,7 +352,13 @@ window.Wisky3D = window.Wisky3D || {};
   // mas guardando os triângulos (com transform já aplicado) em vez de só
   // agregados — usado pela ferramenta de colorir, que precisa da malha de
   // verdade pra pintar, não só volume/bbox.
-  function resolveObjectTriangles(zip, docCache, doc, objectId, accumTransform, outTriangulos) {
+  // `path` é o arquivo (dentro do zip) de onde o <object> desse nível veio, e
+  // `outOrigins` acompanha `outTriangulos` índice a índice com {path,
+  // objectId, localIndex} — localIndex é a posição do triângulo dentro do
+  // <triangles> original daquele object/arquivo. Isso permite, na exportação,
+  // reabrir o pacote 3MF original e escrever a cor de volta nos <triangle>
+  // exatos de onde vieram, em vez de reconstruir o pacote do zero.
+  function resolveObjectTriangles(zip, docCache, doc, objectId, accumTransform, outTriangulos, path, outOrigins) {
     var objectEl = findObjectElement(doc, objectId);
     if (!objectEl) return Promise.resolve();
 
@@ -369,12 +375,13 @@ window.Wisky3D = window.Wisky3D || {};
         ], accumTransform);
       });
       var triEls = trianglesEl ? directChildren(trianglesEl, "triangle") : [];
-      triEls.forEach(function (t) {
+      triEls.forEach(function (t, localIndex) {
         var i1 = parseInt(t.getAttribute("v1"), 10);
         var i2 = parseInt(t.getAttribute("v2"), 10);
         var i3 = parseInt(t.getAttribute("v3"), 10);
         if (vertices[i1] && vertices[i2] && vertices[i3]) {
           outTriangulos.push([vertices[i1], vertices[i2], vertices[i3]]);
+          outOrigins.push({ path: path, objectId: objectId, localIndex: localIndex });
         }
       });
     }
@@ -386,10 +393,10 @@ window.Wisky3D = window.Wisky3D || {};
       var childObjectId = comp.getAttribute("objectid");
       var childTransform = parseTransformAttr(comp.getAttribute("transform"));
       var combined = composeTransform(accumTransform, childTransform);
-      var path = comp.getAttribute("p:path");
+      var compPath = comp.getAttribute("p:path");
 
-      if (path) {
-        var normalizedPath = path.replace(/^\//, "");
+      if (compPath) {
+        var normalizedPath = compPath.replace(/^\//, "");
         var docPromise = docCache[normalizedPath];
         if (!docPromise) {
           var zipEntry = zip.file(normalizedPath);
@@ -398,10 +405,10 @@ window.Wisky3D = window.Wisky3D || {};
           docCache[normalizedPath] = docPromise;
         }
         return docPromise.then(function (extDoc) {
-          return resolveObjectTriangles(zip, docCache, extDoc, childObjectId, combined, outTriangulos);
+          return resolveObjectTriangles(zip, docCache, extDoc, childObjectId, combined, outTriangulos, normalizedPath, outOrigins);
         });
       }
-      return resolveObjectTriangles(zip, docCache, doc, childObjectId, combined, outTriangulos);
+      return resolveObjectTriangles(zip, docCache, doc, childObjectId, combined, outTriangulos, path, outOrigins);
     });
 
     return Promise.all(promises);
@@ -410,8 +417,11 @@ window.Wisky3D = window.Wisky3D || {};
   // Extrai a malha de um pacote 3MF já aberto (JSZip) como array de
   // triângulos no mesmo formato de parseSTL — resolve build items,
   // components aninhados e arquivos externos (p:path), e converte pra mm de
-  // acordo com o <model unit="...">.
-  function extractTriangles3MF(zip, rootXmlText) {
+  // acordo com o <model unit="...">. `rootPath` é o caminho do próprio
+  // 3dmodel.model dentro do zip, usado como origem de quem não vem de
+  // component externo. Retorna também `origins` (ver resolveObjectTriangles),
+  // usado na exportação pra editar o pacote original em vez de recriá-lo.
+  function extractTriangles3MF(zip, rootXmlText, rootPath) {
     var doc = parseXmlDoc(rootXmlText);
     var unidadeAttr = doc.documentElement.getAttribute("unit");
     var escala = UNIDADE_PARA_MM[unidadeAttr] || 1;
@@ -426,9 +436,10 @@ window.Wisky3D = window.Wisky3D || {};
     );
 
     var triangulos = [];
+    var origins = [];
     var promises = items.map(function (item) {
       var transform = parseTransformAttr(item.getAttribute("transform"));
-      return resolveObjectTriangles(zip, docCache, doc, item.getAttribute("objectid"), transform, triangulos);
+      return resolveObjectTriangles(zip, docCache, doc, item.getAttribute("objectid"), transform, triangulos, rootPath, origins);
     });
 
     return Promise.all(promises).then(function () {
@@ -439,7 +450,7 @@ window.Wisky3D = window.Wisky3D || {};
           });
         });
       }
-      return triangulos;
+      return { triangulos: triangulos, origins: origins };
     });
   }
 
