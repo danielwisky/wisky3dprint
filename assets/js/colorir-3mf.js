@@ -43,8 +43,12 @@ if (root) {
   const AVISO_TRIANGULOS_GRANDE = 150000;
   const MAX_UNDO = 20;
   const PALETA_PRESETS = ["#3fb6e8", "#ff6b4a", "#8b7cf6", "#5cd65c", "#ffd633", "#ff4fa3", "#4dd0e1", "#ffa726"];
-  const DEFAULT_COLOR_HEX =
-    "#" + DEFAULT_COLOR.map((n) => n.toString(16).padStart(2, "0")).join("");
+
+  function toHexByte(n) {
+    return n.toString(16).padStart(2, "0");
+  }
+
+  const DEFAULT_COLOR_HEX = "#" + DEFAULT_COLOR.map(toHexByte).join("");
   // Tolerância fixa do balde: 0° exato só pega o triângulo clicado em malhas
   // orgânicas bem trianguladas (STL de scan/escultura), já que ali quase
   // nenhum triângulo vizinho tem normal idêntica — o clique parecia "não
@@ -832,8 +836,7 @@ if (root) {
   // -------------------------------------------------------------------------
 
   function rgbToHex3mf(c) {
-    const toHex = (n) => n.toString(16).padStart(2, "0");
-    return "#" + toHex(c[0]) + toHex(c[1]) + toHex(c[2]) + "ff";
+    return "#" + toHexByte(c[0]) + toHexByte(c[1]) + toHexByte(c[2]) + "ff";
   }
 
   function nomeArquivoSaida(nomeOriginal) {
@@ -920,8 +923,29 @@ if (root) {
   }
 
   function rgbParaHexBambu(c) {
-    const toHex = (n) => n.toString(16).padStart(2, "0");
-    return ("#" + toHex(c[0]) + toHex(c[1]) + toHex(c[2])).toUpperCase();
+    return ("#" + toHexByte(c[0]) + toHexByte(c[1]) + toHexByte(c[2])).toUpperCase();
+  }
+
+  // Fábrica de indexador de cores: devolve uma função que atribui a cada cor
+  // distinta (r,g,b) um índice sequencial na ordem de primeira aparição —
+  // usada tanto para montar o <m:colorgroup> ao remendar um .3mf existente
+  // quanto ao gerar um pacote novo do zero a partir de um STL.
+  function criarIndexadorDeCores() {
+    const colorToIndex = new Map();
+    const cores = [];
+    return {
+      cores,
+      indiceDaCor(r, g, b) {
+        const chave = r + "," + g + "," + b;
+        let idx = colorToIndex.get(chave);
+        if (idx === undefined) {
+          idx = cores.length;
+          cores.push([r, g, b]);
+          colorToIndex.set(chave, idx);
+        }
+        return idx;
+      }
+    };
   }
 
   // Monta a paleta final de filamentos. Se sobrar alguma área ainda não
@@ -1037,18 +1061,7 @@ if (root) {
     let colorGroupId = 900001;
     while (idsUsados.has(String(colorGroupId))) colorGroupId++;
 
-    const colorToIndex = new Map();
-    const cores = [];
-    function indiceDaCor(r, g, b) {
-      const chave = r + "," + g + "," + b;
-      let idx = colorToIndex.get(chave);
-      if (idx === undefined) {
-        idx = cores.length;
-        cores.push([r, g, b]);
-        colorToIndex.set(chave, idx);
-      }
-      return idx;
-    }
+    const { cores, indiceDaCor } = criarIndexadorDeCores();
 
     porObjeto.forEach((lista, objectId) => {
       const objectEl = acharObjectPorId(doc, objectId);
@@ -1215,18 +1228,7 @@ if (root) {
   function exportarModeloDoZero() {
     outEl.textContent = "Gerando arquivo 3MF...";
 
-    const colorToIndex = new Map();
-    const cores = [];
-    function indiceDaCor(r, g, b) {
-      const chave = r + "," + g + "," + b;
-      let idx = colorToIndex.get(chave);
-      if (idx === undefined) {
-        idx = cores.length;
-        cores.push([r, g, b]);
-        colorToIndex.set(chave, idx);
-      }
-      return idx;
-    }
+    const { cores, indiceDaCor } = criarIndexadorDeCores();
 
     const linhasTriangulos = new Array(state.triCount);
     for (let t = 0; t < state.triCount; t++) {
