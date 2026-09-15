@@ -31,7 +31,7 @@ window.Wisky3D = window.Wisky3D || {};
     return 0.5 * Math.sqrt(cx * cx + cy * cy + cz * cz);
   }
 
-  // Área de superfície da malha (soma das áreas dos triângulos) — usada pra
+  // Área de superfície da malha (soma das áreas dos triângulos), usada pra
   // estimar o volume das paredes (casca), já que o volume total sozinho não
   // diferencia "parede sólida" de "miolo em infill".
   function computeMeshAreaMm2(triangulos) {
@@ -108,7 +108,7 @@ window.Wisky3D = window.Wisky3D || {};
 
   // Fator pra converter a unidade declarada no <model unit="..."> pra mm.
   // Fatiadores (Bambu/Orca) sempre gravam em mm, mas o padrão 3MF permite
-  // outras unidades — sem isso, um arquivo em "centimeter" sairia com
+  // outras unidades. Sem isso, um arquivo em "centimeter" sairia com
   // volume/peso 1000x menor que o real.
   var UNIDADE_PARA_MM = { micron: 0.001, millimeter: 1, centimeter: 10, inch: 25.4, foot: 304.8, meter: 1000 };
 
@@ -141,7 +141,7 @@ window.Wisky3D = window.Wisky3D || {};
   }
 
   // Compõe transform pai + filho: aplica o filho primeiro (espaço local do
-  // componente), depois o pai (acumulado até aqui) — é como o 3MF encadeia
+  // componente), depois o pai (acumulado até aqui). É como o 3MF encadeia
   // transforms de <item> e <component> aninhados.
   function composeTransform(parent, child) {
     var M = matMul3(parent.M, child.M);
@@ -207,12 +207,12 @@ window.Wisky3D = window.Wisky3D || {};
   }
 
   // Resolve um <object> do 3MF (mesh direta e/ou <components> apontando pra
-  // outros objects, no mesmo arquivo ou em arquivos externos via p:path —
+  // outros objects, no mesmo arquivo ou em arquivos externos via p:path,
   // padrão usado por fatiadores como Bambu Studio/Orca em modelos multi-peça).
   // O volume de cada mesh-folha é somado em módulo (abs) individualmente,
   // pra não zerar o total quando um componente vem espelhado (transform com
   // determinante negativo, comum em peças simétricas). Não retém os
-  // triângulos resolvidos em memória — só contagem/volume/bbox — porque
+  // triângulos resolvidos em memória, só contagem/volume/bbox, porque
   // modelos reais multi-peça (ex: miniaturas Bambu Studio) podem passar de
   // 3-4 milhões de triângulos e manter tudo em arrays de arrays estouraria
   // memória no navegador sem necessidade (só usamos os agregados).
@@ -337,8 +337,8 @@ window.Wisky3D = window.Wisky3D || {};
         volumeMm3: volumeMm3 * escala * escala * escala,
         areaMm2: areaMm2 * escala * escala,
         bbox: escalarBBox(bbox),
-        // bbox de cada item de nível topo (build item), na ordem de `items` —
-        // usado pra separar por chapa/plate em arquivos multi-plate (ver
+        // bbox de cada item de nível topo (build item), na ordem de `items`.
+        // Usado pra separar por chapa/plate em arquivos multi-plate (ver
         // conversor-3mf.js), já que o bbox combinado acima soma objetos que
         // na real impressora nunca ficam juntos na mesma mesa.
         itens: results.map(function (r, i) {
@@ -350,11 +350,11 @@ window.Wisky3D = window.Wisky3D || {};
 
   // Mesma travessia de <object>/<components> do resolveObjectGeometry acima,
   // mas guardando os triângulos (com transform já aplicado) em vez de só
-  // agregados — usado pela ferramenta de colorir, que precisa da malha de
+  // agregados. Usado pela ferramenta de colorir, que precisa da malha de
   // verdade pra pintar, não só volume/bbox.
   // `path` é o arquivo (dentro do zip) de onde o <object> desse nível veio, e
   // `outOrigins` acompanha `outTriangulos` índice a índice com {path,
-  // objectId, localIndex} — localIndex é a posição do triângulo dentro do
+  // objectId, localIndex}. localIndex é a posição do triângulo dentro do
   // <triangles> original daquele object/arquivo. Isso permite, na exportação,
   // reabrir o pacote 3MF original e escrever a cor de volta nos <triangle>
   // exatos de onde vieram, em vez de reconstruir o pacote do zero.
@@ -415,7 +415,7 @@ window.Wisky3D = window.Wisky3D || {};
   }
 
   // Extrai a malha de um pacote 3MF já aberto (JSZip) como array de
-  // triângulos no mesmo formato de parseSTL — resolve build items,
+  // triângulos no mesmo formato de parseSTL. Resolve build items,
   // components aninhados e arquivos externos (p:path), e converte pra mm de
   // acordo com o <model unit="...">. `rootPath` é o caminho do próprio
   // 3dmodel.model dentro do zip, usado como origem de quem não vem de

@@ -145,7 +145,7 @@
 // ---------------------------------------------------------------------------
 // Motor genérico de lightbox: abrir/fechar, teclado, swipe, navegação
 // circular, foco. Reaproveitado pelo zoom de imagem (.img-zoom, abaixo) e
-// pela galeria do Instagram (gallery-modal, em home.js) — só o HTML/o que
+// pela galeria do Instagram (gallery-modal, em home.js). Só o HTML/o que
 // cada um exibe (contador de fotos vs. legenda+link) muda entre os dois.
 // ---------------------------------------------------------------------------
 

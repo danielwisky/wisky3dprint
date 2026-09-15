@@ -9,7 +9,7 @@ window.Wisky3D = window.Wisky3D || {};
 window.Wisky3D.formatarMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
 window.Wisky3D.parseNumeroPtBr = function (value) {
-  // Formato pt-BR: ponto é separador de milhar, vírgula é decimal — precisa
+  // Formato pt-BR: ponto é separador de milhar, vírgula é decimal. Precisa
   // remover os pontos antes de trocar a vírgula, senão "3.000" vira 3.
   return parseFloat(String(value).replace(/\./g, "").replace(",", "."));
 };

@@ -23,7 +23,7 @@
   // Dica de instalação (Adicionar à Tela de Início): iOS não expõe evento
   // de instalação, então o único jeito é orientar o passo a passo manual.
   // Android tem o prompt nativo do Chrome, mas nem todo navegador/versão
-  // mostra automaticamente — a dica cobre esse caso também.
+  // mostra automaticamente. A dica cobre esse caso também.
   var INSTALL_TIP_DISMISSED_KEY = "wisky3d:installTipFechada";
   var INSTALL_TIP_DISMISSED_KEY_LEGADO = "orcamentoCalc:installTipFechada";
 
@@ -33,7 +33,7 @@
       window.navigator.standalone === true;
     var ua = window.navigator.userAgent || "";
     // Desde o iPadOS 13, o Safari do iPad manda UA de desktop ("Macintosh"),
-    // sem "iPad" — só dá pra distinguir de um Mac de verdade pelo touch.
+    // sem "iPad". Só dá pra distinguir de um Mac de verdade pelo touch.
     var isIPadOS13Mais = window.navigator.platform === "MacIntel" && window.navigator.maxTouchPoints > 1;
     var isIOS = /iPad|iPhone|iPod/.test(ua) || isIPadOS13Mais;
     var isAndroid = /Android/.test(ua);
@@ -64,13 +64,13 @@
   // ferramentas do site (Orçamento e Conversor 3MF).
   //
   // O service worker fica em espera (não ativa sozinho) quando detecta uma
-  // versão nova — só ativa se o usuário tocar em "Atualizar", pra não trocar
+  // versão nova. Só ativa se o usuário tocar em "Atualizar", pra não trocar
   // o código embaixo dos pés de quem está no meio de um uso.
   if ("serviceWorker" in navigator && swUrl) {
     window.addEventListener("load", function () {
       // Aponta sempre pro worker mais recente: se uma segunda versão chegar
       // enquanto o toast da primeira ainda está esperando o clique, o
-      // navegador descarta o worker antigo — sem isso, o clique em
+      // navegador descarta o worker antigo. Sem isso, o clique em
       // "Atualizar" ficaria mandando mensagem pra um worker morto.
       var workerAtual = null;
       function mostrarToastAtualizacao(worker) {
@@ -85,7 +85,7 @@
       }
 
       navigator.serviceWorker.register(swUrl, { scope: swScope }).then(function (reg) {
-        // reg.waiting já está pronto (instalado numa aba anterior) — mostra
+        // reg.waiting já está pronto (instalado numa aba anterior). Mostra
         // o aviso na hora, sem esperar um "statechange" que não vai ocorrer.
         if (reg.waiting && navigator.serviceWorker.controller) {
           mostrarToastAtualizacao(reg.waiting);
@@ -101,7 +101,7 @@
         });
 
         // No iPhone, reabrir o app pelo ícone costuma só retomar a aba
-        // suspensa em segundo plano, sem navegação nova — e é só numa
+        // suspensa em segundo plano, sem navegação nova, e é só numa
         // navegação que o navegador checa atualização sozinho. Forçamos a
         // checagem quando o app volta ao primeiro plano ou a conexão volta.
         function verificarAtualizacao() {

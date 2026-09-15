@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// BLOCO: Colorir 3MF — pinta um STL sem cor no navegador (viewer Three.js +
+// BLOCO: Colorir 3MF. Pinta um STL sem cor no navegador (viewer Three.js +
 // balde/seleção mágica por tolerância de curvatura) e exporta um .3mf com cor
 // por triângulo (3MF Materials and Properties Extension: colorgroup + pid/p1).
 // ---------------------------------------------------------------------------
@@ -51,7 +51,7 @@ if (root) {
   const DEFAULT_COLOR_HEX = "#" + DEFAULT_COLOR.map(toHexByte).join("");
   // Tolerância fixa do balde: 0° exato só pega o triângulo clicado em malhas
   // orgânicas bem trianguladas (STL de scan/escultura), já que ali quase
-  // nenhum triângulo vizinho tem normal idêntica — o clique parecia "não
+  // nenhum triângulo vizinho tem normal idêntica, o clique parecia "não
   // pintar nada". Um valor pequeno cobre essa variação natural sem invadir
   // faces realmente distintas (uma quina reta muda a normal bem mais que
   // isso).
@@ -71,7 +71,7 @@ if (root) {
    *   fileName, triCount,
    *   faceNormals: Float32Array(triCount*3),
    *   adjacency: Array<number[]> (vizinhos por triângulo),
-   *   baseColors: Uint8ClampedArray(triCount*3) — fonte de verdade da cor,
+   *   baseColors: Uint8ClampedArray(triCount*3) (fonte de verdade da cor),
    *   selection: Set<number>,
    *   geometry, cornerExportIndex: Int32Array(triCount*3),
    *   exportVertices: Array<[x,y,z]>, undoStack: Uint8ClampedArray[]
@@ -154,14 +154,14 @@ if (root) {
     // Câmera e alvo escalam juntos em torno do pivô pelo mesmo fator: a
     // distância câmera-alvo muda exatamente por "factor", sem depender da
     // distância até o pivô (que pode ficar perto de zero e, se usada num
-    // denominador, gera saltos numéricos gigantes — bug já visto em produção).
+    // denominador, gera saltos numéricos gigantes; bug já visto em produção).
     camera.position.sub(pivot).multiplyScalar(factor).add(pivot);
     controls.target.sub(pivot).multiplyScalar(factor).add(pivot);
 
     // Trava de segurança: o alvo da órbita nunca pode se afastar demais do
     // centro fixo do modelo. Sem isso, uma sequência longa de zoom (sobretudo
     // perto do limite máximo, onde o raio às vezes deixa de acertar a malha)
-    // podia fazer o alvo "andar" pra fora do modelo evento após evento — a
+    // podia fazer o alvo "andar" pra fora do modelo evento após evento, e a
     // câmera sempre reorienta pro alvo, então o erro se acumulava até o
     // modelo sumir da tela.
     if (meshPivotWorld) {
@@ -174,10 +174,10 @@ if (root) {
     }
 
     // Único limite de segurança: manter a distância câmera-alvo dentro de
-    // [minDistance, maxDistance] — minDistance já garante que a câmera nunca
-    // entra na esfera envolvente do modelo (ver frameCameraToGeometry).
-    // Importante: capturar o deslocamento ANTES de mexer em camera.position —
-    // encadear "camera.position.copy(target).add(camera.position.clone()...)"
+    // [minDistance, maxDistance] (minDistance já garante que a câmera nunca
+    // entra na esfera envolvente do modelo, ver frameCameraToGeometry).
+    // Importante: capturar o deslocamento ANTES de mexer em camera.position.
+    // Encadear "camera.position.copy(target).add(camera.position.clone()...)"
     // é uma armadilha clássica, pois o .copy() já mutou camera.position antes
     // do .clone() rodar, colapsando câmera e alvo no mesmo ponto.
     const offset = camera.position.clone().sub(controls.target);
@@ -222,14 +222,14 @@ if (root) {
     // minDistance >= raio da esfera envolvente: garante que a câmera nunca
     // consiga entrar no volume do modelo, mesmo em formas não-esféricas
     // (ex.: um cubo tem raio inscrito bem menor que o raio da esfera
-    // circunscrita) — evita a câmera atravessar a malha ao dar zoom demais.
+    // circunscrita), evita a câmera atravessar a malha ao dar zoom demais.
     controls.minDistance = radius * 1.05;
     controls.maxDistance = radius * 8;
     recentralizarVista();
   }
 
   // Reposiciona a câmera no enquadramento padrão, sem mexer no giro que o
-  // usuário já deu no modelo — útil pra "se achar" de novo depois de perder o
+  // usuário já deu no modelo, útil pra "se achar" de novo depois de perder o
   // objeto de vista com muito zoom/pan. meshPivotWorld é fixo desde a carga
   // do arquivo, então serve de referência estável mesmo com o objeto girado.
   function recentralizarVista() {
@@ -360,9 +360,9 @@ if (root) {
   // clicado. `compararComOrigem` decide contra qual normal cada vizinho é
   // comparado:
   //  - false (seleção mágica): compara com o vizinho imediato que o
-  //    descobriu, não com a origem — segue curvaturas suaves ao longo de
+  //    descobriu, não com a origem. Segue curvaturas suaves ao longo de
   //    vários cliques, mesmo que a normal final esteja bem longe da do clique.
-  //  - true (balde): compara sempre com a normal do triângulo clicado — a
+  //  - true (balde): compara sempre com a normal do triângulo clicado. A
   //    região fica presa a uma vizinhança realmente próxima do clique, sem a
   //    deriva acumulada de passo a passo que faria a mesma tolerância
   //    "vazar" por uma superfície curva inteira.
@@ -468,7 +468,7 @@ if (root) {
       edit.value = cor.hex;
       edit.setAttribute("aria-label", "Editar cor " + (i + 1));
       edit.addEventListener("click", (e) => e.stopPropagation());
-      // "input" dispara a cada movimento do seletor de cor — só atualiza a
+      // "input" dispara a cada movimento do seletor de cor, só atualiza a
       // prévia visual do botão, sem tocar na malha (evitaria recolorir a
       // malha inteira dezenas de vezes durante o arraste). A troca de fato
       // (e o replace nos triângulos já pintados com a cor antiga) só
@@ -534,7 +534,7 @@ if (root) {
   }
 
   // Troca em lote: acha todo triângulo já pintado com "de" e repinta com
-  // "para" — usado ao editar a cor de um slot da paleta, pra que a mudança
+  // "para". Usado ao editar a cor de um slot da paleta, pra que a mudança
   // valha pras áreas já pintadas com a cor antiga, não só pras próximas.
   function recolorirCor(de, para) {
     if (!state) return;
@@ -601,7 +601,7 @@ if (root) {
   // Projeção clássica de "virtual trackball" (Chen/Mountford/Sellen): mapeia
   // um ponto 2D normalizado de tela pra um ponto 3D numa esfera/hemisfério
   // virtual, indo pra uma folha hiperbólica quando o cursor sai do círculo
-  // central — isso evita comportamento estranho perto das bordas.
+  // central, isso evita comportamento estranho perto das bordas.
   function trackballPoint(x, y) {
     const d2 = x * x + y * y;
     const z = d2 <= 0.5 ? Math.sqrt(1 - d2) : 0.5 / Math.sqrt(d2);
@@ -669,7 +669,7 @@ if (root) {
     const triIndex = hits[0].faceIndex;
     const isBalde = currentTool === "balde";
     // Balde usa uma tolerância pequena fixa (não o slider, que é só da seleção
-    // mágica) comparada sempre contra a normal do triângulo clicado — cobre a
+    // mágica) comparada sempre contra a normal do triângulo clicado. Cobre a
     // face plana clicada (e a granularidade fina de malhas orgânicas) sem
     // vazar pras faces vizinhas nem depender de deriva acumulada.
     const toleranceDeg = isBalde ? BALDE_TOLERANCIA_DEG : Number(toleranciaInput.value);
@@ -716,7 +716,7 @@ if (root) {
     mesh.quaternion.identity();
     scene.add(mesh);
 
-    // Pivô do trackball: o centro geométrico do modelo, fixo no mundo — o
+    // Pivô do trackball: o centro geométrico do modelo, fixo no mundo. O
     // objeto sempre gira em torno dele, não importa qual ponto você "agarra".
     geometry.computeBoundingSphere();
     meshPivotLocal = geometry.boundingSphere.center.clone();
@@ -741,8 +741,8 @@ if (root) {
       cornerExportIndex,
       exportVertices,
       undoStack: [],
-      // O slot 1 começa com a mesma cor cinza do "não pintado" (DEFAULT_COLOR)
-      // — assim dá pra recolorir de uma vez toda a área ainda não pintada só
+      // O slot 1 começa com a mesma cor cinza do "não pintado" (DEFAULT_COLOR).
+      // Assim dá pra recolorir de uma vez toda a área ainda não pintada só
       // trocando a cor desse slot (mesmo mecanismo de replace do editor de
       // paleta), sem precisar pintar triângulo por triângulo.
       paleta: [{ hex: DEFAULT_COLOR_HEX }],
@@ -829,7 +829,7 @@ if (root) {
   }
 
   // -------------------------------------------------------------------------
-  // Exportação — cor por triângulo sempre via 3MF Materials and Properties
+  // Exportação: cor por triângulo sempre via 3MF Materials and Properties
   // Extension (m:colorgroup + pid/p1). Se a origem foi um .3mf, remenda o
   // pacote original (preserva Metadata/, thumbnails etc.); se foi um .stl,
   // monta um pacote novo do zero.
@@ -873,7 +873,7 @@ if (root) {
     return out;
   }
 
-  // Compara pelo nome local (ignorando prefixo de namespace) — necessário para
+  // Compara pelo nome local (ignorando prefixo de namespace), necessário para
   // achar <m:colorgroup> já existentes no arquivo, cujo prefixo pode variar
   // (ou nem existir, se o pacote original declarou a extensão com outro
   // prefixo/namespace default).
@@ -901,7 +901,7 @@ if (root) {
   // dividido, o valor é: 2 bits de "não dividido" (00) + o estado (índice do
   // slot de filamento, 1-based; valores 0-2 cabem em 2 bits, valores >=3 usam
   // um "escape" 11 seguido de nibbles de extensão, cada 0xF valendo +15 até o
-  // nibble final somar o resto) — tudo em uma string hex com os nibbles em
+  // nibble final somar o resto), tudo em uma string hex com os nibbles em
   // ordem invertida (o último caractere é o primeiro nibble do fluxo).
   function filamentIndexParaPaintColor(indice1Based) {
     const nibbles = [];
@@ -927,7 +927,7 @@ if (root) {
   }
 
   // Fábrica de indexador de cores: devolve uma função que atribui a cada cor
-  // distinta (r,g,b) um índice sequencial na ordem de primeira aparição —
+  // distinta (r,g,b) um índice sequencial na ordem de primeira aparição,
   // usada tanto para montar o <m:colorgroup> ao remendar um .3mf existente
   // quanto ao gerar um pacote novo do zero a partir de um STL.
   function criarIndexadorDeCores() {
@@ -950,10 +950,10 @@ if (root) {
 
   // Monta a paleta final de filamentos. Se sobrar alguma área ainda não
   // pintada (triângulo com a cor cinza default), o slot 1 fica reservado pra
-  // ela — é nele que caem os triângulos sem paint_color, que usam o
-  // extrusor/filamento padrão do objeto — e as cores pintadas ocupam os
+  // ela: é nele que caem os triângulos sem paint_color, que usam o
+  // extrusor/filamento padrão do objeto, e as cores pintadas ocupam os
   // slots seguintes. Mas se o modelo inteiro já foi pintado (nenhum
-  // triângulo com a cor default sobrando — por exemplo depois de trocar a
+  // triângulo com a cor default sobrando, por exemplo depois de trocar a
   // cor do próprio slot 1 pela paleta), o cinza não teria nenhum uso real no
   // arquivo final, então ele é omitido e as cores pintadas ocupam os slots a
   // partir do 1.
@@ -984,11 +984,11 @@ if (root) {
 
   // Reconstrói Metadata/project_settings.config para ter exatamente um slot de
   // filamento por cor da paleta (slot 1 = cinza default, os demais = cores
-  // pintadas) — em vez de aproximar a pintura aos slots de AMS que já
+  // pintadas), em vez de aproximar a pintura aos slots de AMS que já
   // existiam no projeto. Todo ajuste de configuração que não seja a própria
   // cor (perfil de temperatura, tipo de material, id do preset etc.) é clonado
-  // do slot 0 original, que no fluxo do Bambu Studio já é o "Bambu PLA Basic"
-  // — assim os novos slots herdam o mesmo preset/perfil de impressora do
+  // do slot 0 original, que no fluxo do Bambu Studio já é o "Bambu PLA Basic".
+  // Assim os novos slots herdam o mesmo preset/perfil de impressora do
   // projeto, sem a ferramenta precisar adivinhar qual variante do PLA Basic
   // usar.
   function reconstruirProjectSettings(cfgOriginal, paleta) {
@@ -1017,7 +1017,7 @@ if (root) {
   // Ajusta, no texto do Metadata/model_settings.config, as listas
   // filament_maps/filament_volume_maps (uma entrada por slot de filamento)
   // para o novo número de slots, e força o extrusor/filamento padrão de cada
-  // object para o slot 1 (o cinza) — o slot original podia apontar para um
+  // object para o slot 1 (o cinza). O slot original podia apontar para um
   // índice que deixou de existir (ou que agora é outra cor) depois da
   // reconstrução da paleta.
   function ajustarFilamentMapsNoModelSettings(xmlText, n) {
@@ -1032,7 +1032,7 @@ if (root) {
   // Edita, no texto XML de um dos arquivos .model do pacote original, só os
   // <triangle> das regiões pintadas (adiciona pid/p1 e um <m:colorgroup> novo
   // com id que não colida com nenhum recurso já existente nesse arquivo, e,
-  // quando o pacote tem slots de filamento configurados, também paint_color —
+  // quando o pacote tem slots de filamento configurados, também paint_color,
   // sem o qual Bambu Studio/OrcaSlicer não mostram a cor). Tudo mais no XML
   // (metadados, outros objects, extensões desconhecidas) permanece intacto.
   function injetarCoresNoXml(xmlText, porObjeto, slotPorCor) {
@@ -1079,7 +1079,7 @@ if (root) {
         triEl.setAttribute("p1", String(pIndex));
         // Sempre limpa o paint_color que já existia no triângulo (pintura
         // feita antes, direto no Bambu Studio) para a exportação refletir só
-        // o que foi pintado nesta ferramenta — sem misturar as duas pinturas.
+        // o que foi pintado nesta ferramenta, sem misturar as duas pinturas.
         triEl.removeAttribute("paint_color");
         const foiPintado = r !== DEFAULT_COLOR[0] || g !== DEFAULT_COLOR[1] || b !== DEFAULT_COLOR[2];
         if (slotPorCor && foiPintado) {
@@ -1103,7 +1103,7 @@ if (root) {
     // Limpa colorgroups órfãos: qualquer <m:colorgroup> que já existia no
     // arquivo (do pacote original ou de uma exportação anterior desta mesma
     // ferramenta) e cujo id não é mais referenciado por nenhum pid no
-    // documento — sem isso, cada export acumula um novo colorgroup morto no
+    // documento. Sem isso, cada export acumula um novo colorgroup morto no
     // <resources>. Preserva colorgroups ainda referenciados por outra coisa
     // (ex.: pid de object para cor padrão do objeto inteiro).
     const pidsEmUso = new Set();
@@ -1123,7 +1123,7 @@ if (root) {
     });
 
     // Serializar o Document inteiro (em vez de só o elemento raiz) já inclui
-    // a declaração <?xml ...?> em navegadores baseados em Chromium — repeti-la
+    // a declaração <?xml ...?> em navegadores baseados em Chromium. Repeti-la
     // aqui geraria uma segunda declaração e um XML inválido.
     const serializado = new XMLSerializer().serializeToString(doc);
     return /^<\?xml/.test(serializado) ? serializado : '<?xml version="1.0" encoding="UTF-8"?>\n' + serializado;
@@ -1131,7 +1131,7 @@ if (root) {
 
   // Caminho usado quando o arquivo de origem é um .3mf: reabre o zip
   // original e escreve as cores diretamente nos <triangle> de onde vieram,
-  // sem tocar em Metadata/, thumbnails ou qualquer outro arquivo do pacote —
+  // sem tocar em Metadata/, thumbnails ou qualquer outro arquivo do pacote,
   // evita o aviso de "configuração inválida" do Bambu Studio, que aparece
   // quando o pacote deixa de parecer um projeto legítimo.
   function exportarModeloPreservandoPacote() {
@@ -1338,7 +1338,7 @@ if (root) {
 
   paletaAddBtn.addEventListener("click", () => {
     if (!state) return;
-    // O slot 1 (índice 0) é o cinza default, não um preset — os presets
+    // O slot 1 (índice 0) é o cinza default, não um preset. Os presets
     // começam a valer a partir do primeiro slot adicionado.
     paletaNovaCorInput.value = PALETA_PRESETS[(state.paleta.length - 1) % PALETA_PRESETS.length];
     paletaNovaCorInput.click();
