@@ -462,9 +462,22 @@ if (root) {
       edit.value = cor.hex;
       edit.setAttribute("aria-label", "Editar cor " + (i + 1));
       edit.addEventListener("click", (e) => e.stopPropagation());
+      // "input" dispara a cada movimento do seletor de cor — só atualiza a
+      // prévia visual do botão, sem tocar na malha (evitaria recolorir a
+      // malha inteira dezenas de vezes durante o arraste). A troca de fato
+      // (e o replace nos triângulos já pintados com a cor antiga) só
+      // acontece em "change", quando o usuário confirma a nova cor.
       edit.addEventListener("input", () => {
-        state.paleta[i].hex = edit.value;
         btn.style.background = edit.value;
+      });
+      edit.addEventListener("change", () => {
+        const hexAntigo = cor.hex;
+        const hexNovo = edit.value;
+        cor.hex = hexNovo;
+        if (hexAntigo.toLowerCase() !== hexNovo.toLowerCase()) {
+          recolorirCor(hexToRgb(hexAntigo), hexToRgb(hexNovo));
+        }
+        renderPaleta();
       });
 
       slot.appendChild(btn);
@@ -478,6 +491,7 @@ if (root) {
         del.setAttribute("aria-label", "Remover cor " + (i + 1));
         del.addEventListener("click", (e) => {
           e.stopPropagation();
+          recolorirCor(hexToRgb(cor.hex), DEFAULT_COLOR);
           state.paleta.splice(i, 1);
           if (state.paletaAtivaIndex >= state.paleta.length) state.paletaAtivaIndex = state.paleta.length - 1;
           renderPaleta();
@@ -511,6 +525,24 @@ if (root) {
       state.baseColors[t * 3 + 2] = rgb[2];
     }
     refreshColorBuffer();
+  }
+
+  // Troca em lote: acha todo triângulo já pintado com "de" e repinta com
+  // "para" — usado ao editar a cor de um slot da paleta, pra que a mudança
+  // valha pras áreas já pintadas com a cor antiga, não só pras próximas.
+  function recolorirCor(de, para) {
+    if (!state) return;
+    const alvo = [];
+    for (let t = 0; t < state.triCount; t++) {
+      if (
+        state.baseColors[t * 3] === de[0] &&
+        state.baseColors[t * 3 + 1] === de[1] &&
+        state.baseColors[t * 3 + 2] === de[2]
+      ) {
+        alvo.push(t);
+      }
+    }
+    if (alvo.length) paintTriangles(alvo, para);
   }
 
   // -------------------------------------------------------------------------
