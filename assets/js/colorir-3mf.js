@@ -43,6 +43,13 @@ if (root) {
   const AVISO_TRIANGULOS_GRANDE = 150000;
   const MAX_UNDO = 20;
   const PALETA_PRESETS = ["#3fb6e8", "#ff6b4a", "#8b7cf6", "#5cd65c", "#ffd633", "#ff4fa3", "#4dd0e1", "#ffa726"];
+  // Tolerância fixa do balde: 0° exato só pega o triângulo clicado em malhas
+  // orgânicas bem trianguladas (STL de scan/escultura), já que ali quase
+  // nenhum triângulo vizinho tem normal idêntica — o clique parecia "não
+  // pintar nada". Um valor pequeno cobre essa variação natural sem invadir
+  // faces realmente distintas (uma quina reta muda a normal bem mais que
+  // isso).
+  const BALDE_TOLERANCIA_DEG = 8;
 
   let currentTool = "balde";
   let renderer = null;
@@ -343,11 +350,17 @@ if (root) {
     return { adjacency, exportVertices, cornerExportIndex };
   }
 
-  // Compartilhada por balde e seleção mágica: BFS comparando cada triângulo
-  // contra o vizinho imediato que o descobriu (não contra a normal de
-  // origem), pra acompanhar curvaturas suaves em vez de parar assim que a
-  // normal se afasta um pouco do ponto clicado.
-  function floodFillByNormalTolerance(startTri, toleranceDeg, adjacency, faceNormals, triCount) {
+  // Compartilhada por balde e seleção mágica: BFS a partir do triângulo
+  // clicado. `compararComOrigem` decide contra qual normal cada vizinho é
+  // comparado:
+  //  - false (seleção mágica): compara com o vizinho imediato que o
+  //    descobriu, não com a origem — segue curvaturas suaves ao longo de
+  //    vários cliques, mesmo que a normal final esteja bem longe da do clique.
+  //  - true (balde): compara sempre com a normal do triângulo clicado — a
+  //    região fica presa a uma vizinhança realmente próxima do clique, sem a
+  //    deriva acumulada de passo a passo que faria a mesma tolerância
+  //    "vazar" por uma superfície curva inteira.
+  function floodFillByNormalTolerance(startTri, toleranceDeg, adjacency, faceNormals, triCount, compararComOrigem) {
     // Pequena margem: normais de triângulos coplanares raramente são
     // bit-idênticas (erro de ponto flutuante do produto vetorial), então com
     // tolerância 0° o "dot >= 1" exato quase nunca passava mesmo entre
@@ -357,10 +370,13 @@ if (root) {
     visited[startTri] = 1;
     const stack = [startTri];
     const result = [startTri];
+    const origX = faceNormals[startTri * 3], origY = faceNormals[startTri * 3 + 1], origZ = faceNormals[startTri * 3 + 2];
 
     while (stack.length) {
       const cur = stack.pop();
-      const cx = faceNormals[cur * 3], cy = faceNormals[cur * 3 + 1], cz = faceNormals[cur * 3 + 2];
+      const cx = compararComOrigem ? origX : faceNormals[cur * 3];
+      const cy = compararComOrigem ? origY : faceNormals[cur * 3 + 1];
+      const cz = compararComOrigem ? origZ : faceNormals[cur * 3 + 2];
       const vizinhos = adjacency[cur];
       for (let i = 0; i < vizinhos.length; i++) {
         const n = vizinhos[i];
@@ -613,10 +629,13 @@ if (root) {
     if (!hits.length) return;
 
     const triIndex = hits[0].faceIndex;
-    // Balde sempre pinta só a face plana clicada (tolerância 0); a tolerância
-    // do slider vale só pra seleção mágica, que é onde ela fica visível.
-    const toleranceDeg = currentTool === "balde" ? 0 : Number(toleranciaInput.value);
-    const regiao = floodFillByNormalTolerance(triIndex, toleranceDeg, state.adjacency, state.faceNormals, state.triCount);
+    const isBalde = currentTool === "balde";
+    // Balde usa uma tolerância pequena fixa (não o slider, que é só da seleção
+    // mágica) comparada sempre contra a normal do triângulo clicado — cobre a
+    // face plana clicada (e a granularidade fina de malhas orgânicas) sem
+    // vazar pras faces vizinhas nem depender de deriva acumulada.
+    const toleranceDeg = isBalde ? BALDE_TOLERANCIA_DEG : Number(toleranciaInput.value);
+    const regiao = floodFillByNormalTolerance(triIndex, toleranceDeg, state.adjacency, state.faceNormals, state.triCount, isBalde);
 
     if (currentTool === "balde") {
       paintTriangles(regiao, hexToRgb(corAtivaHex()));
@@ -631,7 +650,7 @@ if (root) {
   // Carregar STL e montar o estado/viewer
   // -------------------------------------------------------------------------
 
-  function buildState(triangulos, fileName) {
+  function buildState(triangulos, fileName, origem) {
     initSceneOnce();
 
     const { triCount, positions } = buildGeometryData(triangulos);
@@ -685,7 +704,12 @@ if (root) {
       exportVertices,
       undoStack: [],
       paleta: [{ hex: PALETA_PRESETS[0] }],
-      paletaAtivaIndex: 0
+      paletaAtivaIndex: 0,
+      // Presentes só quando o arquivo original é um .3mf: permitem, na
+      // exportação, remendar o pacote original (preservando Metadata/,
+      // thumbnails etc.) em vez de reconstruir tudo do zero.
+      triangleOrigins: (origem && origem.origins) || null,
+      zip: (origem && origem.zip) || null
     };
 
     renderPaleta();
@@ -707,7 +731,7 @@ if (root) {
 
   function extrairTriangulosDoArquivo(file) {
     if (/\.stl$/i.test(file.name)) {
-      return file.arrayBuffer().then((buffer) => ModelParser.parseSTL(buffer));
+      return file.arrayBuffer().then((buffer) => ({ triangulos: ModelParser.parseSTL(buffer), origins: null, zip: null }));
     }
 
     if (typeof JSZip === "undefined") {
@@ -718,7 +742,14 @@ if (root) {
       let modelFiles = zip.file(/(^|\/)3D\/3dmodel\.model$/i);
       if (!modelFiles.length) modelFiles = zip.file(/3dmodel\.model$/i);
       if (!modelFiles.length) throw new Error("3dmodel.model não encontrado no pacote 3MF");
-      return modelFiles[0].async("text").then((modelText) => ModelParser.extractTriangles3MF(zip, modelText));
+      const rootPath = modelFiles[0].name;
+      return modelFiles[0].async("text").then((modelText) =>
+        ModelParser.extractTriangles3MF(zip, modelText, rootPath).then((resultado) => ({
+          triangulos: resultado.triangulos,
+          origins: resultado.origins,
+          zip
+        }))
+      );
     });
   }
 
@@ -738,9 +769,9 @@ if (root) {
     painel.hidden = true;
 
     extrairTriangulosDoArquivo(file)
-      .then((triangulos) => {
-        if (!triangulos.length) throw new Error("nenhuma geometria encontrada no arquivo");
-        buildState(triangulos, file.name);
+      .then((resultado) => {
+        if (!resultado.triangulos.length) throw new Error("nenhuma geometria encontrada no arquivo");
+        buildState(resultado.triangulos, file.name, resultado);
         painel.hidden = false;
         resizeRenderer();
         frameCameraToGeometry();
@@ -756,8 +787,10 @@ if (root) {
   }
 
   // -------------------------------------------------------------------------
-  // Exportação: pacote .3mf montado do zero via JSZip, cor por triângulo
-  // usando o 3MF Materials and Properties Extension (m:colorgroup + pid/p1).
+  // Exportação — cor por triângulo sempre via 3MF Materials and Properties
+  // Extension (m:colorgroup + pid/p1). Se a origem foi um .3mf, remenda o
+  // pacote original (preserva Metadata/, thumbnails etc.); se foi um .stl,
+  // monta um pacote novo do zero.
   // -------------------------------------------------------------------------
 
   function rgbToHex3mf(c) {
@@ -780,7 +813,174 @@ if (root) {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
+  const NS_MATERIAL = "http://schemas.microsoft.com/3dmanufacturing/material/2015/02";
+
+  function filhoDireto(el, tag) {
+    for (let i = 0; i < el.childNodes.length; i++) {
+      const n = el.childNodes[i];
+      if (n.nodeType === 1 && n.nodeName.toLowerCase() === tag) return n;
+    }
+    return null;
+  }
+
+  function filhosDiretos(el, tag) {
+    const out = [];
+    for (let i = 0; i < el.childNodes.length; i++) {
+      const n = el.childNodes[i];
+      if (n.nodeType === 1 && n.nodeName.toLowerCase() === tag) out.push(n);
+    }
+    return out;
+  }
+
+  function acharObjectPorId(doc, objectId) {
+    const objetos = doc.getElementsByTagName("object");
+    for (let i = 0; i < objetos.length; i++) {
+      if (objetos[i].getAttribute("id") === String(objectId)) return objetos[i];
+    }
+    return null;
+  }
+
+  // Edita, no texto XML de um dos arquivos .model do pacote original, só os
+  // <triangle> das regiões pintadas (adiciona pid/p1 e um <m:colorgroup> novo
+  // com id que não colida com nenhum recurso já existente nesse arquivo).
+  // Tudo mais no XML (metadados, outros objects, extensões desconhecidas)
+  // permanece intacto.
+  function injetarCoresNoXml(xmlText, porObjeto) {
+    const doc = new DOMParser().parseFromString(xmlText, "application/xml");
+    const modelEl = doc.documentElement;
+
+    if (!modelEl.getAttribute("xmlns:m")) {
+      modelEl.setAttribute("xmlns:m", NS_MATERIAL);
+    }
+
+    const resourcesEl = filhoDireto(modelEl, "resources");
+    if (!resourcesEl) return xmlText;
+
+    const idsUsados = new Set();
+    (function coletarIds(el) {
+      for (let i = 0; i < el.childNodes.length; i++) {
+        const n = el.childNodes[i];
+        if (n.nodeType === 1) {
+          const id = n.getAttribute && n.getAttribute("id");
+          if (id) idsUsados.add(id);
+          coletarIds(n);
+        }
+      }
+    })(resourcesEl);
+
+    let colorGroupId = 900001;
+    while (idsUsados.has(String(colorGroupId))) colorGroupId++;
+
+    const colorToIndex = new Map();
+    const cores = [];
+    function indiceDaCor(r, g, b) {
+      const chave = r + "," + g + "," + b;
+      let idx = colorToIndex.get(chave);
+      if (idx === undefined) {
+        idx = cores.length;
+        cores.push([r, g, b]);
+        colorToIndex.set(chave, idx);
+      }
+      return idx;
+    }
+
+    porObjeto.forEach((lista, objectId) => {
+      const objectEl = acharObjectPorId(doc, objectId);
+      if (!objectEl) return;
+      const meshEl = filhoDireto(objectEl, "mesh");
+      if (!meshEl) return;
+      const trianglesEl = filhoDireto(meshEl, "triangles");
+      if (!trianglesEl) return;
+      const triEls = filhosDiretos(trianglesEl, "triangle");
+      lista.forEach(({ localIndex, r, g, b }) => {
+        const triEl = triEls[localIndex];
+        if (!triEl) return;
+        const pIndex = indiceDaCor(r, g, b);
+        triEl.setAttribute("pid", String(colorGroupId));
+        triEl.setAttribute("p1", String(pIndex));
+      });
+    });
+
+    if (cores.length) {
+      const colorGroupEl = doc.createElementNS(NS_MATERIAL, "m:colorgroup");
+      colorGroupEl.setAttribute("id", String(colorGroupId));
+      cores.forEach((c) => {
+        const colorEl = doc.createElementNS(NS_MATERIAL, "m:color");
+        colorEl.setAttribute("color", rgbToHex3mf(c));
+        colorGroupEl.appendChild(colorEl);
+      });
+      resourcesEl.insertBefore(colorGroupEl, resourcesEl.firstChild);
+    }
+
+    // Serializar o Document inteiro (em vez de só o elemento raiz) já inclui
+    // a declaração <?xml ...?> em navegadores baseados em Chromium — repeti-la
+    // aqui geraria uma segunda declaração e um XML inválido.
+    const serializado = new XMLSerializer().serializeToString(doc);
+    return /^<\?xml/.test(serializado) ? serializado : '<?xml version="1.0" encoding="UTF-8"?>\n' + serializado;
+  }
+
+  // Caminho usado quando o arquivo de origem é um .3mf: reabre o zip
+  // original e escreve as cores diretamente nos <triangle> de onde vieram,
+  // sem tocar em Metadata/, thumbnails ou qualquer outro arquivo do pacote —
+  // evita o aviso de "configuração inválida" do Bambu Studio, que aparece
+  // quando o pacote deixa de parecer um projeto legítimo.
+  function exportarModeloPreservandoPacote() {
+    outEl.textContent = "Gerando arquivo 3MF...";
+
+    const porArquivo = new Map();
+    for (let t = 0; t < state.triCount; t++) {
+      const origem = state.triangleOrigins[t];
+      if (!origem) continue;
+      let porObjeto = porArquivo.get(origem.path);
+      if (!porObjeto) {
+        porObjeto = new Map();
+        porArquivo.set(origem.path, porObjeto);
+      }
+      let lista = porObjeto.get(origem.objectId);
+      if (!lista) {
+        lista = [];
+        porObjeto.set(origem.objectId, lista);
+      }
+      lista.push({
+        localIndex: origem.localIndex,
+        r: state.baseColors[t * 3],
+        g: state.baseColors[t * 3 + 1],
+        b: state.baseColors[t * 3 + 2]
+      });
+    }
+
+    const zip = state.zip;
+    const tarefas = Array.from(porArquivo.keys()).map((path) => {
+      const entry = zip.file(path);
+      if (!entry) return Promise.resolve();
+      return entry.async("text").then((xmlText) => {
+        zip.file(path, injetarCoresNoXml(xmlText, porArquivo.get(path)));
+      });
+    });
+
+    Promise.all(tarefas)
+      .then(() => zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } }))
+      .then((blob) => {
+        baixarBlob(blob, nomeArquivoSaida(state.fileName));
+        outEl.textContent = "3MF colorido baixado.";
+      })
+      .catch((err) => {
+        if (window.console && console.error) console.error("Colorir 3MF:", err);
+        outEl.textContent = "Não foi possível gerar o arquivo 3MF.";
+      });
+  }
+
   function exportarModelo() {
+    if (state.zip && state.triangleOrigins) {
+      exportarModeloPreservandoPacote();
+      return;
+    }
+    exportarModeloDoZero();
+  }
+
+  // Caminho usado quando o arquivo de origem é um .stl (não existe pacote
+  // 3MF original pra preservar): monta um .3mf novo do zero via JSZip.
+  function exportarModeloDoZero() {
     outEl.textContent = "Gerando arquivo 3MF...";
 
     const colorToIndex = new Map();
