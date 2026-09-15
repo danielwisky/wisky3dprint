@@ -43,6 +43,8 @@ if (root) {
   const AVISO_TRIANGULOS_GRANDE = 150000;
   const MAX_UNDO = 20;
   const PALETA_PRESETS = ["#3fb6e8", "#ff6b4a", "#8b7cf6", "#5cd65c", "#ffd633", "#ff4fa3", "#4dd0e1", "#ffa726"];
+  const DEFAULT_COLOR_HEX =
+    "#" + DEFAULT_COLOR.map((n) => n.toString(16).padStart(2, "0")).join("");
   // Tolerância fixa do balde: 0° exato só pega o triângulo clicado em malhas
   // orgânicas bem trianguladas (STL de scan/escultura), já que ali quase
   // nenhum triângulo vizinho tem normal idêntica — o clique parecia "não
@@ -735,7 +737,11 @@ if (root) {
       cornerExportIndex,
       exportVertices,
       undoStack: [],
-      paleta: [{ hex: PALETA_PRESETS[0] }],
+      // O slot 1 começa com a mesma cor cinza do "não pintado" (DEFAULT_COLOR)
+      // — assim dá pra recolorir de uma vez toda a área ainda não pintada só
+      // trocando a cor desse slot (mesmo mecanismo de replace do editor de
+      // paleta), sem precisar pintar triângulo por triângulo.
+      paleta: [{ hex: DEFAULT_COLOR_HEX }],
       paletaAtivaIndex: 0,
       // Presentes só quando o arquivo original é um .3mf: permitem, na
       // exportação, remendar o pacote original (preservando Metadata/,
@@ -1317,7 +1323,9 @@ if (root) {
 
   paletaAddBtn.addEventListener("click", () => {
     if (!state) return;
-    paletaNovaCorInput.value = PALETA_PRESETS[state.paleta.length % PALETA_PRESETS.length];
+    // O slot 1 (índice 0) é o cinza default, não um preset — os presets
+    // começam a valer a partir do primeiro slot adicionado.
+    paletaNovaCorInput.value = PALETA_PRESETS[(state.paleta.length - 1) % PALETA_PRESETS.length];
     paletaNovaCorInput.click();
   });
 
