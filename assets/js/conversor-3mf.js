@@ -214,10 +214,7 @@
   function mesclarBBox(a, b) {
     if (!a) return b;
     if (!b) return a;
-    return {
-      minX: Math.min(a.minX, b.minX), minY: Math.min(a.minY, b.minY), minZ: Math.min(a.minZ, b.minZ),
-      maxX: Math.max(a.maxX, b.maxX), maxY: Math.max(a.maxY, b.maxY), maxZ: Math.max(a.maxZ, b.maxZ)
-    };
+    return ModelParser.mergeBBox(a, b);
   }
 
   // Junta o bbox dos itens (retornados por ModelParser.parse3MFPackage) de
@@ -381,16 +378,7 @@
     return base + "_" + slug + ".3mf";
   }
 
-  function baixarBlob(blob, nomeArquivo) {
-    var a = document.createElement("a");
-    var url = URL.createObjectURL(blob);
-    a.href = url;
-    a.download = nomeArquivo;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-  }
+  var baixarBlob = ModelParser.baixarBlob;
 
   function nomeArquivoZip(nomeOriginal) {
     return nomeOriginal.replace(/\.3mf$/i, "") + "-convertidos.zip";
@@ -468,19 +456,17 @@
         var perfis = resultados[1];
         zipRef = zip;
 
-        var configFiles = zip.file(/project_settings\.config$/i);
-        if (!configFiles.length) throw new Error("project_settings.config não encontrado");
+        var configFile = ModelParser.localizarArquivoUnico(zip, "project_settings.config");
+        if (!configFile) throw new Error("project_settings.config não encontrado");
 
-        var modelFiles = zip.file(/(^|\/)3D\/3dmodel\.model$/i);
-        if (!modelFiles.length) modelFiles = zip.file(/3dmodel\.model$/i);
-
-        var modelSettingsFiles = zip.file(/model_settings\.config$/i);
+        var modelFile = ModelParser.localizarModeloRaiz(zip);
+        var modelSettingsFile = ModelParser.localizarArquivoUnico(zip, "model_settings.config");
 
         return Promise.all([
-          configFiles[0].async("text"),
-          configFiles[0].name,
-          modelFiles.length ? modelFiles[0].async("text") : Promise.resolve(null),
-          modelSettingsFiles.length ? modelSettingsFiles[0].async("text") : Promise.resolve(null)
+          configFile.async("text"),
+          configFile.name,
+          modelFile ? modelFile.async("text") : Promise.resolve(null),
+          modelSettingsFile ? modelSettingsFile.async("text") : Promise.resolve(null)
         ]).then(function (r) {
           return { perfis: perfis, configText: r[0], configPath: r[1], modelText: r[2], modelSettingsText: r[3] };
         });

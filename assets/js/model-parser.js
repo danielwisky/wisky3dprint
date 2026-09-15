@@ -206,49 +206,95 @@ window.Wisky3D = window.Wisky3D || {};
     return bbox;
   }
 
-  // Resolve um <object> do 3MF (mesh direta e/ou <components> apontando pra
-  // outros objects, no mesmo arquivo ou em arquivos externos via p:path,
-  // padrão usado por fatiadores como Bambu Studio/Orca em modelos multi-peça).
-  // O volume de cada mesh-folha é somado em módulo (abs) individualmente,
-  // pra não zerar o total quando um componente vem espelhado (transform com
-  // determinante negativo, comum em peças simétricas). Não retém os
-  // triângulos resolvidos em memória, só contagem/volume/bbox, porque
-  // modelos reais multi-peça (ex: miniaturas Bambu Studio) podem passar de
-  // 3-4 milhões de triângulos e manter tudo em arrays de arrays estouraria
-  // memória no navegador sem necessidade (só usamos os agregados).
-  function resolveObjectGeometry(zip, docCache, doc, objectId, accumTransform) {
+  // Travessia recursiva de um <object> do 3MF (mesh direta e/ou <components>
+  // apontando pra outros objects, no mesmo arquivo ou em arquivos externos via
+  // p:path, padrão usado por fatiadores como Bambu Studio/Orca em modelos
+  // multi-peça), compartilhada entre resolveObjectGeometry (só agrega
+  // volume/área/bbox) e resolveObjectTriangles (retém os triângulos de
+  // verdade, pra ferramenta de colorir). Pra cada mesh-folha encontrada,
+  // chama `onMesh(leafTriangles, localIndices, meshBbox, path, objectId)` com
+  // os triângulos já com transform acumulado aplicado; quem chamou decide o
+  // que fazer com eles (somar agregados ou empilhar num array de saída).
+  // `path` é o arquivo (dentro do zip) de onde o object desse nível veio,
+  // repassado como está pra components locais e trocado pelo p:path
+  // resolvido pra components externos.
+  function resolveObjectRecursivo(zip, docCache, doc, objectId, accumTransform, path, onMesh) {
     var objectEl = findObjectElement(doc, objectId);
-    if (!objectEl) return Promise.resolve({ triangleCount: 0, volumeMm3: 0, areaMm2: 0, bbox: bboxVazio() });
+    if (!objectEl) return Promise.resolve();
 
     var meshEl = directChild(objectEl, "mesh");
-    var triangleCount = 0;
-    var volumeMm3 = 0;
-    var areaMm2 = 0;
-    var bbox = bboxVazio();
-
     if (meshEl) {
       var verticesEl = directChild(meshEl, "vertices");
       var trianglesEl = directChild(meshEl, "triangles");
       var vertexEls = verticesEl ? directChildren(verticesEl, "vertex") : [];
+      var meshBbox = bboxVazio();
       var vertices = vertexEls.map(function (v) {
         var p = applyTransform([
           parseFloat(v.getAttribute("x")),
           parseFloat(v.getAttribute("y")),
           parseFloat(v.getAttribute("z"))
         ], accumTransform);
-        estenderBBox(bbox, p);
+        estenderBBox(meshBbox, p);
         return p;
       });
       var triEls = trianglesEl ? directChildren(trianglesEl, "triangle") : [];
       var leafTriangles = [];
-      triEls.forEach(function (t) {
+      var localIndices = [];
+      triEls.forEach(function (t, localIndex) {
         var i1 = parseInt(t.getAttribute("v1"), 10);
         var i2 = parseInt(t.getAttribute("v2"), 10);
         var i3 = parseInt(t.getAttribute("v3"), 10);
         if (vertices[i1] && vertices[i2] && vertices[i3]) {
           leafTriangles.push([vertices[i1], vertices[i2], vertices[i3]]);
+          localIndices.push(localIndex);
         }
       });
+      if (vertexEls.length) onMesh(leafTriangles, localIndices, meshBbox, path, objectId);
+    }
+
+    var componentsEl = directChild(objectEl, "components");
+    if (!componentsEl) return Promise.resolve();
+
+    var promises = directChildren(componentsEl, "component").map(function (comp) {
+      var childObjectId = comp.getAttribute("objectid");
+      var childTransform = parseTransformAttr(comp.getAttribute("transform"));
+      var combined = composeTransform(accumTransform, childTransform);
+      var compPath = comp.getAttribute("p:path");
+
+      if (compPath) {
+        var normalizedPath = compPath.replace(/^\//, "");
+        var docPromise = docCache[normalizedPath];
+        if (!docPromise) {
+          var zipEntry = zip.file(normalizedPath);
+          if (!zipEntry) return Promise.resolve();
+          docPromise = zipEntry.async("text").then(parseXmlDoc);
+          docCache[normalizedPath] = docPromise;
+        }
+        return docPromise.then(function (extDoc) {
+          return resolveObjectRecursivo(zip, docCache, extDoc, childObjectId, combined, normalizedPath, onMesh);
+        });
+      }
+      return resolveObjectRecursivo(zip, docCache, doc, childObjectId, combined, path, onMesh);
+    });
+
+    return Promise.all(promises);
+  }
+
+  // Só agrega volume/área/bbox (soma o volume de cada mesh-folha em módulo,
+  // pra não zerar o total quando um componente vem espelhado, transform com
+  // determinante negativo, comum em peças simétricas). Não retém os
+  // triângulos resolvidos em memória, porque modelos reais multi-peça (ex:
+  // miniaturas Bambu Studio) podem passar de 3-4 milhões de triângulos e
+  // manter tudo em arrays de arrays estouraria memória no navegador sem
+  // necessidade (só usamos os agregados).
+  function resolveObjectGeometry(zip, docCache, doc, objectId, accumTransform) {
+    var triangleCount = 0;
+    var volumeMm3 = 0;
+    var areaMm2 = 0;
+    var bbox = bboxVazio();
+
+    function onMesh(leafTriangles, localIndices, meshBbox) {
+      bbox = mergeBBox(bbox, meshBbox);
       if (leafTriangles.length) {
         volumeMm3 += computeMeshVolumeMm3(leafTriangles);
         areaMm2 += computeMeshAreaMm2(leafTriangles);
@@ -256,38 +302,7 @@ window.Wisky3D = window.Wisky3D || {};
       }
     }
 
-    var componentsEl = directChild(objectEl, "components");
-    if (!componentsEl) return Promise.resolve({ triangleCount: triangleCount, volumeMm3: volumeMm3, areaMm2: areaMm2, bbox: bbox });
-
-    var promises = directChildren(componentsEl, "component").map(function (comp) {
-      var childObjectId = comp.getAttribute("objectid");
-      var childTransform = parseTransformAttr(comp.getAttribute("transform"));
-      var combined = composeTransform(accumTransform, childTransform);
-      var path = comp.getAttribute("p:path");
-
-      if (path) {
-        var normalizedPath = path.replace(/^\//, "");
-        var docPromise = docCache[normalizedPath];
-        if (!docPromise) {
-          var zipEntry = zip.file(normalizedPath);
-          if (!zipEntry) return Promise.resolve({ triangleCount: 0, volumeMm3: 0, areaMm2: 0, bbox: bboxVazio() });
-          docPromise = zipEntry.async("text").then(parseXmlDoc);
-          docCache[normalizedPath] = docPromise;
-        }
-        return docPromise.then(function (extDoc) {
-          return resolveObjectGeometry(zip, docCache, extDoc, childObjectId, combined);
-        });
-      }
-      return resolveObjectGeometry(zip, docCache, doc, childObjectId, combined);
-    });
-
-    return Promise.all(promises).then(function (results) {
-      results.forEach(function (r) {
-        triangleCount += r.triangleCount;
-        volumeMm3 += r.volumeMm3;
-        areaMm2 += r.areaMm2;
-        bbox = mergeBBox(bbox, r.bbox);
-      });
+    return resolveObjectRecursivo(zip, docCache, doc, objectId, accumTransform, null, onMesh).then(function () {
       return { triangleCount: triangleCount, volumeMm3: volumeMm3, areaMm2: areaMm2, bbox: bbox };
     });
   }
@@ -348,70 +363,24 @@ window.Wisky3D = window.Wisky3D || {};
     });
   }
 
-  // Mesma travessia de <object>/<components> do resolveObjectGeometry acima,
-  // mas guardando os triângulos (com transform já aplicado) em vez de só
-  // agregados. Usado pela ferramenta de colorir, que precisa da malha de
-  // verdade pra pintar, não só volume/bbox.
-  // `path` é o arquivo (dentro do zip) de onde o <object> desse nível veio, e
+  // Mesma travessia de <object>/<components> do resolveObjectGeometry acima
+  // (resolveObjectRecursivo), mas guardando os triângulos (com transform já
+  // aplicado) em vez de só agregados. Usado pela ferramenta de colorir, que
+  // precisa da malha de verdade pra pintar, não só volume/bbox.
   // `outOrigins` acompanha `outTriangulos` índice a índice com {path,
   // objectId, localIndex}. localIndex é a posição do triângulo dentro do
   // <triangles> original daquele object/arquivo. Isso permite, na exportação,
   // reabrir o pacote 3MF original e escrever a cor de volta nos <triangle>
   // exatos de onde vieram, em vez de reconstruir o pacote do zero.
   function resolveObjectTriangles(zip, docCache, doc, objectId, accumTransform, outTriangulos, path, outOrigins) {
-    var objectEl = findObjectElement(doc, objectId);
-    if (!objectEl) return Promise.resolve();
-
-    var meshEl = directChild(objectEl, "mesh");
-    if (meshEl) {
-      var verticesEl = directChild(meshEl, "vertices");
-      var trianglesEl = directChild(meshEl, "triangles");
-      var vertexEls = verticesEl ? directChildren(verticesEl, "vertex") : [];
-      var vertices = vertexEls.map(function (v) {
-        return applyTransform([
-          parseFloat(v.getAttribute("x")),
-          parseFloat(v.getAttribute("y")),
-          parseFloat(v.getAttribute("z"))
-        ], accumTransform);
-      });
-      var triEls = trianglesEl ? directChildren(trianglesEl, "triangle") : [];
-      triEls.forEach(function (t, localIndex) {
-        var i1 = parseInt(t.getAttribute("v1"), 10);
-        var i2 = parseInt(t.getAttribute("v2"), 10);
-        var i3 = parseInt(t.getAttribute("v3"), 10);
-        if (vertices[i1] && vertices[i2] && vertices[i3]) {
-          outTriangulos.push([vertices[i1], vertices[i2], vertices[i3]]);
-          outOrigins.push({ path: path, objectId: objectId, localIndex: localIndex });
-        }
+    function onMesh(leafTriangles, localIndices, meshBbox, meshPath, meshObjectId) {
+      leafTriangles.forEach(function (tri, i) {
+        outTriangulos.push(tri);
+        outOrigins.push({ path: meshPath, objectId: meshObjectId, localIndex: localIndices[i] });
       });
     }
 
-    var componentsEl = directChild(objectEl, "components");
-    if (!componentsEl) return Promise.resolve();
-
-    var promises = directChildren(componentsEl, "component").map(function (comp) {
-      var childObjectId = comp.getAttribute("objectid");
-      var childTransform = parseTransformAttr(comp.getAttribute("transform"));
-      var combined = composeTransform(accumTransform, childTransform);
-      var compPath = comp.getAttribute("p:path");
-
-      if (compPath) {
-        var normalizedPath = compPath.replace(/^\//, "");
-        var docPromise = docCache[normalizedPath];
-        if (!docPromise) {
-          var zipEntry = zip.file(normalizedPath);
-          if (!zipEntry) return Promise.resolve();
-          docPromise = zipEntry.async("text").then(parseXmlDoc);
-          docCache[normalizedPath] = docPromise;
-        }
-        return docPromise.then(function (extDoc) {
-          return resolveObjectTriangles(zip, docCache, extDoc, childObjectId, combined, outTriangulos, normalizedPath, outOrigins);
-        });
-      }
-      return resolveObjectTriangles(zip, docCache, doc, childObjectId, combined, outTriangulos, path, outOrigins);
-    });
-
-    return Promise.all(promises);
+    return resolveObjectRecursivo(zip, docCache, doc, objectId, accumTransform, path, onMesh);
   }
 
   // Extrai a malha de um pacote 3MF já aberto (JSZip) como array de
@@ -454,6 +423,40 @@ window.Wisky3D = window.Wisky3D || {};
     });
   }
 
+  // Acha o 3dmodel.model dentro de um pacote 3MF (JSZip já carregado). Tenta
+  // primeiro o caminho padrão (3D/3dmodel.model); alguns pacotes de terceiros
+  // usam outro caminho, daí o fallback por nome de arquivo em qualquer pasta.
+  function localizarModeloRaiz(zip) {
+    var arquivos = zip.file(/(^|\/)3D\/3dmodel\.model$/i);
+    if (!arquivos.length) arquivos = zip.file(/3dmodel\.model$/i);
+    return arquivos.length ? arquivos[0] : null;
+  }
+
+  // Acha um arquivo de Metadata/ pelo nome (ex.: "project_settings.config"),
+  // em qualquer subpasta do pacote. Ancorado no início do nome do arquivo
+  // (precedido só por "/" ou início da string) para não casar por engano com
+  // um arquivo tipo "meuproject_settings.config".
+  function localizarArquivoUnico(zip, nomeArquivo) {
+    var escapado = nomeArquivo.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    var arquivos = zip.file(new RegExp("(^|/)" + escapado + "$", "i"));
+    return arquivos.length ? arquivos[0] : null;
+  }
+
+  // Baixa um blob como arquivo, revogando a URL temporária logo depois. O
+  // setTimeout (em vez de revogar na hora) evita cortar o download em
+  // navegadores que só começam a gravar o arquivo de fato um instante depois
+  // do clique sintético.
+  function baixarBlob(blob, nomeArquivo) {
+    var a = document.createElement("a");
+    var url = URL.createObjectURL(blob);
+    a.href = url;
+    a.download = nomeArquivo;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
   function parse3MFPerfil(configText) {
     var densidadeMatch = configText.match(/"filament_density"\s*:\s*\[\s*"([\d.]+)"/);
     var diametroMatch = configText.match(/"filament_diameter"\s*:\s*\[\s*"([\d.]+)"/);
@@ -474,6 +477,13 @@ window.Wisky3D = window.Wisky3D || {};
     computeMeshVolumeMm3: computeMeshVolumeMm3,
     computeMeshAreaMm2: computeMeshAreaMm2,
     bboxVazio: bboxVazio,
+    mergeBBox: mergeBBox,
+    directChild: directChild,
+    directChildren: directChildren,
+    findObjectElement: findObjectElement,
+    localizarModeloRaiz: localizarModeloRaiz,
+    localizarArquivoUnico: localizarArquivoUnico,
+    baixarBlob: baixarBlob,
     parse3MFPackage: parse3MFPackage,
     extractTriangles3MF: extractTriangles3MF,
     parse3MFPerfil: parse3MFPerfil

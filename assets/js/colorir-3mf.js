@@ -781,11 +781,10 @@ if (root) {
     }
 
     return JSZip.loadAsync(file).then((zip) => {
-      let modelFiles = zip.file(/(^|\/)3D\/3dmodel\.model$/i);
-      if (!modelFiles.length) modelFiles = zip.file(/3dmodel\.model$/i);
-      if (!modelFiles.length) throw new Error("3dmodel.model não encontrado no pacote 3MF");
-      const rootPath = modelFiles[0].name;
-      return modelFiles[0].async("text").then((modelText) =>
+      const modelFile = ModelParser.localizarModeloRaiz(zip);
+      if (!modelFile) throw new Error("3dmodel.model não encontrado no pacote 3MF");
+      const rootPath = modelFile.name;
+      return modelFile.async("text").then((modelText) =>
         ModelParser.extractTriangles3MF(zip, modelText, rootPath).then((resultado) => ({
           triangulos: resultado.triangulos,
           origins: resultado.origins,
@@ -843,35 +842,12 @@ if (root) {
     return nomeOriginal.replace(/\.(stl|3mf)$/i, "") + "-colorido.3mf";
   }
 
-  function baixarBlob(blob, nomeArquivo) {
-    const a = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    a.href = url;
-    a.download = nomeArquivo;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }
+  const baixarBlob = ModelParser.baixarBlob;
 
   const NS_MATERIAL = "http://schemas.microsoft.com/3dmanufacturing/material/2015/02";
-
-  function filhoDireto(el, tag) {
-    for (let i = 0; i < el.childNodes.length; i++) {
-      const n = el.childNodes[i];
-      if (n.nodeType === 1 && n.nodeName.toLowerCase() === tag) return n;
-    }
-    return null;
-  }
-
-  function filhosDiretos(el, tag) {
-    const out = [];
-    for (let i = 0; i < el.childNodes.length; i++) {
-      const n = el.childNodes[i];
-      if (n.nodeType === 1 && n.nodeName.toLowerCase() === tag) out.push(n);
-    }
-    return out;
-  }
+  const filhoDireto = ModelParser.directChild;
+  const filhosDiretos = ModelParser.directChildren;
+  const acharObjectPorId = ModelParser.findObjectElement;
 
   // Compara pelo nome local (ignorando prefixo de namespace), necessário para
   // achar <m:colorgroup> já existentes no arquivo, cujo prefixo pode variar
@@ -884,14 +860,6 @@ if (root) {
       if (n.nodeType === 1 && n.localName && n.localName.toLowerCase() === nomeLocal) out.push(n);
     }
     return out;
-  }
-
-  function acharObjectPorId(doc, objectId) {
-    const objetos = doc.getElementsByTagName("object");
-    for (let i = 0; i < objetos.length; i++) {
-      if (objetos[i].getAttribute("id") === String(objectId)) return objetos[i];
-    }
-    return null;
   }
 
   // Bambu Studio/OrcaSlicer ignoram o pid/p1 padrão do 3MF (extensão de
@@ -1162,7 +1130,7 @@ if (root) {
     const zip = state.zip;
     const { paleta, slotPorCor } = coresPintadasGlobal();
 
-    const configEntry = zip.file(/(^|\/)project_settings\.config$/i)[0];
+    const configEntry = ModelParser.localizarArquivoUnico(zip, "project_settings.config");
     const configPromise = configEntry
       ? configEntry.async("text").then((texto) => {
           try {
@@ -1179,7 +1147,7 @@ if (root) {
         })
       : Promise.resolve(null);
 
-    const modelSettingsEntry = zip.file(/(^|\/)model_settings\.config$/i)[0];
+    const modelSettingsEntry = ModelParser.localizarArquivoUnico(zip, "model_settings.config");
 
     const tarefas = configPromise.then((numSlots) => {
       const slotPorCorAtivo = numSlots ? slotPorCor : null;

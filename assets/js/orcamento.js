@@ -525,14 +525,7 @@
     }).join("\r\n");
 
     var blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement("a");
-    a.href = url;
-    a.download = "orcamento.csv";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    ModelParser.baixarBlob(blob, "orcamento.csv");
   });
 
   // Safari em modo privado (e storage desabilitado) lança ao acessar
@@ -965,13 +958,12 @@
       JSZip.loadAsync(file)
         .then(function (zip) {
           zipRef = zip;
-          var modelFiles = zip.file(/(^|\/)3D\/3dmodel\.model$/i);
-          if (!modelFiles.length) modelFiles = zip.file(/3dmodel\.model$/i);
-          if (!modelFiles.length) throw new Error("modelo não encontrado no 3MF");
-          var configFiles = zip.file(/project_settings\.config$/i);
+          var modelFile = ModelParser.localizarModeloRaiz(zip);
+          if (!modelFile) throw new Error("modelo não encontrado no 3MF");
+          var configFile = ModelParser.localizarArquivoUnico(zip, "project_settings.config");
           return Promise.all([
-            modelFiles[0].async("text"),
-            configFiles.length ? configFiles[0].async("text") : Promise.resolve(null)
+            modelFile.async("text"),
+            configFile ? configFile.async("text") : Promise.resolve(null)
           ]);
         })
         .then(function (resultados) {
