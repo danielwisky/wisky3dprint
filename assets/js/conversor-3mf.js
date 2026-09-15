@@ -1,6 +1,6 @@
 (function () {
 // ---------------------------------------------------------------------------
-// BLOCO: Conversor 3MF — troca o perfil de máquina de um projeto 3MF já
+// BLOCO: Conversor 3MF. Troca o perfil de máquina de um projeto 3MF já
 // fatiado (Bambu Studio/Orca Slicer) pelo de outra impressora, mantendo
 // todos os ajustes de processo escolhidos pelo usuário (suporte, preenchimento,
 // paredes, velocidades, filamento etc.) e sobrescrevendo só os campos que
@@ -35,7 +35,7 @@
   var destinosData = null; // { perfis, chaveDetectada, bbox }
 
   // Prefixos de campos que descrevem o hardware da impressora de destino
-  // (mesa, extrusores, gcode de máquina, AMS) — únicos sobrescritos pelo
+  // (mesa, extrusores, gcode de máquina, AMS), únicos sobrescritos pelo
   // perfil de destino. Todo o resto do projeto original do usuário é mantido.
   var PREFIXOS_CAMPOS_DESTINO = [
     "printer_", "machine_", "extruder_", "bed_", "printable_", "ams_"

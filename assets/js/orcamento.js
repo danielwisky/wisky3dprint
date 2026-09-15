@@ -136,7 +136,7 @@
 
   // A perda/retrabalho é aplicada sobre o subtotal (filamento + energia +
   // desgaste + hardware): equivale a reimprimir essa fração das peças do
-  // item. Embalagem e frete são valores de repasse — entram só no total
+  // item. Embalagem e frete são valores de repasse: entram só no total
   // final, sem incidência de perda nem de margem de lucro.
   function computeItem() {
     var g = parseNum(peso.value);
@@ -426,7 +426,7 @@
     var total = 0;
 
     // Colunas de Embalagem/Frete só aparecem no orçamento impresso se algum
-    // item do orçamento de fato usa esses valores — evita poluir a tabela
+    // item do orçamento de fato usa esses valores. Evita poluir a tabela
     // com colunas zeradas.
     var temEmbalagem = itens.some(function (item) { return item.embalagem > 0; });
     var temFrete = itens.some(function (item) { return item.frete > 0; });
@@ -536,7 +536,7 @@
   });
 
   // Safari em modo privado (e storage desabilitado) lança ao acessar
-  // localStorage — protege igual ao padrão já usado em main.js.
+  // localStorage. Protege igual ao padrão já usado em main.js.
   function lsGet(key) {
     try { return localStorage.getItem(key); } catch (e) { return null; }
   }
@@ -565,7 +565,7 @@
   ];
 
   // Defaults do _config.yml chegam como float JS (ponto decimal, ex.: "0.8"),
-  // mas os campos são lidos com parseNumeroPtBr (vírgula decimal) — sem essa
+  // mas os campos são lidos com parseNumeroPtBr (vírgula decimal). Sem essa
   // conversão o "0.8" seria lido como 8.
   function paraPtBr(valor) {
     return String(valor).replace(".", ",");
@@ -735,7 +735,7 @@
 
     var larguraExtrusao = parseFloat(d.larguraExtrusaoMm) || 0.4;
 
-    // Volume "real" de material: a peça não é só infill uniforme — as
+    // Volume "real" de material: a peça não é só infill uniforme, as
     // paredes (perímetros sólidos) ficam por cima do infill e, em modelos
     // com muitas peças pequenas/finas, costumam pesar mais que o miolo.
     // Aproxima a casca como área de superfície × espessura de parede
@@ -760,7 +760,7 @@
       ? (volumeMaterialMm3 / vazaoMm3S + nCamadas * overheadPorCamada) / 60
       : 0;
 
-    // Arredonda o total antes de separar em horas/minutos — arredondar cada
+    // Arredonda o total antes de separar em horas/minutos. Arredondar cada
     // parte isoladamente pode gerar "60min" (ex.: 179.6min viraria 2h 60min).
     var tempoTotalMinArred = Math.round(tempoTotalMin);
     horas.value = Math.floor(tempoTotalMinArred / 60);
@@ -816,7 +816,7 @@
       modeloDensidadeOut.textContent = perfilDoArquivo.densidade + " g/cm³";
       modeloDensidadeRow.hidden = false;
       // Perfil do fatiador embutido no 3MF (Bambu/Orca): usa como ponto de
-      // partida quando disponível, mas continua editável — o usuário pode
+      // partida quando disponível, mas continua editável: o usuário pode
       // ajustar antes de calcular.
       if (perfilDoArquivo.paredes) paredesInput.value = perfilDoArquivo.paredes;
       if (perfilDoArquivo.infillPct != null) infillInput.value = perfilDoArquivo.infillPct;
@@ -829,7 +829,7 @@
     modeloBadge.hidden = false;
     modeloAbrirBtn.hidden = true;
     // Não fecha o modal sozinho: o usuário pode querer ajustar material,
-    // infill, paredes, altura de camada ou velocidade antes de fechar —
+    // infill, paredes, altura de camada ou velocidade antes de fechar:
     // fechar automaticamente escondia esses campos logo após o cálculo.
     // O botão "Concluir" deixa esse fechamento explícito.
     modeloConcluirWrap.hidden = false;
@@ -900,7 +900,7 @@
     pesoAutoTag.hidden = true;
     tempoAutoTag.hidden = true;
 
-    // Peso/tempo vieram do modelo removido — sem ele deixam de fazer
+    // Peso/tempo vieram do modelo removido. Sem ele deixam de fazer
     // sentido, então volta pro estado de preenchimento manual.
     peso.value = "";
     horas.value = "";
