@@ -886,13 +886,15 @@ if (root) {
     return ("#" + toHex(c[0]) + toHex(c[1]) + toHex(c[2])).toUpperCase();
   }
 
-  // Varre todos os triângulos já pintados nesta ferramenta (cor diferente do
-  // cinza default) e monta a paleta final de cores, na ordem em que aparecem,
-  // junto com o mapa cor -> slot (1-based). Se nada foi pintado, devolve uma
-  // paleta vazia (o export então usa 1 slot cinza default).
+  // Monta a paleta final de filamentos: o slot 1 é sempre o cinza default (é
+  // nele que caem os triângulos não pintados, já que ficam sem paint_color e
+  // usam o extrusor/filamento padrão do objeto) e os slots seguintes são as
+  // cores efetivamente pintadas nesta ferramenta, na ordem em que aparecem.
+  // Sem isso, o slot 1 acabava sendo a primeira cor pintada e as áreas não
+  // pintadas eram exibidas com essa cor em vez de cinza.
   function coresPintadasGlobal() {
     const slotPorCor = new Map();
-    const paleta = [];
+    const paleta = [DEFAULT_COLOR];
     for (let t = 0; t < state.triCount; t++) {
       const r = state.baseColors[t * 3], g = state.baseColors[t * 3 + 1], b = state.baseColors[t * 3 + 2];
       if (r === DEFAULT_COLOR[0] && g === DEFAULT_COLOR[1] && b === DEFAULT_COLOR[2]) continue;
@@ -906,20 +908,20 @@ if (root) {
   }
 
   // Reconstrói Metadata/project_settings.config para ter exatamente um slot de
-  // filamento por cor pintada nesta ferramenta (ou 1 slot cinza default, se
-  // nada foi pintado) — em vez de aproximar a pintura aos slots de AMS que já
+  // filamento por cor da paleta (slot 1 = cinza default, os demais = cores
+  // pintadas) — em vez de aproximar a pintura aos slots de AMS que já
   // existiam no projeto. Todo ajuste de configuração que não seja a própria
   // cor (perfil de temperatura, tipo de material, id do preset etc.) é clonado
   // do slot 0 original, que no fluxo do Bambu Studio já é o "Bambu PLA Basic"
-  // — assim o novo slot herda o mesmo preset/perfil de impressora do projeto,
-  // sem a ferramenta precisar adivinhar qual variante do PLA Basic usar.
+  // — assim os novos slots herdam o mesmo preset/perfil de impressora do
+  // projeto, sem a ferramenta precisar adivinhar qual variante do PLA Basic
+  // usar.
   function reconstruirProjectSettings(cfgOriginal, paleta) {
     const nAntigo = Array.isArray(cfgOriginal.filament_colour) ? cfgOriginal.filament_colour.length : 0;
     if (!nAntigo) return null;
 
     const cfg = JSON.parse(JSON.stringify(cfgOriginal));
-    const coresFinais = paleta.length ? paleta : [DEFAULT_COLOR];
-    const n = coresFinais.length;
+    const n = paleta.length;
 
     Object.keys(cfg).forEach((chave) => {
       const valor = cfg[chave];
@@ -928,10 +930,10 @@ if (root) {
       }
     });
 
-    cfg.filament_colour = coresFinais.map(rgbParaHexBambu);
+    cfg.filament_colour = paleta.map(rgbParaHexBambu);
     cfg.filament_multi_colour = cfg.filament_colour.slice();
     cfg.filament_colour_type = new Array(n).fill("1");
-    cfg.filament_self_index = coresFinais.map((_, i) => String(i + 1));
+    cfg.filament_self_index = paleta.map((_, i) => String(i + 1));
     cfg.filament_map = new Array(n).fill("1");
 
     return cfg;
@@ -939,14 +941,17 @@ if (root) {
 
   // Ajusta, no texto do Metadata/model_settings.config, as listas
   // filament_maps/filament_volume_maps (uma entrada por slot de filamento)
-  // para o novo número de slots — senão ficam com o tamanho antigo e
-  // divergem do project_settings.config recém-reconstruído.
+  // para o novo número de slots, e força o extrusor/filamento padrão de cada
+  // object para o slot 1 (o cinza) — o slot original podia apontar para um
+  // índice que deixou de existir (ou que agora é outra cor) depois da
+  // reconstrução da paleta.
   function ajustarFilamentMapsNoModelSettings(xmlText, n) {
     const mapaFilamentos = new Array(n).fill("1").join(" ");
     const mapaVolumes = new Array(n).fill("0").join(" ");
     return xmlText
       .replace(/(<metadata\s+key="filament_maps"\s+value=")[^"]*(")/g, "$1" + mapaFilamentos + "$2")
-      .replace(/(<metadata\s+key="filament_volume_maps"\s+value=")[^"]*(")/g, "$1" + mapaVolumes + "$2");
+      .replace(/(<metadata\s+key="filament_volume_maps"\s+value=")[^"]*(")/g, "$1" + mapaVolumes + "$2")
+      .replace(/(<metadata\s+key="extruder"\s+value=")[^"]*(")/g, "$11$2");
   }
 
   // Edita, no texto XML de um dos arquivos .model do pacote original, só os
