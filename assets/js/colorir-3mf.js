@@ -953,6 +953,10 @@ if (root) {
         const pIndex = indiceDaCor(r, g, b);
         triEl.setAttribute("pid", String(colorGroupId));
         triEl.setAttribute("p1", String(pIndex));
+        // Sempre limpa o paint_color que já existia no triângulo (pintura
+        // feita antes, direto no Bambu Studio) para a exportação refletir só
+        // o que foi pintado nesta ferramenta — sem misturar as duas pinturas.
+        triEl.removeAttribute("paint_color");
         const foiPintado = r !== DEFAULT_COLOR[0] || g !== DEFAULT_COLOR[1] || b !== DEFAULT_COLOR[2];
         if (resolverSlot && foiPintado) {
           const slot = resolverSlot(r, g, b);
