@@ -840,12 +840,67 @@ if (root) {
     return null;
   }
 
+  // Bambu Studio/OrcaSlicer ignoram o pid/p1 padrão do 3MF (extensão de
+  // materiais) em pacotes que reconhecem como projeto nativo, e só pintam a
+  // partir do atributo proprietário "paint_color" (mesma serialização do
+  // slic3rpe:mmu_segmentation do PrusaSlicer). Para um triângulo inteiro e não
+  // dividido, o valor é: 2 bits de "não dividido" (00) + o estado (índice do
+  // slot de filamento, 1-based; valores 0-2 cabem em 2 bits, valores >=3 usam
+  // um "escape" 11 seguido de nibbles de extensão, cada 0xF valendo +15 até o
+  // nibble final somar o resto) — tudo em uma string hex com os nibbles em
+  // ordem invertida (o último caractere é o primeiro nibble do fluxo).
+  function filamentIndexParaPaintColor(indice1Based) {
+    const nibbles = [];
+    if (indice1Based < 3) {
+      nibbles.push(indice1Based << 2);
+    } else {
+      nibbles.push(3 << 2);
+      let resto = indice1Based - 3;
+      while (resto >= 15) {
+        nibbles.push(15);
+        resto -= 15;
+      }
+      nibbles.push(resto);
+    }
+    return nibbles
+      .reverse()
+      .map((n) => n.toString(16).toUpperCase())
+      .join("");
+  }
+
+  function hexParaRgb(hex) {
+    const m = /^#?([0-9a-f]{6})/i.exec(hex || "");
+    if (!m) return null;
+    const n = parseInt(m[1], 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  }
+
+  // Lê os slots de filamento já configurados no projeto original (Metadata/
+  // project_settings.config) e devolve uma função que acha, para uma cor RGB
+  // pintada, o slot existente mais próximo — usado para gerar um paint_color
+  // válido sem inventar slots novos nem mexer no perfil de AMS do usuário.
+  function criarResolvedorDeSlot(cores) {
+    if (!cores || !cores.length) return null;
+    return function (r, g, b) {
+      let melhorIdx = 0;
+      let melhorDist = Infinity;
+      cores.forEach((c, i) => {
+        if (!c) return;
+        const dr = c[0] - r, dg = c[1] - g, db = c[2] - b;
+        const dist = dr * dr + dg * dg + db * db;
+        if (dist < melhorDist) { melhorDist = dist; melhorIdx = i; }
+      });
+      return melhorIdx + 1;
+    };
+  }
+
   // Edita, no texto XML de um dos arquivos .model do pacote original, só os
   // <triangle> das regiões pintadas (adiciona pid/p1 e um <m:colorgroup> novo
-  // com id que não colida com nenhum recurso já existente nesse arquivo).
-  // Tudo mais no XML (metadados, outros objects, extensões desconhecidas)
-  // permanece intacto.
-  function injetarCoresNoXml(xmlText, porObjeto) {
+  // com id que não colida com nenhum recurso já existente nesse arquivo, e,
+  // quando o pacote tem slots de filamento configurados, também paint_color —
+  // sem o qual Bambu Studio/OrcaSlicer não mostram a cor). Tudo mais no XML
+  // (metadados, outros objects, extensões desconhecidas) permanece intacto.
+  function injetarCoresNoXml(xmlText, porObjeto, resolverSlot) {
     const doc = new DOMParser().parseFromString(xmlText, "application/xml");
     const modelEl = doc.documentElement;
 
@@ -898,6 +953,11 @@ if (root) {
         const pIndex = indiceDaCor(r, g, b);
         triEl.setAttribute("pid", String(colorGroupId));
         triEl.setAttribute("p1", String(pIndex));
+        const foiPintado = r !== DEFAULT_COLOR[0] || g !== DEFAULT_COLOR[1] || b !== DEFAULT_COLOR[2];
+        if (resolverSlot && foiPintado) {
+          const slot = resolverSlot(r, g, b);
+          triEl.setAttribute("paint_color", filamentIndexParaPaintColor(slot));
+        }
       });
     });
 
@@ -950,15 +1010,32 @@ if (root) {
     }
 
     const zip = state.zip;
-    const tarefas = Array.from(porArquivo.keys()).map((path) => {
-      const entry = zip.file(path);
-      if (!entry) return Promise.resolve();
-      return entry.async("text").then((xmlText) => {
-        zip.file(path, injetarCoresNoXml(xmlText, porArquivo.get(path)));
-      });
-    });
+    const configEntry = zip.file(/(^|\/)project_settings\.config$/i)[0];
+    const configPromise = configEntry
+      ? configEntry.async("text").then((texto) => {
+          try {
+            const cfg = JSON.parse(texto);
+            const cores = Array.isArray(cfg.filament_colour) ? cfg.filament_colour.map(hexParaRgb) : null;
+            return criarResolvedorDeSlot(cores);
+          } catch (e) {
+            return null;
+          }
+        })
+      : Promise.resolve(null);
 
-    Promise.all(tarefas)
+    const tarefas = configPromise.then((resolverSlot) =>
+      Promise.all(
+        Array.from(porArquivo.keys()).map((path) => {
+          const entry = zip.file(path);
+          if (!entry) return Promise.resolve();
+          return entry.async("text").then((xmlText) => {
+            zip.file(path, injetarCoresNoXml(xmlText, porArquivo.get(path), resolverSlot));
+          });
+        })
+      )
+    );
+
+    tarefas
       .then(() => zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } }))
       .then((blob) => {
         baixarBlob(blob, nomeArquivoSaida(state.fileName));
