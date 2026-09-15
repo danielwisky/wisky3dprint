@@ -832,6 +832,19 @@ if (root) {
     return out;
   }
 
+  // Compara pelo nome local (ignorando prefixo de namespace) — necessário para
+  // achar <m:colorgroup> já existentes no arquivo, cujo prefixo pode variar
+  // (ou nem existir, se o pacote original declarou a extensão com outro
+  // prefixo/namespace default).
+  function filhosDiretosPorNomeLocal(el, nomeLocal) {
+    const out = [];
+    for (let i = 0; i < el.childNodes.length; i++) {
+      const n = el.childNodes[i];
+      if (n.nodeType === 1 && n.localName && n.localName.toLowerCase() === nomeLocal) out.push(n);
+    }
+    return out;
+  }
+
   function acharObjectPorId(doc, objectId) {
     const objetos = doc.getElementsByTagName("object");
     for (let i = 0; i < objetos.length; i++) {
@@ -868,30 +881,72 @@ if (root) {
       .join("");
   }
 
-  function hexParaRgb(hex) {
-    const m = /^#?([0-9a-f]{6})/i.exec(hex || "");
-    if (!m) return null;
-    const n = parseInt(m[1], 16);
-    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  function rgbParaHexBambu(c) {
+    const toHex = (n) => n.toString(16).padStart(2, "0");
+    return ("#" + toHex(c[0]) + toHex(c[1]) + toHex(c[2])).toUpperCase();
   }
 
-  // Lê os slots de filamento já configurados no projeto original (Metadata/
-  // project_settings.config) e devolve uma função que acha, para uma cor RGB
-  // pintada, o slot existente mais próximo — usado para gerar um paint_color
-  // válido sem inventar slots novos nem mexer no perfil de AMS do usuário.
-  function criarResolvedorDeSlot(cores) {
-    if (!cores || !cores.length) return null;
-    return function (r, g, b) {
-      let melhorIdx = 0;
-      let melhorDist = Infinity;
-      cores.forEach((c, i) => {
-        if (!c) return;
-        const dr = c[0] - r, dg = c[1] - g, db = c[2] - b;
-        const dist = dr * dr + dg * dg + db * db;
-        if (dist < melhorDist) { melhorDist = dist; melhorIdx = i; }
-      });
-      return melhorIdx + 1;
-    };
+  // Varre todos os triângulos já pintados nesta ferramenta (cor diferente do
+  // cinza default) e monta a paleta final de cores, na ordem em que aparecem,
+  // junto com o mapa cor -> slot (1-based). Se nada foi pintado, devolve uma
+  // paleta vazia (o export então usa 1 slot cinza default).
+  function coresPintadasGlobal() {
+    const slotPorCor = new Map();
+    const paleta = [];
+    for (let t = 0; t < state.triCount; t++) {
+      const r = state.baseColors[t * 3], g = state.baseColors[t * 3 + 1], b = state.baseColors[t * 3 + 2];
+      if (r === DEFAULT_COLOR[0] && g === DEFAULT_COLOR[1] && b === DEFAULT_COLOR[2]) continue;
+      const chave = r + "," + g + "," + b;
+      if (!slotPorCor.has(chave)) {
+        slotPorCor.set(chave, paleta.length + 1);
+        paleta.push([r, g, b]);
+      }
+    }
+    return { paleta, slotPorCor };
+  }
+
+  // Reconstrói Metadata/project_settings.config para ter exatamente um slot de
+  // filamento por cor pintada nesta ferramenta (ou 1 slot cinza default, se
+  // nada foi pintado) — em vez de aproximar a pintura aos slots de AMS que já
+  // existiam no projeto. Todo ajuste de configuração que não seja a própria
+  // cor (perfil de temperatura, tipo de material, id do preset etc.) é clonado
+  // do slot 0 original, que no fluxo do Bambu Studio já é o "Bambu PLA Basic"
+  // — assim o novo slot herda o mesmo preset/perfil de impressora do projeto,
+  // sem a ferramenta precisar adivinhar qual variante do PLA Basic usar.
+  function reconstruirProjectSettings(cfgOriginal, paleta) {
+    const nAntigo = Array.isArray(cfgOriginal.filament_colour) ? cfgOriginal.filament_colour.length : 0;
+    if (!nAntigo) return null;
+
+    const cfg = JSON.parse(JSON.stringify(cfgOriginal));
+    const coresFinais = paleta.length ? paleta : [DEFAULT_COLOR];
+    const n = coresFinais.length;
+
+    Object.keys(cfg).forEach((chave) => {
+      const valor = cfg[chave];
+      if (Array.isArray(valor) && valor.length === nAntigo) {
+        cfg[chave] = new Array(n).fill(valor[0]);
+      }
+    });
+
+    cfg.filament_colour = coresFinais.map(rgbParaHexBambu);
+    cfg.filament_multi_colour = cfg.filament_colour.slice();
+    cfg.filament_colour_type = new Array(n).fill("1");
+    cfg.filament_self_index = coresFinais.map((_, i) => String(i + 1));
+    cfg.filament_map = new Array(n).fill("1");
+
+    return cfg;
+  }
+
+  // Ajusta, no texto do Metadata/model_settings.config, as listas
+  // filament_maps/filament_volume_maps (uma entrada por slot de filamento)
+  // para o novo número de slots — senão ficam com o tamanho antigo e
+  // divergem do project_settings.config recém-reconstruído.
+  function ajustarFilamentMapsNoModelSettings(xmlText, n) {
+    const mapaFilamentos = new Array(n).fill("1").join(" ");
+    const mapaVolumes = new Array(n).fill("0").join(" ");
+    return xmlText
+      .replace(/(<metadata\s+key="filament_maps"\s+value=")[^"]*(")/g, "$1" + mapaFilamentos + "$2")
+      .replace(/(<metadata\s+key="filament_volume_maps"\s+value=")[^"]*(")/g, "$1" + mapaVolumes + "$2");
   }
 
   // Edita, no texto XML de um dos arquivos .model do pacote original, só os
@@ -900,7 +955,7 @@ if (root) {
   // quando o pacote tem slots de filamento configurados, também paint_color —
   // sem o qual Bambu Studio/OrcaSlicer não mostram a cor). Tudo mais no XML
   // (metadados, outros objects, extensões desconhecidas) permanece intacto.
-  function injetarCoresNoXml(xmlText, porObjeto, resolverSlot) {
+  function injetarCoresNoXml(xmlText, porObjeto, slotPorCor) {
     const doc = new DOMParser().parseFromString(xmlText, "application/xml");
     const modelEl = doc.documentElement;
 
@@ -953,10 +1008,14 @@ if (root) {
         const pIndex = indiceDaCor(r, g, b);
         triEl.setAttribute("pid", String(colorGroupId));
         triEl.setAttribute("p1", String(pIndex));
+        // Sempre limpa o paint_color que já existia no triângulo (pintura
+        // feita antes, direto no Bambu Studio) para a exportação refletir só
+        // o que foi pintado nesta ferramenta — sem misturar as duas pinturas.
+        triEl.removeAttribute("paint_color");
         const foiPintado = r !== DEFAULT_COLOR[0] || g !== DEFAULT_COLOR[1] || b !== DEFAULT_COLOR[2];
-        if (resolverSlot && foiPintado) {
-          const slot = resolverSlot(r, g, b);
-          triEl.setAttribute("paint_color", filamentIndexParaPaintColor(slot));
+        if (slotPorCor && foiPintado) {
+          const slot = slotPorCor.get(r + "," + g + "," + b);
+          if (slot) triEl.setAttribute("paint_color", filamentIndexParaPaintColor(slot));
         }
       });
     });
@@ -971,6 +1030,28 @@ if (root) {
       });
       resourcesEl.insertBefore(colorGroupEl, resourcesEl.firstChild);
     }
+
+    // Limpa colorgroups órfãos: qualquer <m:colorgroup> que já existia no
+    // arquivo (do pacote original ou de uma exportação anterior desta mesma
+    // ferramenta) e cujo id não é mais referenciado por nenhum pid no
+    // documento — sem isso, cada export acumula um novo colorgroup morto no
+    // <resources>. Preserva colorgroups ainda referenciados por outra coisa
+    // (ex.: pid de object para cor padrão do objeto inteiro).
+    const pidsEmUso = new Set();
+    (function coletarPids(el) {
+      for (let i = 0; i < el.childNodes.length; i++) {
+        const n = el.childNodes[i];
+        if (n.nodeType === 1) {
+          const pid = n.getAttribute && n.getAttribute("pid");
+          if (pid) pidsEmUso.add(pid);
+          coletarPids(n);
+        }
+      }
+    })(modelEl);
+    filhosDiretosPorNomeLocal(resourcesEl, "colorgroup").forEach((cg) => {
+      const id = cg.getAttribute("id");
+      if (id && !pidsEmUso.has(id)) resourcesEl.removeChild(cg);
+    });
 
     // Serializar o Document inteiro (em vez de só o elemento raiz) já inclui
     // a declaração <?xml ...?> em navegadores baseados em Chromium — repeti-la
@@ -1010,30 +1091,48 @@ if (root) {
     }
 
     const zip = state.zip;
+    const { paleta, slotPorCor } = coresPintadasGlobal();
+
     const configEntry = zip.file(/(^|\/)project_settings\.config$/i)[0];
     const configPromise = configEntry
       ? configEntry.async("text").then((texto) => {
           try {
-            const cfg = JSON.parse(texto);
-            const cores = Array.isArray(cfg.filament_colour) ? cfg.filament_colour.map(hexParaRgb) : null;
-            return criarResolvedorDeSlot(cores);
+            const cfgOriginal = JSON.parse(texto);
+            const novoCfg = reconstruirProjectSettings(cfgOriginal, paleta);
+            if (novoCfg) {
+              zip.file(configEntry.name, JSON.stringify(novoCfg, null, 4));
+              return novoCfg.filament_colour.length;
+            }
+            return null;
           } catch (e) {
             return null;
           }
         })
       : Promise.resolve(null);
 
-    const tarefas = configPromise.then((resolverSlot) =>
-      Promise.all(
-        Array.from(porArquivo.keys()).map((path) => {
+    const modelSettingsEntry = zip.file(/(^|\/)model_settings\.config$/i)[0];
+
+    const tarefas = configPromise.then((numSlots) => {
+      const slotPorCorAtivo = numSlots ? slotPorCor : null;
+      const ajustesModelSettings = modelSettingsEntry
+        ? modelSettingsEntry
+            .async("text")
+            .then((xmlText) => {
+              zip.file(modelSettingsEntry.name, ajustarFilamentMapsNoModelSettings(xmlText, numSlots || 1));
+            })
+        : Promise.resolve();
+
+      return Promise.all([
+        ajustesModelSettings,
+        ...Array.from(porArquivo.keys()).map((path) => {
           const entry = zip.file(path);
           if (!entry) return Promise.resolve();
           return entry.async("text").then((xmlText) => {
-            zip.file(path, injetarCoresNoXml(xmlText, porArquivo.get(path), resolverSlot));
+            zip.file(path, injetarCoresNoXml(xmlText, porArquivo.get(path), slotPorCorAtivo));
           });
         })
-      )
-    );
+      ]);
+    });
 
     tarefas
       .then(() => zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } }))
