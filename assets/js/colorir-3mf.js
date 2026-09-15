@@ -924,24 +924,37 @@ if (root) {
     return ("#" + toHex(c[0]) + toHex(c[1]) + toHex(c[2])).toUpperCase();
   }
 
-  // Monta a paleta final de filamentos: o slot 1 é sempre o cinza default (é
-  // nele que caem os triângulos não pintados, já que ficam sem paint_color e
-  // usam o extrusor/filamento padrão do objeto) e os slots seguintes são as
-  // cores efetivamente pintadas nesta ferramenta, na ordem em que aparecem.
-  // Sem isso, o slot 1 acabava sendo a primeira cor pintada e as áreas não
-  // pintadas eram exibidas com essa cor em vez de cinza.
+  // Monta a paleta final de filamentos. Se sobrar alguma área ainda não
+  // pintada (triângulo com a cor cinza default), o slot 1 fica reservado pra
+  // ela — é nele que caem os triângulos sem paint_color, que usam o
+  // extrusor/filamento padrão do objeto — e as cores pintadas ocupam os
+  // slots seguintes. Mas se o modelo inteiro já foi pintado (nenhum
+  // triângulo com a cor default sobrando — por exemplo depois de trocar a
+  // cor do próprio slot 1 pela paleta), o cinza não teria nenhum uso real no
+  // arquivo final, então ele é omitido e as cores pintadas ocupam os slots a
+  // partir do 1.
   function coresPintadasGlobal() {
-    const slotPorCor = new Map();
-    const paleta = [DEFAULT_COLOR];
+    const cores = [];
+    const indiceDaCorGlobal = new Map();
+    let temNaoPintado = false;
     for (let t = 0; t < state.triCount; t++) {
       const r = state.baseColors[t * 3], g = state.baseColors[t * 3 + 1], b = state.baseColors[t * 3 + 2];
-      if (r === DEFAULT_COLOR[0] && g === DEFAULT_COLOR[1] && b === DEFAULT_COLOR[2]) continue;
+      if (r === DEFAULT_COLOR[0] && g === DEFAULT_COLOR[1] && b === DEFAULT_COLOR[2]) {
+        temNaoPintado = true;
+        continue;
+      }
       const chave = r + "," + g + "," + b;
-      if (!slotPorCor.has(chave)) {
-        slotPorCor.set(chave, paleta.length + 1);
-        paleta.push([r, g, b]);
+      if (!indiceDaCorGlobal.has(chave)) {
+        indiceDaCorGlobal.set(chave, cores.length);
+        cores.push([r, g, b]);
       }
     }
+
+    const paleta = temNaoPintado ? [DEFAULT_COLOR, ...cores] : cores.length ? cores : [DEFAULT_COLOR];
+    const offset = temNaoPintado ? 2 : 1;
+    const slotPorCor = new Map();
+    cores.forEach((c, i) => slotPorCor.set(c[0] + "," + c[1] + "," + c[2], i + offset));
+
     return { paleta, slotPorCor };
   }
 
