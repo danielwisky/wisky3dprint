@@ -249,6 +249,16 @@ pecas:
     preco: 55
     descricao: "Caixinha de música com bailarina giratória sobre base rosa em espiral. Peça decorativa delicada."
 
+  - nome: "Relógio Cubo Cósmico Cronos"
+    categorias: ["Decoração"]
+    pronta_entrega: true
+    imagens:
+      - "/assets/img/estoque/relogio-cubo-cosmico-2.webp"
+      - "/assets/img/estoque/relogio-cubo-cosmico-3.webp"
+      - "/assets/img/estoque/relogio-cubo-cosmico-1.webp"
+    preco: 100
+    descricao: "Relógio de mesa em formato de cubo, com painéis em tons de espaço estrelado e ponteiros dourados. Peça decorativa pronta para presentear."
+
   - nome: "Kid Goku"
     categorias: ["Personagens", "Dragon Ball"]
     pronta_entrega: true
