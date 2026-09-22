@@ -51,3 +51,15 @@ test("parseNumeroPtBr remove separador de milhar antes da vírgula decimal", () 
   assert.equal(window.Wisky3D.parseNumeroPtBr("3.000,50"), 3000.5);
   assert.equal(window.Wisky3D.parseNumeroPtBr("1.250"), 1250);
 });
+
+test("parseNumeroPtBr trata ponto sem vírgula como decimal quando não é grupo de milhar", () => {
+  // Bug real: peso "174.9" (auto-preenchido via toFixed, ou digitado em
+  // formato internacional) era lido como 1749 (10x maior), inflando o orçamento.
+  assert.equal(window.Wisky3D.parseNumeroPtBr("174.9"), 174.9);
+  assert.equal(window.Wisky3D.parseNumeroPtBr("80.5"), 80.5);
+  assert.equal(window.Wisky3D.parseNumeroPtBr("0.2"), 0.2);
+});
+
+test("parseNumeroPtBr ainda trata ponto seguido de 3 dígitos como milhar", () => {
+  assert.equal(window.Wisky3D.parseNumeroPtBr("3.000.000"), 3000000);
+});
