@@ -95,6 +95,7 @@
   var d = form.dataset;
   var fmt = window.Wisky3D.formatarMoeda;
   var parseNum = window.Wisky3D.parseNumeroPtBr;
+  var parseMedida = window.Wisky3D.parseMedidaPtBr;
 
   var rows = {
     filamento: document.getElementById("orcamento-calc-b-filamento"),
@@ -696,7 +697,7 @@
   function densidadeAtual() {
     if (perfilDoArquivo) return perfilDoArquivo.densidade;
     if (materialSelect.value === "outro") {
-      return parseNum(densidadeInput.value);
+      return parseMedida(densidadeInput.value);
     }
     var opt = materialSelect.options[materialSelect.selectedIndex];
     return parseFloat(opt.dataset.densidade);
@@ -742,8 +743,8 @@
     var volumeCm3 = volumeMaterialMm3 / 1000;
     peso.value = (volumeCm3 * densidade).toFixed(1);
 
-    var alturaCamada = parseNum(alturaCamadaInput.value) || parseFloat(d.alturaCamadaMm) || 0.2;
-    var velocidade = parseNum(velocidadeInput.value) || parseFloat(d.velocidadeMmS) || 50;
+    var alturaCamada = parseMedida(alturaCamadaInput.value) || parseFloat(d.alturaCamadaMm) || 0.2;
+    var velocidade = parseMedida(velocidadeInput.value) || parseFloat(d.velocidadeMmS) || 50;
     var overheadPorCamada = parseFloat(d.overheadCamadaS) || 2;
 
     var alturaModelo = lastMeshStats.bbox.maxZ - lastMeshStats.bbox.minZ;

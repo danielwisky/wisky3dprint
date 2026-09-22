@@ -31,6 +31,18 @@ window.Wisky3D.parseNumeroPtBr = function (value) {
   return parseFloat(str.replace(/\./g, ""));
 };
 
+// Para campos de medida (densidade g/cm³, altura de camada mm, velocidade
+// mm/s): nunca precisam de separador de milhar, então um "." sem vírgula é
+// sempre decimal. Evita o caso ambíguo de parseNumeroPtBr onde um decimal de
+// 3 casas (ex.: densidade "1.250") seria lido como milhar (1250).
+window.Wisky3D.parseMedidaPtBr = function (value) {
+  var str = String(value).trim();
+  if (str.indexOf(",") !== -1) {
+    return parseFloat(str.replace(/\./g, "").replace(",", "."));
+  }
+  return parseFloat(str);
+};
+
 // pesoG, horas, filamentoKg, potenciaW, tarifaKwh, desgaste (custo fixo de desgaste da impressora)
 window.Wisky3D.calcularSubtotalBase = function (params) {
   var custoFilamento = (params.pesoG / 1000) * params.filamentoKg;

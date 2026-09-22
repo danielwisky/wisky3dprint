@@ -63,3 +63,16 @@ test("parseNumeroPtBr trata ponto sem vírgula como decimal quando não é grupo
 test("parseNumeroPtBr ainda trata ponto seguido de 3 dígitos como milhar", () => {
   assert.equal(window.Wisky3D.parseNumeroPtBr("3.000.000"), 3000000);
 });
+
+test("parseMedidaPtBr trata ponto sempre como decimal (sem heurística de milhar)", () => {
+  // Campos de medida (densidade g/cm³, altura de camada mm) nunca têm
+  // milhar, então "1.250" g/cm³ deve continuar 1.25, não virar 1250.
+  assert.equal(window.Wisky3D.parseMedidaPtBr("1.250"), 1.25);
+  assert.equal(window.Wisky3D.parseMedidaPtBr("0.200"), 0.2);
+  assert.equal(window.Wisky3D.parseMedidaPtBr("174.9"), 174.9);
+  assert.equal(window.Wisky3D.parseMedidaPtBr("100"), 100);
+});
+
+test("parseMedidaPtBr converte vírgula decimal", () => {
+  assert.equal(window.Wisky3D.parseMedidaPtBr("1,25"), 1.25);
+});
