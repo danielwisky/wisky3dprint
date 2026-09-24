@@ -42,7 +42,7 @@ jobs:
       - name: Check links, images and HTML
         run: bundle exec htmlproofer ./_site --disable-external --ignore-urls "/^https?:\/\/(www\.)?instagram\.com/"
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
 
   deploy:
     environment:
