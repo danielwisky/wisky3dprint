@@ -3,6 +3,7 @@ name: Deploy Jekyll site to Pages
 on:
   push:
     branches: ["master", "main"]
+  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -45,6 +46,7 @@ jobs:
         uses: actions/upload-pages-artifact@v3
 
   deploy:
+    if: github.event_name == 'push'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
