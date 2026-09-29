@@ -652,6 +652,60 @@ if (root) {
     needsRender = true;
   }
 
+  // Bbox (em espaço local, a partir das posições reais em positionsOriginais)
+  // dos triângulos da chapa `indice`, usado só pra enquadrar a câmera nela.
+  function computeChapaPivotERaio(indice) {
+    const visiveis = state.triangulosPorChapa && state.triangulosPorChapa.get(indice);
+    if (!visiveis || !visiveis.size) return null;
+    let minX = Infinity, minY = Infinity, minZ = Infinity;
+    let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+    visiveis.forEach((t) => {
+      const base = t * 9;
+      for (let c = 0; c < 3; c++) {
+        const x = state.positionsOriginais[base + c * 3];
+        const y = state.positionsOriginais[base + c * 3 + 1];
+        const z = state.positionsOriginais[base + c * 3 + 2];
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+        if (z < minZ) minZ = z;
+        if (z > maxZ) maxZ = z;
+      }
+    });
+    const pivotLocal = new THREE.Vector3((minX + maxX) / 2, (minY + maxY) / 2, (minZ + maxZ) / 2);
+    const radius = pivotLocal.distanceTo(new THREE.Vector3(minX, minY, minZ)) || 1;
+    return { pivotLocal, radius };
+  }
+
+  // Reenquadra a câmera na chapa ativa (ou no modelo inteiro, se `indice` for
+  // null), reaproveitando o mesmo esquema de near/far/min/maxDistance de
+  // frameCameraToGeometry. Também move o pivô do trackball (meshPivotLocal/
+  // meshPivotWorld) pra chapa em foco, senão o clamp de deriva do zoom (que
+  // usa meshPivotWorld como referência) prenderia a câmera perto do centro do
+  // modelo inteiro mesmo com uma chapa distante em foco.
+  function atualizarFocoDaChapa(indice) {
+    mesh.updateMatrixWorld(true);
+    let pivotLocalNovo = state.pivotLocalTodos;
+    let raioNovo = state.radiusTodos;
+    if (indice !== null) {
+      const foco = computeChapaPivotERaio(indice);
+      if (foco) {
+        pivotLocalNovo = foco.pivotLocal;
+        raioNovo = foco.radius;
+      }
+    }
+    meshPivotLocal = pivotLocalNovo.clone();
+    meshPivotWorld = mesh.localToWorld(pivotLocalNovo.clone());
+    modelRadius = raioNovo;
+    camera.near = Math.max(modelRadius / 100, 0.01);
+    camera.far = modelRadius * 20;
+    camera.updateProjectionMatrix();
+    controls.minDistance = modelRadius * 1.05;
+    controls.maxDistance = modelRadius * 8;
+    recentralizarVista();
+  }
+
   function setChapaAtiva(indice) {
     if (!state) return;
     state.chapaAtivaIndice = indice;
@@ -659,6 +713,7 @@ if (root) {
       state.selection.clear();
     }
     aplicarFiltroDeVisibilidade();
+    atualizarFocoDaChapa(indice);
     renderAbasChapa();
     refreshColorBuffer();
     updateSelectionUI();
@@ -868,6 +923,12 @@ if (root) {
     renderPaleta();
     refreshColorBuffer();
     frameCameraToGeometry();
+    // Snapshot do pivô/raio de "Todos" (modelo inteiro), capturado logo após
+    // frameCameraToGeometry (que os calculou a partir da geometria ainda sem
+    // filtro nenhum aplicado) — usado por atualizarFocoDaChapa pra voltar a
+    // esse enquadramento sempre que o usuário volta pra aba "Todos".
+    state.pivotLocalTodos = meshPivotLocal.clone();
+    state.radiusTodos = modelRadius;
     renderAbasChapa();
 
     const grande = triCount >= AVISO_TRIANGULOS_GRANDE;
