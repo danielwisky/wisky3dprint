@@ -227,7 +227,16 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // `path` é o arquivo (dentro do zip) de onde o object desse nível veio,
   // repassado como está pra components locais e trocado pelo p:path
   // resolvido pra components externos.
-  function resolveObjectRecursivo(zip, docCache, doc, objectId, accumTransform, path, onMesh) {
+  // `topObjectId` é o objectid do <item> de build de nível topo que originou
+  // esta cadeia de resolução (permanece o mesmo em toda a recursão); difere
+  // de `objectId` sempre que o object de nível topo é uma "montagem" sem
+  // <mesh> própria, só <components> apontando pra outro object com a malha
+  // de fato (comum em 3MF do Bambu Studio/OrcaSlicer) — nesse caso `objectId`
+  // vira o id do object-folha (com a malha) enquanto `topObjectId` continua
+  // sendo o id que aparece em <model_settings.config>/<plate> e no <item> do
+  // <build>, usado por mapearTriangulosParaChapas pra casar triângulo -> chapa.
+  function resolveObjectRecursivo(zip, docCache, doc, objectId, accumTransform, path, onMesh, topObjectId) {
+    if (topObjectId === undefined) topObjectId = objectId;
     var objectEl = findObjectElement(doc, objectId);
     if (!objectEl) return Promise.resolve();
 
@@ -258,7 +267,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
           localIndices.push(localIndex);
         }
       });
-      if (vertexEls.length) onMesh(leafTriangles, localIndices, meshBbox, path, objectId);
+      if (vertexEls.length) onMesh(leafTriangles, localIndices, meshBbox, path, objectId, topObjectId);
     }
 
     var componentsEl = directChild(objectEl, "components");
@@ -280,10 +289,10 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
           docCache[normalizedPath] = docPromise;
         }
         return docPromise.then(function (extDoc) {
-          return resolveObjectRecursivo(zip, docCache, extDoc, childObjectId, combined, normalizedPath, onMesh);
+          return resolveObjectRecursivo(zip, docCache, extDoc, childObjectId, combined, normalizedPath, onMesh, topObjectId);
         });
       }
-      return resolveObjectRecursivo(zip, docCache, doc, childObjectId, combined, path, onMesh);
+      return resolveObjectRecursivo(zip, docCache, doc, childObjectId, combined, path, onMesh, topObjectId);
     });
 
     return Promise.all(promises);
@@ -382,10 +391,10 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // reabrir o pacote 3MF original e escrever a cor de volta nos <triangle>
   // exatos de onde vieram, em vez de reconstruir o pacote do zero.
   function resolveObjectTriangles(zip, docCache, doc, objectId, accumTransform, outTriangulos, path, outOrigins) {
-    function onMesh(leafTriangles, localIndices, meshBbox, meshPath, meshObjectId) {
+    function onMesh(leafTriangles, localIndices, meshBbox, meshPath, meshObjectId, topObjectId) {
       leafTriangles.forEach(function (tri, i) {
         outTriangulos.push(tri);
-        outOrigins.push({ path: meshPath, objectId: meshObjectId, localIndex: localIndices[i] });
+        outOrigins.push({ path: meshPath, objectId: meshObjectId, topObjectId: topObjectId, localIndex: localIndices[i] });
       });
     }
 
@@ -534,14 +543,19 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   }
 
   // Agrupa índices de triângulo por chapa, numa única varredura de
-  // `triangleOrigins` (formato `{path, objectId, localIndex}` por triângulo,
-  // ver resolveObjectTriangles/extractTriangles3MF). Pra cada triângulo,
-  // compara o objectId da origem contra o `objectIds` (Set) de cada chapa em
-  // `chapas` (formato `{indice, objectIds}`, ver detectarChapas em
-  // colorir-3mf.js) e empilha o índice do triângulo na chapa correspondente.
-  // Um triângulo cujo objectId não bate com nenhuma chapa simplesmente não
-  // entra em nenhum grupo (não deveria acontecer na prática, já que toda peça
-  // pertence a alguma chapa, mas não lança erro se acontecer).
+  // `triangleOrigins` (formato `{path, objectId, topObjectId, localIndex}`
+  // por triângulo, ver resolveObjectTriangles/extractTriangles3MF). Pra cada
+  // triângulo, compara `topObjectId` (o objectid do <item> de build de nível
+  // topo, não o objectId do object-folha que carrega a malha — eles diferem
+  // sempre que o item de build referencia uma "montagem" via <components>,
+  // caso comum em 3MF do Bambu Studio/OrcaSlicer) contra o `objectIds` (Set)
+  // de cada chapa em `chapas` (formato `{indice, objectIds}`, ver
+  // detectarChapas em colorir-3mf.js, que também usa os ids de nível topo do
+  // model_settings.config) e empilha o índice do triângulo na chapa
+  // correspondente. Um triângulo cujo topObjectId não bate com nenhuma chapa
+  // simplesmente não entra em nenhum grupo (não deveria acontecer na
+  // prática, já que toda peça pertence a alguma chapa, mas não lança erro se
+  // acontecer).
   function mapearTriangulosParaChapas(triangleOrigins, chapas) {
     var porChapa = new Map();
     chapas.forEach(function (chapa) { porChapa.set(chapa.indice, []); });
@@ -549,8 +563,9 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     for (var t = 0; t < triangleOrigins.length; t++) {
       var origin = triangleOrigins[t];
       if (!origin) continue;
+      var topId = origin.topObjectId !== undefined ? origin.topObjectId : origin.objectId;
       for (var i = 0; i < chapas.length; i++) {
-        if (chapas[i].objectIds.has(origin.objectId)) {
+        if (chapas[i].objectIds.has(topId)) {
           porChapa.get(chapas[i].indice).push(t);
           break;
         }
