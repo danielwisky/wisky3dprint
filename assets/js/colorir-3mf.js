@@ -40,7 +40,7 @@ if (root) {
   const recentralizarBtn = document.getElementById("cor3mf-recentralizar");
   const abasEl = document.getElementById("cor3mf-abas");
 
-  const DEFAULT_COLOR = [176, 176, 190];
+  const DEFAULT_COLOR = ThreeMFWriter.DEFAULT_COLOR;
   const HIGHLIGHT_COLOR = [255, 214, 51];
   const AVISO_TRIANGULOS_GRANDE = 150000;
   const MAX_UNDO = 20;

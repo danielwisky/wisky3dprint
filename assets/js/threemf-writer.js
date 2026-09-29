@@ -16,10 +16,11 @@ window.Wisky3D = window.Wisky3D || {};
   var NS_MATERIAL = "http://schemas.microsoft.com/3dmanufacturing/material/2015/02";
 
   // Cor default (cinza) usada pela ferramenta de colorir pra área ainda não
-  // pintada. Precisa bater com o DEFAULT_COLOR de colorir-3mf.js: é o valor
-  // usado por injetarCoresNoXml pra decidir se um triângulo foi "pintado de
-  // verdade" (recebe paint_color) ou ficou com a cor default do objeto
-  // (não recebe, herda o extrusor/filamento padrão).
+  // pintada. Exportada como ThreeMFWriter.DEFAULT_COLOR (fonte única) porque
+  // injetarCoresNoXml usa esse valor pra decidir se um triângulo foi "pintado
+  // de verdade" (recebe paint_color) ou ficou com a cor default do objeto
+  // (não recebe, herda o extrusor/filamento padrão) — colorir-3mf.js reusa a
+  // mesma constante em vez de declarar seu próprio literal.
   var DEFAULT_COLOR = [176, 176, 190];
 
   function toHexByte(n) {
@@ -319,6 +320,7 @@ window.Wisky3D = window.Wisky3D || {};
   }
 
   window.Wisky3D.ThreeMFWriter = {
+    DEFAULT_COLOR: DEFAULT_COLOR,
     toHexByte: toHexByte,
     rgbToHex3mf: rgbToHex3mf,
     rgbParaHexBambu: rgbParaHexBambu,
