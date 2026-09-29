@@ -37,6 +37,7 @@ if (root) {
   const exportBtn = document.getElementById("cor3mf-exportar");
   const outEl = document.getElementById("cor3mf-out");
   const recentralizarBtn = document.getElementById("cor3mf-recentralizar");
+  const abasEl = document.getElementById("cor3mf-abas");
 
   const DEFAULT_COLOR = [176, 176, 190];
   const HIGHLIGHT_COLOR = [255, 214, 51];
@@ -366,7 +367,7 @@ if (root) {
   //    região fica presa a uma vizinhança realmente próxima do clique, sem a
   //    deriva acumulada de passo a passo que faria a mesma tolerância
   //    "vazar" por uma superfície curva inteira.
-  function floodFillByNormalTolerance(startTri, toleranceDeg, adjacency, faceNormals, triCount, compararComOrigem) {
+  function floodFillByNormalTolerance(startTri, toleranceDeg, adjacency, faceNormals, triCount, compararComOrigem, filtroVisivel) {
     // Pequena margem: normais de triângulos coplanares raramente são
     // bit-idênticas (erro de ponto flutuante do produto vetorial), então com
     // tolerância 0° o "dot >= 1" exato quase nunca passava mesmo entre
@@ -387,6 +388,7 @@ if (root) {
       for (let i = 0; i < vizinhos.length; i++) {
         const n = vizinhos[i];
         if (visited[n]) continue;
+        if (filtroVisivel && !filtroVisivel.has(n)) continue;
         const nx = faceNormals[n * 3], ny = faceNormals[n * 3 + 1], nz = faceNormals[n * 3 + 2];
         const dot = cx * nx + cy * ny + cz * nz;
         if (dot >= toleranceCos) {
@@ -582,6 +584,89 @@ if (root) {
     limparSelecaoBtn.disabled = n === 0;
   }
 
+  // -------------------------------------------------------------------------
+  // Abas de chapa (3MF multi-plate): barra "Todos" + uma aba por chapa. Fica
+  // oculta quando o arquivo não tem metadado de chapa (state.chapas === null,
+  // o caso mais comum hoje: STL ou 3MF de uma chapa só), preservando o
+  // comportamento anterior à risca.
+  // -------------------------------------------------------------------------
+
+  function renderAbasChapa() {
+    if (!state || !state.chapas) {
+      abasEl.hidden = true;
+      abasEl.innerHTML = "";
+      return;
+    }
+
+    abasEl.innerHTML = "";
+    abasEl.hidden = false;
+
+    function criarAba(indice, rotulo) {
+      const ativa = state.chapaAtivaIndice === indice;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "cor3mf-aba" + (ativa ? " is-ativa" : "");
+      btn.setAttribute("role", "tab");
+      btn.setAttribute("aria-selected", ativa ? "true" : "false");
+      btn.dataset.chapa = indice === null ? "" : String(indice);
+      btn.textContent = rotulo;
+      btn.addEventListener("click", () => setChapaAtiva(indice));
+      return btn;
+    }
+
+    abasEl.appendChild(criarAba(null, "Todos"));
+    state.chapas.forEach((chapa) => {
+      abasEl.appendChild(criarAba(chapa.indice, "Modelo " + chapa.indice));
+    });
+  }
+
+  // Reescreve, em cada triângulo, a posição real (chapa visível) ou um ponto
+  // degenerado (chapa oculta: os 3 vértices colapsam no pivô do modelo, área
+  // zero -> invisível e não raycastável de forma útil). Não mexe em
+  // baseColors/cor nem na câmera: trocar de aba não perde pintura já feita
+  // nem reseta o enquadramento que o usuário escolheu.
+  function aplicarFiltroDeVisibilidade() {
+    if (!state) return;
+    const posArr = state.geometry.attributes.position.array;
+
+    if (state.chapaAtivaIndice === null || !state.chapas) {
+      posArr.set(state.positionsOriginais);
+    } else {
+      const visiveis = state.triangulosPorChapa && state.triangulosPorChapa.get(state.chapaAtivaIndice);
+      const pivotX = meshPivotLocal ? meshPivotLocal.x : 0;
+      const pivotY = meshPivotLocal ? meshPivotLocal.y : 0;
+      const pivotZ = meshPivotLocal ? meshPivotLocal.z : 0;
+      for (let t = 0; t < state.triCount; t++) {
+        const base = t * 9;
+        if (visiveis && visiveis.has(t)) {
+          for (let i = 0; i < 9; i++) posArr[base + i] = state.positionsOriginais[base + i];
+        } else {
+          for (let c = 0; c < 3; c++) {
+            posArr[base + c * 3] = pivotX;
+            posArr[base + c * 3 + 1] = pivotY;
+            posArr[base + c * 3 + 2] = pivotZ;
+          }
+        }
+      }
+    }
+
+    state.geometry.attributes.position.needsUpdate = true;
+    state.geometry.computeBoundingSphere();
+    needsRender = true;
+  }
+
+  function setChapaAtiva(indice) {
+    if (!state) return;
+    state.chapaAtivaIndice = indice;
+    if (state.selection.size) {
+      state.selection.clear();
+    }
+    aplicarFiltroDeVisibilidade();
+    renderAbasChapa();
+    refreshColorBuffer();
+    updateSelectionUI();
+  }
+
   const raycaster = new THREE.Raycaster();
   const pointerNdc = new THREE.Vector2();
   let pointerDownPos = null;
@@ -673,7 +758,10 @@ if (root) {
     // face plana clicada (e a granularidade fina de malhas orgânicas) sem
     // vazar pras faces vizinhas nem depender de deriva acumulada.
     const toleranceDeg = isBalde ? BALDE_TOLERANCIA_DEG : Number(toleranciaInput.value);
-    const regiao = floodFillByNormalTolerance(triIndex, toleranceDeg, state.adjacency, state.faceNormals, state.triCount, isBalde);
+    const filtroVisivel = state.chapaAtivaIndice !== null && state.triangulosPorChapa
+      ? state.triangulosPorChapa.get(state.chapaAtivaIndice)
+      : null;
+    const regiao = floodFillByNormalTolerance(triIndex, toleranceDeg, state.adjacency, state.faceNormals, state.triCount, isBalde, filtroVisivel);
 
     if (currentTool === "balde") {
       paintTriangles(regiao, hexToRgb(corAtivaHex()));
@@ -692,6 +780,11 @@ if (root) {
     initSceneOnce();
 
     const { triCount, positions } = buildGeometryData(triangulos);
+    // Cópia imutável das posições reais, capturada antes de qualquer filtro de
+    // visibilidade por chapa (ver aplicarFiltroDeVisibilidade): é a fonte de
+    // verdade usada tanto para restaurar "Todos" quanto para reescrever, na
+    // troca de aba, os 9 floats de cada triângulo visível.
+    const positionsOriginais = positions.slice();
     const faceNormals = computeFaceNormals(positions, triCount);
     const { adjacency, exportVertices, cornerExportIndex } = buildAdjacencyAndExportIndex(positions, triCount);
 
@@ -741,6 +834,7 @@ if (root) {
       cornerExportIndex,
       exportVertices,
       undoStack: [],
+      positionsOriginais,
       // O slot 1 começa com a mesma cor cinza do "não pintado" (DEFAULT_COLOR).
       // Assim dá pra recolorir de uma vez toda a área ainda não pintada só
       // trocando a cor desse slot (mesmo mecanismo de replace do editor de
@@ -761,11 +855,23 @@ if (root) {
     // única vez aqui, não recalculado a cada clique.
     state.chapas = (origem && origem.chapas) || null;
     state.chapaAtivaIndice = null; // null = "Todos"
-    state.triangulosPorChapa = state.chapas ? ModelParser.mapearTriangulosParaChapas(state.triangleOrigins, state.chapas) : null;
+    // mapearTriangulosParaChapas devolve arrays (ordem de varredura); aqui
+    // viram Set pra permitir teste O(1) de pertencimento tanto no filtro de
+    // visibilidade (aplicarFiltroDeVisibilidade) quanto no BFS de
+    // balde/seleção mágica (floodFillByNormalTolerance).
+    if (state.chapas) {
+      state.triangulosPorChapa = new Map();
+      ModelParser.mapearTriangulosParaChapas(state.triangleOrigins, state.chapas).forEach((lista, indice) => {
+        state.triangulosPorChapa.set(indice, new Set(lista));
+      });
+    } else {
+      state.triangulosPorChapa = null;
+    }
 
     renderPaleta();
     refreshColorBuffer();
     frameCameraToGeometry();
+    renderAbasChapa();
 
     const grande = triCount >= AVISO_TRIANGULOS_GRANDE;
     avisoGrandeEl.hidden = !grande;
