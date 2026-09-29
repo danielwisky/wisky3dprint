@@ -177,61 +177,6 @@
       .normalize("NFD").replace(DIACRITICOS_REGEX, "");
   }
 
-  // Um 3MF pode conter várias chapas independentes (plates), cada uma com seu
-  // próprio arranjo de peças. Sem isso, o bbox combinado de todas as chapas
-  // dava um "tamanho" maior que qualquer mesa real e gerava avisos de encaixe
-  // falsos. Lê Metadata/model_settings.config e devolve, por chapa, a lista de
-  // object_id das peças que pertencem a ela (ou null se o arquivo não tem
-  // metadados de chapa, caso de projetos com uma chapa só).
-  function parsePlateAssignments(modelSettingsText) {
-    if (!modelSettingsText || typeof DOMParser === "undefined") return null;
-    try {
-      var doc = new DOMParser().parseFromString(modelSettingsText, "application/xml");
-      if (doc.getElementsByTagName("parsererror").length) return null;
-      var plateEls = doc.getElementsByTagName("plate");
-      if (!plateEls.length) return null;
-
-      var chapas = [];
-      for (var i = 0; i < plateEls.length; i++) {
-        var instancias = plateEls[i].getElementsByTagName("model_instance");
-        var ids = [];
-        for (var j = 0; j < instancias.length; j++) {
-          var metas = instancias[j].getElementsByTagName("metadata");
-          for (var k = 0; k < metas.length; k++) {
-            if (metas[k].getAttribute("key") === "object_id") {
-              ids.push(metas[k].getAttribute("value"));
-            }
-          }
-        }
-        if (ids.length) chapas.push(ids);
-      }
-      return chapas.length > 1 ? chapas : null;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  function mesclarBBox(a, b) {
-    if (!a) return b;
-    if (!b) return a;
-    return ModelParser.mergeBBox(a, b);
-  }
-
-  // Junta o bbox dos itens (retornados por ModelParser.parse3MFPackage) de
-  // acordo com a lista de object_id de cada chapa, gerando um bbox por chapa
-  // em vez de um bbox único pra todo o arquivo.
-  function calcularChapas(itens, plateAssignments) {
-    if (!plateAssignments || !itens) return null;
-    var chapas = plateAssignments.map(function (ids, indice) {
-      var bbox = null;
-      itens.forEach(function (item) {
-        if (ids.indexOf(item.objectId) !== -1) bbox = mesclarBBox(bbox, item.bbox);
-      });
-      return { indice: indice + 1, bbox: bbox };
-    }).filter(function (chapa) { return chapa.bbox; });
-    return chapas.length > 1 ? chapas : null;
-  }
-
   function toggleDestino(chave) {
     if (!estado) return;
     var idx = estado.destinoKeys.indexOf(chave);
@@ -479,7 +424,7 @@
 
         return geometriaPromise.then(function (res) {
           var bbox = res ? res.bbox : null;
-          var chapas = res ? calcularChapas(res.itens, parsePlateAssignments(r.modelSettingsText)) : null;
+          var chapas = res ? ModelParser.calcularChapas(res.itens, ModelParser.parsePlateAssignments(r.modelSettingsText)) : null;
 
           estado = { file: file, zip: zipRef, projectConfig: config, projectConfigPath: r.configPath, destinoKeys: [] };
           var chaveDetectada = renderOrigem(config, r.perfis, bbox, chapas);
