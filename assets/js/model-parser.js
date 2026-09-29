@@ -524,7 +524,8 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
       itens.forEach(function (item) {
         if (ids.indexOf(item.objectId) !== -1) {
           // Mescla o bbox do item com o bbox acumulado da chapa
-          bbox = bbox ? mergeBBox(bbox, item.bbox) : item.bbox;
+          if (!bbox) bbox = item.bbox;
+          else if (item.bbox) bbox = mergeBBox(bbox, item.bbox);
         }
       });
       return { indice: indice + 1, bbox: bbox };
