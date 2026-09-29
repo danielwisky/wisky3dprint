@@ -1,5 +1,14 @@
 window.Wisky3D = window.Wisky3D || {};
 
+// Suporte a Node.js: carrega DOMParser do @xmldom se disponível (testes)
+if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
+  try {
+    window.DOMParser = require("@xmldom/xmldom").DOMParser;
+  } catch (e) {
+    // Ignorar se @xmldom não estiver instalado
+  }
+}
+
 (function () {
 // ---------------------------------------------------------------------------
 // BLOCO: Parsing de modelos 3D (STL/3MF): volume, bounding box e densidade
@@ -471,6 +480,58 @@ window.Wisky3D = window.Wisky3D || {};
     };
   }
 
+  // Um 3MF pode conter várias chapas independentes (plates), cada uma com seu
+  // próprio arranjo de peças. Sem isso, o bbox combinado de todas as chapas
+  // dava um "tamanho" maior que qualquer mesa real e gerava avisos de encaixe
+  // falsos. Lê Metadata/model_settings.config e devolve, por chapa, a lista de
+  // object_id das peças que pertencem a ela (ou null se o arquivo não tem
+  // metadados de chapa, caso de projetos com uma chapa só).
+  function parsePlateAssignments(modelSettingsText) {
+    if (!modelSettingsText || typeof DOMParser === "undefined") return null;
+    try {
+      var doc = new DOMParser().parseFromString(modelSettingsText, "application/xml");
+      if (doc.getElementsByTagName("parsererror").length) return null;
+      var plateEls = doc.getElementsByTagName("plate");
+      if (!plateEls.length) return null;
+
+      var chapas = [];
+      for (var i = 0; i < plateEls.length; i++) {
+        var instancias = plateEls[i].getElementsByTagName("model_instance");
+        var ids = [];
+        for (var j = 0; j < instancias.length; j++) {
+          var metas = instancias[j].getElementsByTagName("metadata");
+          for (var k = 0; k < metas.length; k++) {
+            if (metas[k].getAttribute("key") === "object_id") {
+              ids.push(metas[k].getAttribute("value"));
+            }
+          }
+        }
+        if (ids.length) chapas.push(ids);
+      }
+      return chapas.length > 1 ? chapas : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Junta o bbox dos itens (retornados por parse3MFPackage) de acordo com a
+  // lista de object_id de cada chapa, gerando um bbox por chapa em vez de um
+  // bbox único pra todo o arquivo.
+  function calcularChapas(itens, plateAssignments) {
+    if (!plateAssignments || !itens) return null;
+    var chapas = plateAssignments.map(function (ids, indice) {
+      var bbox = null;
+      itens.forEach(function (item) {
+        if (ids.indexOf(item.objectId) !== -1) {
+          // Mescla o bbox do item com o bbox acumulado da chapa
+          bbox = bbox ? mergeBBox(bbox, item.bbox) : item.bbox;
+        }
+      });
+      return { indice: indice + 1, bbox: bbox };
+    }).filter(function (chapa) { return chapa.bbox; });
+    return chapas.length > 1 ? chapas : null;
+  }
+
   window.Wisky3D.ModelParser = {
     parseSTL: parseSTL,
     computeBoundingBox: computeBoundingBox,
@@ -486,6 +547,8 @@ window.Wisky3D = window.Wisky3D || {};
     baixarBlob: baixarBlob,
     parse3MFPackage: parse3MFPackage,
     extractTriangles3MF: extractTriangles3MF,
-    parse3MFPerfil: parse3MFPerfil
+    parse3MFPerfil: parse3MFPerfil,
+    parsePlateAssignments: parsePlateAssignments,
+    calcularChapas: calcularChapas
   };
 })();
