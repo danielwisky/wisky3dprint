@@ -533,6 +533,33 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     return chapas.length > 1 ? chapas : null;
   }
 
+  // Agrupa índices de triângulo por chapa, numa única varredura de
+  // `triangleOrigins` (formato `{path, objectId, localIndex}` por triângulo,
+  // ver resolveObjectTriangles/extractTriangles3MF). Pra cada triângulo,
+  // compara o objectId da origem contra o `objectIds` (Set) de cada chapa em
+  // `chapas` (formato `{indice, objectIds}`, ver detectarChapas em
+  // colorir-3mf.js) e empilha o índice do triângulo na chapa correspondente.
+  // Um triângulo cujo objectId não bate com nenhuma chapa simplesmente não
+  // entra em nenhum grupo (não deveria acontecer na prática, já que toda peça
+  // pertence a alguma chapa, mas não lança erro se acontecer).
+  function mapearTriangulosParaChapas(triangleOrigins, chapas) {
+    var porChapa = new Map();
+    chapas.forEach(function (chapa) { porChapa.set(chapa.indice, []); });
+
+    for (var t = 0; t < triangleOrigins.length; t++) {
+      var origin = triangleOrigins[t];
+      if (!origin) continue;
+      for (var i = 0; i < chapas.length; i++) {
+        if (chapas[i].objectIds.has(origin.objectId)) {
+          porChapa.get(chapas[i].indice).push(t);
+          break;
+        }
+      }
+    }
+
+    return porChapa;
+  }
+
   window.Wisky3D.ModelParser = {
     parseSTL: parseSTL,
     computeBoundingBox: computeBoundingBox,
@@ -550,6 +577,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     extractTriangles3MF: extractTriangles3MF,
     parse3MFPerfil: parse3MFPerfil,
     parsePlateAssignments: parsePlateAssignments,
-    calcularChapas: calcularChapas
+    calcularChapas: calcularChapas,
+    mapearTriangulosParaChapas: mapearTriangulosParaChapas
   };
 })();

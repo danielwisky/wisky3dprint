@@ -754,6 +754,15 @@ if (root) {
       zip: (origem && origem.zip) || null
     };
 
+    // Chapas (plates) detectadas num 3MF multi-plate (ver detectarChapas em
+    // processarArquivo): guardado no estado pra uso futuro (seletor de chapa
+    // na UI, ainda não implementado), null quando o arquivo não tem esse
+    // metadado (STL, 3MF single-plate). triangulosPorChapa é derivado uma
+    // única vez aqui, não recalculado a cada clique.
+    state.chapas = (origem && origem.chapas) || null;
+    state.chapaAtivaIndice = null; // null = "Todos"
+    state.triangulosPorChapa = state.chapas ? ModelParser.mapearTriangulosParaChapas(state.triangleOrigins, state.chapas) : null;
+
     renderPaleta();
     refreshColorBuffer();
     frameCameraToGeometry();
@@ -784,14 +793,34 @@ if (root) {
       const modelFile = ModelParser.localizarModeloRaiz(zip);
       if (!modelFile) throw new Error("3dmodel.model não encontrado no pacote 3MF");
       const rootPath = modelFile.name;
+      const modelSettingsEntry = ModelParser.localizarArquivoUnico(zip, "model_settings.config");
+      const modelSettingsPromise = modelSettingsEntry ? modelSettingsEntry.async("text") : Promise.resolve(null);
       return modelFile.async("text").then((modelText) =>
-        ModelParser.extractTriangles3MF(zip, modelText, rootPath).then((resultado) => ({
-          triangulos: resultado.triangulos,
-          origins: resultado.origins,
-          zip
-        }))
+        Promise.all([ModelParser.extractTriangles3MF(zip, modelText, rootPath), modelSettingsPromise]).then(
+          ([resultado, modelSettingsText]) => ({
+            triangulos: resultado.triangulos,
+            origins: resultado.origins,
+            zip,
+            modelSettingsText
+          })
+        )
       );
     });
+  }
+
+  // Detecta as chapas (plates) de um pacote 3MF multi-plate a partir do texto
+  // de Metadata/model_settings.config, casando cada objectId com o índice de
+  // chapa a que pertence. Retorna null quando o arquivo não tem metadados de
+  // chapa (STL, 3MF single-plate ou 3MF sem esse metadado), caso em que a
+  // ferramenta continua se comportando como hoje (uma "chapa" implícita só).
+  function detectarChapas(modelSettingsText, triangleOrigins) {
+    if (!modelSettingsText) return null;
+    const plateAssignments = ModelParser.parsePlateAssignments(modelSettingsText);
+    if (!plateAssignments) return null;
+    return plateAssignments.map((objectIds, indice) => ({
+      indice: indice + 1,
+      objectIds: new Set(objectIds)
+    }));
   }
 
   function processarArquivo(file) {
@@ -812,6 +841,7 @@ if (root) {
     extrairTriangulosDoArquivo(file)
       .then((resultado) => {
         if (!resultado.triangulos.length) throw new Error("nenhuma geometria encontrada no arquivo");
+        resultado.chapas = detectarChapas(resultado.modelSettingsText, resultado.origins);
         buildState(resultado.triangulos, file.name, resultado);
         painel.hidden = false;
         resizeRenderer();
