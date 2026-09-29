@@ -1,0 +1,19 @@
+<div class="split3mf calc" id="split3mf">
+  <div class="calc-field calc-field-upload">
+    <span class="calc-field-label-sr" id="split3mf-upload-label">Arquivo do modelo (3MF)</span>
+    <label for="split3mf-upload" class="calc-dropzone" id="split3mf-dropzone">
+      <span class="calc-dropzone-texto" id="split3mf-dropzone-texto">Arraste o arquivo .3mf aqui ou <span class="calc-dropzone-link">escolha um arquivo</span></span>
+      <span class="calc-dropzone-loading" id="split3mf-loading" hidden>Lendo o arquivo, aguarde...</span>
+    </label>
+    <input type="file" id="split3mf-upload" accept=".3mf" aria-labelledby="split3mf-upload-label">
+  </div>
+  <p class="calc-modelo-erro" id="split3mf-erro" hidden></p>
+
+  <div id="split3mf-painel" hidden>
+    <div id="split3mf-lista" class="calc-section"></div>
+
+    <div class="calc-result-box">
+      <button type="button" class="btn btn-gradient calc-add-btn" id="split3mf-baixar-tudo">Baixar tudo (.zip)</button>
+    </div>
+  </div>
+</div>
