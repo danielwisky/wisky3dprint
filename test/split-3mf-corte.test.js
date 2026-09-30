@@ -304,3 +304,139 @@ test("exportação: o XML das peças cortadas, relido, conserva o volume da peç
   });
   assert.ok(Math.abs(volumeTotal - 8000) < 1e-6, "volume relido: " + volumeTotal);
 });
+
+// ---------------------------------------------------------------------------
+// Regressões de manifold (fix da Task 14): tampa com pontos colineares,
+// lascas de parede, solda perto de meia-célula da grade e solda do contorno
+// da tampa em cortes sucessivos.
+// ---------------------------------------------------------------------------
+
+// Cilindro fechado de n lados, raio r, altura h, base em `origem`.
+function cilindro(n, r, h, origem) {
+  const o = origem || [0, 0, 0];
+  const v = [[0, 0, 0], [0, 0, h]];
+  for (let i = 0; i < n; i++) {
+    const a = 2 * Math.PI * i / n;
+    v.push([r * Math.cos(a), r * Math.sin(a), 0], [r * Math.cos(a), r * Math.sin(a), h]);
+  }
+  const faces = [];
+  for (let i = 0; i < n; i++) {
+    const a = 2 + 2 * i, b = 2 + 2 * ((i + 1) % n);
+    faces.push([0, b, a], [1, a + 1, b + 1], [a, b, b + 1], [a, b + 1, a + 1]);
+  }
+  return faces.map((f) => f.map((k) => [v[k][0] + o[0], v[k][1] + o[1], v[k][2] + o[2]]));
+}
+
+// Esfera UV (nu segmentos x nv anéis), com os polos duplicados em nu
+// vértices (a solda de criarPeca junta).
+function esfera(nu, nv, r, origem) {
+  const o = origem || [0, 0, 0];
+  const v = [];
+  for (let j = 0; j <= nv; j++) {
+    for (let i = 0; i < nu; i++) {
+      const th = Math.PI * j / nv, ph = 2 * Math.PI * i / nu;
+      v.push([r * Math.sin(th) * Math.cos(ph) + o[0], r * Math.sin(th) * Math.sin(ph) + o[1], r * Math.cos(th) + o[2]]);
+    }
+  }
+  const id = (i, j) => j * nu + (i % nu);
+  const faces = [];
+  for (let j = 0; j < nv; j++) {
+    for (let i = 0; i < nu; i++) {
+      const a = id(i, j), b = id(i + 1, j), c = id(i + 1, j + 1), d = id(i, j + 1);
+      if (j > 0) faces.push([a, d, b]);
+      if (j < nv - 1) faces.push([b, d, c]);
+    }
+  }
+  return faces.map((f) => f.map((k) => v[k]));
+}
+
+function pecaDe(tris) {
+  return criarPeca({ id: 1, rotulo: "Objeto 1", unidadeId: 0, origemPecaId: null }, tris, null);
+}
+
+// Relê o XML exportado e confere, por object, que toda aresta dirigida
+// aparece uma vez e tem o par oposto (o que um fatiador vê).
+function assertExportacaoManifold(pecas) {
+  const doc = new DOMParser().parseFromString(montarModeloDasPecas(pecas).modelXml, "application/xml");
+  Array.from(doc.getElementsByTagName("object")).forEach(function (obj, i) {
+    const triangulos = Array.from(obj.getElementsByTagName("triangle")).map((t) => ({
+      v1: Number(t.getAttribute("v1")), v2: Number(t.getAttribute("v2")), v3: Number(t.getAttribute("v3"))
+    }));
+    assertManifoldFechada({ rotulo: "object " + (i + 1) + " do XML", triangulos: triangulos });
+  });
+}
+
+test("regressão: cubo com a triangulação do colorido.3mf, Z a 50% com 25° exporta manifold (T-junction na tampa)", () => {
+  const peca = pecaCubo(20);
+  const r = cortarPeca(peca, "z", 50, 25, { earcutFn: earcut, novaIdentidade: contadorDeIdentidades() });
+  assertManifoldFechada(r.negativo);
+  assertManifoldFechada(r.positivo);
+  assertExportacaoManifold([r.negativo, r.positivo]);
+  assert.ok(Math.abs(r.negativo.volumeMm3 + r.positivo.volumeMm3 - 8000) < 1e-6);
+});
+
+test("regressão: cilindro de altura 2,469 cortado em Z a 0,5% (plano em meia-célula da grade de solda) fecha o anel", () => {
+  const peca = pecaDe(cilindro(64, 8, 2.469));
+  [0.5, 1.5, 4.5, 50.5].forEach(function (pos) {
+    const r = cortarPeca(peca, "z", pos, 0, { earcutFn: earcut, novaIdentidade: contadorDeIdentidades() });
+    assertManifoldFechada(r.negativo);
+    assertManifoldFechada(r.positivo);
+    assertExportacaoManifold([r.negativo, r.positivo]);
+  });
+});
+
+test("regressão: corte sucessivo em cilindro fino não funde na tampa vértices que a parede mantém separados", () => {
+  const opcoes = { earcutFn: earcut, novaIdentidade: contadorDeIdentidades() };
+  const peca = pecaDe(cilindro(64, 8, 2.469, [1.1, 2.2, 3.3]));
+  const r1 = cortarPeca(peca, "x", 45, 30, opcoes);
+  const r2 = cortarPeca(r1.negativo, "x", 50, -60, opcoes);
+  assertManifoldFechada(r2.negativo);
+  assertManifoldFechada(r2.positivo);
+  assert.ok(Math.abs(r2.negativo.volumeMm3 + r2.positivo.volumeMm3 - r1.negativo.volumeMm3) < 1e-6);
+});
+
+test("regressão: cortes aleatórios (semente fixa, com cortes sucessivos) em cubo, cilindro e esfera saem sempre manifold", () => {
+  let semente = 20260930;
+  function aleatorio() {
+    semente = (semente * 1103515245 + 12345) % 2147483648;
+    return semente / 2147483648;
+  }
+  const formas = {
+    cubo: cubo(20),
+    "cubo transladado": cubo(24.6913, [123.456789, -45.678912, 7.891234]),
+    cilindro: cilindro(48, 8, 30, [40, 10, 0]),
+    "cilindro fino": cilindro(64, 8, 2.469, [1.1, 2.2, 3.3]),
+    esfera: esfera(40, 20, 10, [3.3, 7.7, 11.1])
+  };
+  let cortes = 0;
+  Object.keys(formas).forEach(function (nome) {
+    const base = pecaDe(formas[nome]);
+    assertManifoldFechada(base);
+    for (let k = 0; k < 25; k++) {
+      let pecas = [base];
+      for (let s = 0; s < 2; s++) {
+        const idx = Math.floor(aleatorio() * pecas.length);
+        const eixo = "xyz"[Math.floor(aleatorio() * 3)];
+        const pos = Math.round(aleatorio() * 198 + 1) / 2;
+        const inc = Math.round(aleatorio() * 170 - 85);
+        const alvo = pecas[idx];
+        let r;
+        try {
+          r = cortarPeca(alvo, eixo, pos, inc, { earcutFn: earcut, novaIdentidade: contadorDeIdentidades() });
+        } catch (err) {
+          if (err.codigo === "PLANO_NAO_CORTA") continue;
+          throw err;
+        }
+        cortes++;
+        const contexto = nome + " #" + k + "." + s + " (" + eixo + " " + pos + "% " + inc + "°)";
+        [r.negativo, r.positivo].forEach(function (p) {
+          assertManifoldFechada(Object.assign({}, p, { rotulo: p.rotulo + " de " + contexto }));
+        });
+        const erroVolume = Math.abs(r.negativo.volumeMm3 + r.positivo.volumeMm3 - alvo.volumeMm3);
+        assert.ok(erroVolume < 1e-6 * Math.max(1, alvo.volumeMm3), "volume conservado em " + contexto);
+        pecas = pecas.slice(0, idx).concat([r.negativo, r.positivo], pecas.slice(idx + 1));
+      }
+    }
+  });
+  assert.ok(cortes > 200, "cortes efetivos: " + cortes);
+});

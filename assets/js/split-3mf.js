@@ -634,13 +634,13 @@
     // gerar esta (null na peça "inicial", montada direto de uma unidade).
     // -------------------------------------------------------------------------
 
-    // Tolerância da solda de vértices das peças (grade de 1e-5 mm, a mesma
-    // EPS_SOLDA que mesh-clip.js usa pra fechar o contorno da tampa). O ponto
-    // de corte de uma aresta é calculado separadamente em cada um dos dois
-    // triângulos que a compartilham e pode diferir em ~1e-16 (ver Task 13):
-    // sem soldar, a malha exportada teria arestas "abertas" entre a parede
-    // cortada e a tampa, e o próximo corte sucessivo não reconheceria as
-    // arestas compartilhadas.
+    // Tolerância da solda de vértices das peças (grade de 1e-5 mm). O ponto
+    // de corte de uma aresta compartilhada sai bit a bit igual nos dois
+    // triângulos (interpolação canônica em mesh-clip.js interpolarNaAresta),
+    // e a tampa reusa esses mesmos pontos; a solda junta vértices próximos
+    // de verdade e descarta as lascas que colapsam (mesh-clip.js não
+    // descarta lascas por área, só aqui, por colapso na solda), o que é
+    // topologicamente seguro: parede e tampa colapsam do mesmo jeito.
     const FATOR_SOLDA = 1e5;
 
     // triangulos: [[ [x,y,z] x3 ], ...] (soup, mesmo formato de

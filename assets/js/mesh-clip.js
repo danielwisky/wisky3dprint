@@ -69,7 +69,30 @@ window.Wisky3D = window.Wisky3D || {};
     return dx * plano.normal[0] + dy * plano.normal[1] + dz * plano.normal[2];
   }
 
+  // Ordem lexicográfica (x, depois y, depois z) entre dois pontos.
+  function pontoLexMaior(a, b) {
+    if (a[0] !== b[0]) return a[0] > b[0];
+    if (a[1] !== b[1]) return a[1] > b[1];
+    return a[2] > b[2];
+  }
+
+  // Ponto de interseção do plano com a aresta A-B (dA, dB: distâncias dos
+  // extremos ao plano). A conta é sempre feita a partir do extremo
+  // lexicograficamente menor: os dois triângulos que compartilham a aresta a
+  // percorrem em sentidos opostos (A->B num, B->A no outro), e interpolar
+  // cada vez a partir de um extremo diferente dava resultados que diferiam
+  // em ~1 ulp. Perto de uma fronteira da grade de solda (ex. plano em
+  // z*1e5 = k+0,5) esses dois pontos caíam em células diferentes e o anel de
+  // corte inteiro ficava aberto (fix Task 14). Canonicalizando, os dois
+  // vizinhos produzem o mesmo ponto bit a bit. Extremo exatamente no plano
+  // (d = 0) devolve o próprio extremo, sem arredondamento.
   function interpolarNaAresta(pA, pB, dA, dB) {
+    if (pontoLexMaior(pA, pB)) {
+      var pTmp = pA; pA = pB; pB = pTmp;
+      var dTmp = dA; dA = dB; dB = dTmp;
+    }
+    if (dA === 0) return [pA[0], pA[1], pA[2]];
+    if (dB === 0) return [pB[0], pB[1], pB[2]];
     var t = dA / (dA - dB);
     return [
       pA[0] + (pB[0] - pA[0]) * t,
@@ -87,14 +110,20 @@ window.Wisky3D = window.Wisky3D || {};
     return 0.5 * Math.sqrt(cx * cx + cy * cy + cz * cz);
   }
 
-  function triAreaDesprezivel(p1, p2, p3) {
-    return areaTriangulo(p1, p2, p3) < EPS;
+  function pontosIguais(a, b) {
+    return a === b || (a[0] === b[0] && a[1] === b[1] && a[2] === b[2]);
   }
 
+  // Descarta só o triângulo que colapsou de fato (dois cantos no mesmo
+  // ponto, bit a bit). Lascas de área pequena, ou até nula com 3 pontos
+  // distintos e colineares, são geometria legítima: descartá-las por área
+  // (como era até a Task 14, área < EPS) abria buracos e T-junctions na
+  // malha. Quem decide se a lasca degenera é a solda de vértices depois do
+  // corte (split-3mf.js soldarTriangulos descarta triângulos cujos cantos
+  // caem no mesmo vértice soldado), o que é topologicamente seguro.
   function empurrarTriSeValido(lista, p1, p2, p3) {
-    if (!triAreaDesprezivel(p1, p2, p3)) {
-      lista.push([p1, p2, p3]);
-    }
+    if (pontosIguais(p1, p2) || pontosIguais(p2, p3) || pontosIguais(p1, p3)) return;
+    lista.push([p1, p2, p3]);
   }
 
   function clipTriangulo(tri, plano) {
@@ -226,9 +255,17 @@ window.Wisky3D = window.Wisky3D || {};
   var COR_TAMPA_PADRAO = [176, 176, 190];
 
   // Distância máxima (mesma unidade da malha, mm) para considerar dois pontos
-  // de interseção "o mesmo vértice". Pontos calculados por interpolação em
-  // triângulos vizinhos podem diferir por ~1e-15 sem serem bit-a-bit iguais.
-  var EPS_SOLDA = 1e-5;
+  // do contorno "o mesmo vértice" ao montar a tampa. Com a interpolação
+  // canônica (interpolarNaAresta), os pontos de corte de uma aresta
+  // compartilhada já saem bit a bit iguais; essa tolerância só absorve ruído
+  // de ponto flutuante (~1e-12) de entradas que não são indexadas.
+  // Precisa ficar bem abaixo da grade de solda das peças (1e-5 mm em
+  // split-3mf.js soldarTriangulos): com 1e-5 aqui (até a Task 14), dois
+  // vértices legítimos a ~1e-5 um do outro (lasca de um corte anterior)
+  // viravam 1 só na tampa e continuavam 2 na parede, deixando a peça
+  // não-manifold. Com a tampa usando os pontos reais da parede, quem decide
+  // se pontos próximos colapsam é sempre a solda das peças, dos dois lados.
+  var EPS_SOLDA = 1e-9;
 
   function resolverEarcut(earcutFn) {
     var fn = earcutFn || (window.Wisky3D && window.Wisky3D.earcut);
@@ -455,24 +492,30 @@ window.Wisky3D = window.Wisky3D || {};
     }
 
     var indices = earcut(coords, holeIndices, 2);
-    var triangulos = [];
 
+    // Mantém todo triângulo do earcut com 3 vértices distintos, mesmo de
+    // área 0: quando uma diagonal de face cruza o plano, o contorno ganha
+    // pontos colineares e o earcut os cobre com triângulos degenerados.
+    // Descartá-los deixava uma T-junction entre a tampa e a parede (fix
+    // Task 14). O winding é decidido uma vez por polígono, pelo sinal da
+    // soma dos produtos mistos contra a normal pedida: earcut devolve todos
+    // os triângulos com a mesma orientação 2D, e o sinal de um triângulo
+    // degenerado sozinho é arbitrário.
+    var selecionados = [];
+    var somaOrientacao = 0;
     for (var t = 0; t + 2 < indices.length; t += 3) {
       var a = vertices[indices[t]];
       var b = vertices[indices[t + 1]];
       var c = vertices[indices[t + 2]];
-      // earcut só garante orientação consistente no 2D; confere no 3D pelo
-      // produto misto contra a normal pedida e inverte o winding se preciso.
-      var normalTri = produtoVetorial(subtrair(b, a), subtrair(c, a));
-      if (produtoEscalar(normalTri, base.n) < 0) {
-        var tmp = b;
-        b = c;
-        c = tmp;
-      }
-      empurrarTriSeValido(triangulos, a, b, c);
+      if (pontosIguais(a, b) || pontosIguais(b, c) || pontosIguais(a, c)) continue;
+      selecionados.push([a, b, c]);
+      somaOrientacao += produtoEscalar(produtoVetorial(subtrair(b, a), subtrair(c, a)), base.n);
     }
 
-    return triangulos;
+    var inverter = somaOrientacao < 0;
+    return selecionados.map(function (tri) {
+      return inverter ? [tri[0], tri[2], tri[1]] : tri;
+    });
   }
 
   // Arestas de borda de um lado do corte que estão sobre o plano: arestas de
