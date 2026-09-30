@@ -1,5 +1,14 @@
 window.Wisky3D = window.Wisky3D || {};
 
+// Suporte a Node.js: carrega DOMParser do @xmldom se disponível (testes)
+if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
+  try {
+    window.DOMParser = require("@xmldom/xmldom").DOMParser;
+  } catch (e) {
+    // Ignorar se @xmldom não estiver instalado
+  }
+}
+
 (function () {
 // ---------------------------------------------------------------------------
 // BLOCO: Parsing de modelos 3D (STL/3MF): volume, bounding box e densidade
@@ -185,6 +194,21 @@ window.Wisky3D = window.Wisky3D || {};
     return null;
   }
 
+  // Compara pelo nome local (ignorando prefixo de namespace, ex.: "m:color"),
+  // necessário pra achar elementos de extensões do 3MF (m:colorgroup,
+  // m:color) cujo prefixo pode variar (ou nem existir, se o pacote declarou a
+  // extensão com outro prefixo/namespace default). Compartilhado com
+  // threemf-writer.js (limpeza de colorgroups órfãos) e com
+  // lerCorPorTriangulo abaixo, pra não duplicar essa busca.
+  function filhosDiretosPorNomeLocal(el, nomeLocal) {
+    var out = [];
+    for (var i = 0; i < el.childNodes.length; i++) {
+      var n = el.childNodes[i];
+      if (n.nodeType === 1 && n.localName && n.localName.toLowerCase() === nomeLocal) out.push(n);
+    }
+    return out;
+  }
+
   function bboxVazio() {
     return { minX: Infinity, minY: Infinity, minZ: Infinity, maxX: -Infinity, maxY: -Infinity, maxZ: -Infinity };
   }
@@ -218,7 +242,16 @@ window.Wisky3D = window.Wisky3D || {};
   // `path` é o arquivo (dentro do zip) de onde o object desse nível veio,
   // repassado como está pra components locais e trocado pelo p:path
   // resolvido pra components externos.
-  function resolveObjectRecursivo(zip, docCache, doc, objectId, accumTransform, path, onMesh) {
+  // `topObjectId` é o objectid do <item> de build de nível topo que originou
+  // esta cadeia de resolução (permanece o mesmo em toda a recursão); difere
+  // de `objectId` sempre que o object de nível topo é uma "montagem" sem
+  // <mesh> própria, só <components> apontando pra outro object com a malha
+  // de fato (comum em 3MF do Bambu Studio/OrcaSlicer) — nesse caso `objectId`
+  // vira o id do object-folha (com a malha) enquanto `topObjectId` continua
+  // sendo o id que aparece em <model_settings.config>/<plate> e no <item> do
+  // <build>, usado por mapearTriangulosParaChapas pra casar triângulo -> chapa.
+  function resolveObjectRecursivo(zip, docCache, doc, objectId, accumTransform, path, onMesh, topObjectId) {
+    if (topObjectId === undefined) topObjectId = objectId;
     var objectEl = findObjectElement(doc, objectId);
     if (!objectEl) return Promise.resolve();
 
@@ -249,7 +282,7 @@ window.Wisky3D = window.Wisky3D || {};
           localIndices.push(localIndex);
         }
       });
-      if (vertexEls.length) onMesh(leafTriangles, localIndices, meshBbox, path, objectId);
+      if (vertexEls.length) onMesh(leafTriangles, localIndices, meshBbox, path, objectId, topObjectId);
     }
 
     var componentsEl = directChild(objectEl, "components");
@@ -271,10 +304,10 @@ window.Wisky3D = window.Wisky3D || {};
           docCache[normalizedPath] = docPromise;
         }
         return docPromise.then(function (extDoc) {
-          return resolveObjectRecursivo(zip, docCache, extDoc, childObjectId, combined, normalizedPath, onMesh);
+          return resolveObjectRecursivo(zip, docCache, extDoc, childObjectId, combined, normalizedPath, onMesh, topObjectId);
         });
       }
-      return resolveObjectRecursivo(zip, docCache, doc, childObjectId, combined, path, onMesh);
+      return resolveObjectRecursivo(zip, docCache, doc, childObjectId, combined, path, onMesh, topObjectId);
     });
 
     return Promise.all(promises);
@@ -373,10 +406,10 @@ window.Wisky3D = window.Wisky3D || {};
   // reabrir o pacote 3MF original e escrever a cor de volta nos <triangle>
   // exatos de onde vieram, em vez de reconstruir o pacote do zero.
   function resolveObjectTriangles(zip, docCache, doc, objectId, accumTransform, outTriangulos, path, outOrigins) {
-    function onMesh(leafTriangles, localIndices, meshBbox, meshPath, meshObjectId) {
+    function onMesh(leafTriangles, localIndices, meshBbox, meshPath, meshObjectId, topObjectId) {
       leafTriangles.forEach(function (tri, i) {
         outTriangulos.push(tri);
-        outOrigins.push({ path: meshPath, objectId: meshObjectId, localIndex: localIndices[i] });
+        outOrigins.push({ path: meshPath, objectId: meshObjectId, topObjectId: topObjectId, localIndex: localIndices[i] });
       });
     }
 
@@ -471,6 +504,334 @@ window.Wisky3D = window.Wisky3D || {};
     };
   }
 
+  // Um 3MF pode conter várias chapas independentes (plates), cada uma com seu
+  // próprio arranjo de peças. Sem isso, o bbox combinado de todas as chapas
+  // dava um "tamanho" maior que qualquer mesa real e gerava avisos de encaixe
+  // falsos. Lê Metadata/model_settings.config e devolve, por chapa, a lista de
+  // object_id das peças que pertencem a ela (ou null se o arquivo não tem
+  // metadados de chapa, caso de projetos com uma chapa só).
+  function parsePlateAssignments(modelSettingsText) {
+    if (!modelSettingsText || typeof DOMParser === "undefined") return null;
+    try {
+      var doc = new DOMParser().parseFromString(modelSettingsText, "application/xml");
+      if (doc.getElementsByTagName("parsererror").length) return null;
+      var plateEls = doc.getElementsByTagName("plate");
+      if (!plateEls.length) return null;
+
+      var chapas = [];
+      for (var i = 0; i < plateEls.length; i++) {
+        var instancias = plateEls[i].getElementsByTagName("model_instance");
+        var ids = [];
+        for (var j = 0; j < instancias.length; j++) {
+          var metas = instancias[j].getElementsByTagName("metadata");
+          for (var k = 0; k < metas.length; k++) {
+            if (metas[k].getAttribute("key") === "object_id") {
+              ids.push(metas[k].getAttribute("value"));
+            }
+          }
+        }
+        if (ids.length) chapas.push(ids);
+      }
+      return chapas.length > 1 ? chapas : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Junta o bbox dos itens (retornados por parse3MFPackage) de acordo com a
+  // lista de object_id de cada chapa, gerando um bbox por chapa em vez de um
+  // bbox único pra todo o arquivo. Cada chapa retornada também traz a lista
+  // de object_id que a compõe (`objectIds`), pra quem precisar filtrar itens
+  // por chapa depois (ex.: Split 3MF), além do bbox mesclado.
+  //
+  // `opcoes.manterUnica` (default false, comportamento pré-existente
+  // preservado): normalmente, se sobrar 1 chapa só com bbox válido depois do
+  // filtro, o resultado inteiro vira `null` (uso histórico: telas que só
+  // mostram cards de chapa quando há mais de uma chapa "de verdade").
+  // Passando `{ manterUnica: true }`, esse colapso é pulado e a chapa única
+  // (ou array vazio, se nenhuma tiver bbox) é retornada normalmente — usado
+  // pelo Split 3MF, que trata "1 unidade só" como caso válido, não erro.
+  function calcularChapas(itens, plateAssignments, opcoes) {
+    if (!plateAssignments || !itens) return null;
+    var manterUnica = opcoes && opcoes.manterUnica;
+    var chapas = plateAssignments.map(function (ids, indice) {
+      var bbox = null;
+      itens.forEach(function (item) {
+        if (ids.indexOf(item.objectId) !== -1) {
+          // Mescla o bbox do item com o bbox acumulado da chapa
+          if (!bbox) bbox = item.bbox;
+          else if (item.bbox) bbox = mergeBBox(bbox, item.bbox);
+        }
+      });
+      return { indice: indice + 1, objectIds: ids, bbox: bbox };
+    }).filter(function (chapa) { return chapa.bbox; });
+    if (manterUnica) return chapas;
+    return chapas.length > 1 ? chapas : null;
+  }
+
+  // Agrupa índices de triângulo por chapa, numa única varredura de
+  // `triangleOrigins` (formato `{path, objectId, topObjectId, localIndex}`
+  // por triângulo, ver resolveObjectTriangles/extractTriangles3MF). Pra cada
+  // triângulo, compara `topObjectId` (o objectid do <item> de build de nível
+  // topo, não o objectId do object-folha que carrega a malha — eles diferem
+  // sempre que o item de build referencia uma "montagem" via <components>,
+  // caso comum em 3MF do Bambu Studio/OrcaSlicer) contra o `objectIds` (Set)
+  // de cada chapa em `chapas` (formato `{indice, objectIds}`, ver
+  // detectarChapas em colorir-3mf.js, que também usa os ids de nível topo do
+  // model_settings.config) e empilha o índice do triângulo na chapa
+  // correspondente. Um triângulo cujo topObjectId não bate com nenhuma chapa
+  // simplesmente não entra em nenhum grupo (não deveria acontecer na
+  // prática, já que toda peça pertence a alguma chapa, mas não lança erro se
+  // acontecer).
+  function mapearTriangulosParaChapas(triangleOrigins, chapas) {
+    var porChapa = new Map();
+    chapas.forEach(function (chapa) { porChapa.set(chapa.indice, []); });
+
+    for (var t = 0; t < triangleOrigins.length; t++) {
+      var origin = triangleOrigins[t];
+      if (!origin) continue;
+      var topId = origin.topObjectId !== undefined ? origin.topObjectId : origin.objectId;
+      for (var i = 0; i < chapas.length; i++) {
+        if (chapas[i].objectIds.has(topId)) {
+          porChapa.get(chapas[i].indice).push(t);
+          break;
+        }
+      }
+    }
+
+    return porChapa;
+  }
+
+  // Dá pra ter até 3 vizinhos por triângulo (um por aresta). Vértices são
+  // "soldados" por posição quantizada pra achar arestas compartilhadas, já
+  // que a geometria não-indexada usada pelo viewer não compartilha vértices
+  // entre triângulos. Geometria pura (sem THREE.js/DOM), por isso mora aqui e
+  // não em colorir-3mf.js, que só chama esta função.
+  //
+  // `opcoes` (opcional, Task 15, mudança aditiva — sem ele o retorno e o
+  // custo são exatamente os de antes):
+  //  - fatorQuantizacao: grade da solda (default 1e4, ~0.0001 mm). O Split
+  //    3MF passa 1e5 pras peças cortadas, que já vêm soldadas nessa grade
+  //    (split-3mf.js FATOR_SOLDA) — requantizar mais grosso fundiria
+  //    vértices distintos de lascas finas e acusaria não-manifold à toa.
+  //  - contarArestas: se true, o retorno ganha `triangulosPorAresta`
+  //    (Map "a_b" -> nº de triângulos que usam a aresta não-orientada a-b;
+  //    malha fechada = exatamente 2 em toda aresta, furo = 1, não-manifold
+  //    = 3+) e `triangulosDegenerados` (triângulos com dois cantos no mesmo
+  //    vértice pós-solda, que ficam fora da contagem: colapsam num segmento
+  //    e não abrem nem fecham nada — mesmo critério de soldarTriangulos em
+  //    split-3mf.js). A lista de adjacência não muda.
+  function buildAdjacencyAndExportIndex(positions, triCount, opcoes) {
+    var FATOR_QUANTIZACAO = (opcoes && opcoes.fatorQuantizacao) || 1e4; // ~0.0001mm de tolerância pra "mesmo ponto"
+    var contarArestas = !!(opcoes && opcoes.contarArestas);
+    var keyToIndex = new Map();
+    var exportVertices = [];
+    var cornerExportIndex = new Int32Array(triCount * 3);
+
+    for (var i = 0; i < triCount * 3; i++) {
+      var base = i * 3;
+      var x = positions[base], y = positions[base + 1], z = positions[base + 2];
+      var chave = Math.round(x * FATOR_QUANTIZACAO) + "," + Math.round(y * FATOR_QUANTIZACAO) + "," + Math.round(z * FATOR_QUANTIZACAO);
+      var idx = keyToIndex.get(chave);
+      if (idx === undefined) {
+        idx = exportVertices.length;
+        exportVertices.push([x, y, z]);
+        keyToIndex.set(chave, idx);
+      }
+      cornerExportIndex[i] = idx;
+    }
+
+    var adjacencySets = new Array(triCount);
+    for (var t = 0; t < triCount; t++) adjacencySets[t] = new Set();
+
+    var edgeMap = new Map();
+    function edgeKey(a, b) {
+      return a < b ? a + "_" + b : b + "_" + a;
+    }
+
+    for (var t2 = 0; t2 < triCount; t2++) {
+      var i0 = cornerExportIndex[t2 * 3];
+      var i1 = cornerExportIndex[t2 * 3 + 1];
+      var i2 = cornerExportIndex[t2 * 3 + 2];
+      var arestas = [[i0, i1], [i1, i2], [i2, i0]];
+      for (var e = 0; e < arestas.length; e++) {
+        var chave2 = edgeKey(arestas[e][0], arestas[e][1]);
+        var lista = edgeMap.get(chave2);
+        if (!lista) {
+          lista = [];
+          edgeMap.set(chave2, lista);
+        }
+        for (var j = 0; j < lista.length; j++) {
+          var outro = lista[j];
+          adjacencySets[t2].add(outro);
+          adjacencySets[outro].add(t2);
+        }
+        lista.push(t2);
+      }
+    }
+
+    var adjacency = adjacencySets.map(function (s) { return Array.from(s); });
+    var resultado = { adjacency: adjacency, exportVertices: exportVertices, cornerExportIndex: cornerExportIndex };
+
+    if (contarArestas) {
+      var triangulosPorAresta = new Map();
+      var triangulosDegenerados = 0;
+      for (var t3 = 0; t3 < triCount; t3++) {
+        var a0 = cornerExportIndex[t3 * 3];
+        var a1 = cornerExportIndex[t3 * 3 + 1];
+        var a2 = cornerExportIndex[t3 * 3 + 2];
+        if (a0 === a1 || a1 === a2 || a0 === a2) {
+          triangulosDegenerados++;
+          continue;
+        }
+        var chaves = [edgeKey(a0, a1), edgeKey(a1, a2), edgeKey(a2, a0)];
+        for (var k = 0; k < 3; k++) {
+          triangulosPorAresta.set(chaves[k], (triangulosPorAresta.get(chaves[k]) || 0) + 1);
+        }
+      }
+      resultado.triangulosPorAresta = triangulosPorAresta;
+      resultado.triangulosDegenerados = triangulosDegenerados;
+    }
+
+    return resultado;
+  }
+
+  // Cor default (cinza) de área sem pintura/atribuição de cor explícita.
+  // Mesmo valor de ThreeMFWriter.DEFAULT_COLOR (fonte histórica dessa
+  // constante, ver comentário lá), duplicado aqui como literal porque
+  // model-parser.js carrega antes de threemf-writer.js na ordem de <script>
+  // das páginas que usam os dois módulos, então não dá pra referenciar
+  // ThreeMFWriter.DEFAULT_COLOR na hora que este módulo é avaliado.
+  var DEFAULT_COLOR = [176, 176, 190];
+
+  function hexColorParaRgb(hex) {
+    if (!hex) return null;
+    var h = hex.replace("#", "");
+    if (h.length < 6) return null;
+    return [parseInt(h.substr(0, 2), 16), parseInt(h.substr(2, 2), 16), parseInt(h.substr(4, 2), 16)];
+  }
+
+  // Acha <m:colorgroup id="pid"> dentro de <resources> do doc informado,
+  // comparando por nome local (ver filhosDiretosPorNomeLocal) porque o
+  // prefixo do namespace de materiais pode variar entre pacotes.
+  function acharColorGroupPorId(doc, pid) {
+    var resourcesEl = directChild(doc.documentElement, "resources");
+    if (!resourcesEl) return null;
+    var grupos = filhosDiretosPorNomeLocal(resourcesEl, "colorgroup");
+    for (var i = 0; i < grupos.length; i++) {
+      if (grupos[i].getAttribute("id") === String(pid)) return grupos[i];
+    }
+    return null;
+  }
+
+  // Lê a cor "de verdade" de cada triângulo originado de extractTriangles3MF
+  // (via `origins`, ver resolveObjectTriangles), reabrindo o(s) arquivo(s)
+  // .model de onde eles vieram quando necessário (mesmo padrão de resolução
+  // de p:path que resolveObjectRecursivo usa pra components externos: cache
+  // de doc por path, reaberto do zip só na primeira vez) e olhando o
+  // <triangle> exato (índice `origin.localIndex` dentro de
+  // <mesh><triangles>) pra decidir a cor:
+  //  - pid/p1: resolve contra <m:colorgroup id="pid"> em <resources>,
+  //    decodificando o hex "#RRGGBBAA" do <m:color> de índice p1.
+  //  - sem pid mas com paint_color (extensão proprietária Bambu/OrcaSlicer):
+  //    decodifica o índice de filamento (ThreeMFWriter.paintColorParaFilamentIndex,
+  //    inverso de filamentIndexParaPaintColor) e mapeia pra cor via
+  //    `projectSettingsConfig.filament_colour[indice-1]` ("#RRGGBB" do Bambu
+  //    Studio). Sem projectSettingsConfig (ou sem entrada nesse índice), cai
+  //    na cor default (fallback neutro).
+  //  - nenhum dos dois: cor default (`corDefault` ou DEFAULT_COLOR) — área
+  //    não pintada, herda o extrusor/filamento padrão do objeto.
+  // Retorna Promise<Uint8ClampedArray(origins.length*3)>, mesmo formato/ordem
+  // de state.baseColors em colorir-3mf.js (triângulo i -> [i*3, i*3+1, i*3+2]).
+  function lerCorPorTriangulo(zip, modelDoc, origins, projectSettingsConfig, corDefault) {
+    var DEFAULT = corDefault || DEFAULT_COLOR;
+    var out = new Uint8ClampedArray(origins.length * 3);
+
+    function setColor(i, rgb) {
+      var c = rgb || DEFAULT;
+      out[i * 3] = c[0];
+      out[i * 3 + 1] = c[1];
+      out[i * 3 + 2] = c[2];
+    }
+
+    var rootFile = localizarModeloRaiz(zip);
+    var rootPath = rootFile ? rootFile.name : null;
+    var docCache = {};
+    // Cache da lista de <triangle> de cada object, por path+objectId: sem
+    // isso, achar o triângulo de índice `localIndex` custava uma varredura de
+    // TODOS os <object> do doc (findObjectElement) + a reconstrução da lista
+    // inteira de triângulos do object (directChildren) A CADA triângulo —
+    // custo quadrático no nº de triângulos do object (medido: ~87s em 40k
+    // triângulos, ~350s em 80k). Com o cache, cada object é resolvido uma
+    // única vez e o acesso por índice é O(1).
+    var triElsCache = {};
+
+    function getDoc(path) {
+      if (path === rootPath || path === null || path === undefined) return Promise.resolve(modelDoc);
+      if (docCache[path]) return docCache[path];
+      var entry = zip.file(path);
+      if (!entry) return Promise.resolve(null);
+      var promessa = entry.async("text").then(parseXmlDoc);
+      docCache[path] = promessa;
+      return promessa;
+    }
+
+    function getTriEls(doc, path, objectId) {
+      var chave = (path || "") + "#" + objectId;
+      if (triElsCache[chave]) return triElsCache[chave];
+      var objectEl = findObjectElement(doc, objectId);
+      var meshEl = objectEl && directChild(objectEl, "mesh");
+      var trianglesEl = meshEl && directChild(meshEl, "triangles");
+      var triEls = trianglesEl ? directChildren(trianglesEl, "triangle") : [];
+      triElsCache[chave] = triEls;
+      return triEls;
+    }
+
+    var promises = origins.map(function (origin, i) {
+      if (!origin) {
+        setColor(i, DEFAULT);
+        return Promise.resolve();
+      }
+      return getDoc(origin.path).then(function (doc) {
+        if (!doc) {
+          setColor(i, DEFAULT);
+          return;
+        }
+        var triEls = getTriEls(doc, origin.path, origin.objectId);
+        var triEl = triEls[origin.localIndex];
+        if (!triEl) {
+          setColor(i, DEFAULT);
+          return;
+        }
+
+        var pid = triEl.getAttribute("pid");
+        var p1 = triEl.getAttribute("p1");
+        if (pid && p1 !== null && p1 !== "") {
+          var colorGroupEl = acharColorGroupPorId(doc, pid);
+          var colorEls = colorGroupEl ? filhosDiretosPorNomeLocal(colorGroupEl, "color") : [];
+          var colorEl = colorEls[parseInt(p1, 10)];
+          setColor(i, colorEl ? hexColorParaRgb(colorEl.getAttribute("color")) : null);
+          return;
+        }
+
+        var paintColor = triEl.getAttribute("paint_color");
+        if (paintColor) {
+          var ThreeMFWriter = window.Wisky3D && window.Wisky3D.ThreeMFWriter;
+          var indice = ThreeMFWriter && ThreeMFWriter.paintColorParaFilamentIndex(paintColor);
+          var hexBambu = indice && projectSettingsConfig && Array.isArray(projectSettingsConfig.filament_colour)
+            ? projectSettingsConfig.filament_colour[indice - 1]
+            : null;
+          setColor(i, hexBambu ? hexColorParaRgb(hexBambu) : null);
+          return;
+        }
+
+        setColor(i, DEFAULT);
+      });
+    });
+
+    return Promise.all(promises).then(function () { return out; });
+  }
+
   window.Wisky3D.ModelParser = {
     parseSTL: parseSTL,
     computeBoundingBox: computeBoundingBox,
@@ -481,11 +842,18 @@ window.Wisky3D = window.Wisky3D || {};
     directChild: directChild,
     directChildren: directChildren,
     findObjectElement: findObjectElement,
+    filhosDiretosPorNomeLocal: filhosDiretosPorNomeLocal,
     localizarModeloRaiz: localizarModeloRaiz,
     localizarArquivoUnico: localizarArquivoUnico,
     baixarBlob: baixarBlob,
     parse3MFPackage: parse3MFPackage,
     extractTriangles3MF: extractTriangles3MF,
-    parse3MFPerfil: parse3MFPerfil
+    parse3MFPerfil: parse3MFPerfil,
+    parsePlateAssignments: parsePlateAssignments,
+    calcularChapas: calcularChapas,
+    mapearTriangulosParaChapas: mapearTriangulosParaChapas,
+    buildAdjacencyAndExportIndex: buildAdjacencyAndExportIndex,
+    DEFAULT_COLOR: DEFAULT_COLOR,
+    lerCorPorTriangulo: lerCorPorTriangulo
   };
 })();

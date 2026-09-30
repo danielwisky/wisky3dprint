@@ -4,12 +4,19 @@
 // por triângulo (3MF Materials and Properties Extension: colorgroup + pid/p1).
 // ---------------------------------------------------------------------------
 import * as THREE from "three";
-import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import {
+  criarViewerBasico,
+  computeFaceNormals,
+  criarMeshTriangulos,
+  aplicarCoresComDestaque,
+  AVISO_TRIANGULOS_GRANDE
+} from "wisky3d/three-viewer-basico.js";
 
 const root = document.getElementById("cor3mf");
 
 if (root) {
   const ModelParser = window.Wisky3D && window.Wisky3D.ModelParser;
+  const ThreeMFWriter = window.Wisky3D && window.Wisky3D.ThreeMFWriter;
 
   const dropzone = document.getElementById("cor3mf-dropzone");
   const upload = document.getElementById("cor3mf-upload");
@@ -37,18 +44,13 @@ if (root) {
   const exportBtn = document.getElementById("cor3mf-exportar");
   const outEl = document.getElementById("cor3mf-out");
   const recentralizarBtn = document.getElementById("cor3mf-recentralizar");
+  const abasEl = document.getElementById("cor3mf-abas");
 
-  const DEFAULT_COLOR = [176, 176, 190];
-  const HIGHLIGHT_COLOR = [255, 214, 51];
-  const AVISO_TRIANGULOS_GRANDE = 150000;
+  const DEFAULT_COLOR = ThreeMFWriter.DEFAULT_COLOR;
   const MAX_UNDO = 20;
   const PALETA_PRESETS = ["#3fb6e8", "#ff6b4a", "#8b7cf6", "#5cd65c", "#ffd633", "#ff4fa3", "#4dd0e1", "#ffa726"];
 
-  function toHexByte(n) {
-    return n.toString(16).padStart(2, "0");
-  }
-
-  const DEFAULT_COLOR_HEX = "#" + DEFAULT_COLOR.map(toHexByte).join("");
+  const DEFAULT_COLOR_HEX = "#" + DEFAULT_COLOR.map(ThreeMFWriter.toHexByte).join("");
   // Tolerância fixa do balde: 0° exato só pega o triângulo clicado em malhas
   // orgânicas bem trianguladas (STL de scan/escultura), já que ali quase
   // nenhum triângulo vizinho tem normal idêntica, o clique parecia "não
@@ -58,13 +60,10 @@ if (root) {
   const BALDE_TOLERANCIA_DEG = 8;
 
   let currentTool = "balde";
-  let renderer = null;
-  let scene = null;
-  let camera = null;
-  let controls = null;
-  let mesh = null;
-  let needsRender = true;
-  let modelRadius = 1; // raio da esfera envolvente do modelo, fixo desde o carregamento
+  // Viewer Three.js compartilhado (assets/js/three-viewer-basico.js): câmera,
+  // luzes, trackball, zoom no cursor, loop de render, enquadramento e resize.
+  // Criado só no primeiro arquivo carregado (initSceneOnce).
+  let viewer = null;
   let state = null;
   /*
    * state = {
@@ -92,157 +91,8 @@ if (root) {
   // -------------------------------------------------------------------------
 
   function initSceneOnce() {
-    if (renderer) return;
-    renderer = new THREE.WebGLRenderer({ canvas: canvasEl, antialias: true });
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x14161c);
-    camera = new THREE.PerspectiveCamera(45, 1, 0.1, 10000);
-
-    scene.add(new THREE.HemisphereLight(0xffffff, 0x3a3d47, 1.15));
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.85);
-    dirLight.position.set(1, 1.6, 1.2);
-    scene.add(dirLight);
-
-    controls = new OrbitControls(camera, renderer.domElement);
-    // Sem inércia (o modelo para na hora que solta o botão) e zoom controlado
-    // à mão (abaixo) pra aproximar/afastar em direção ao ponto sob o cursor.
-    controls.enableDamping = false;
-    controls.enableZoom = false;
-    // O giro é feito à mão (ver bloco "Trackball" abaixo), estilo trackball: gira o
-    // próprio objeto livremente em qualquer direção a partir do ponto
-    // agarrado, sem o eixo vertical fixo do esquema padrão do OrbitControls
-    // (que trava ao tentar virar o objeto de frente/costas a partir de um
-    // ponto fora do eixo central). O OrbitControls fica só com o botão
-    // direito (pan).
-    controls.enableRotate = false;
-    controls.mouseButtons = { LEFT: null, MIDDLE: null, RIGHT: THREE.MOUSE.PAN };
-    controls.addEventListener("change", () => {
-      needsRender = true;
-    });
-
-    canvasEl.addEventListener("wheel", handleWheelZoom, { passive: false });
-
-    window.addEventListener("resize", resizeRenderer);
-    resizeRenderer();
-    animate();
-  }
-
-  // Zoom em direção ao ponto sob o cursor (como no Bambu Studio), em vez de
-  // sempre em direção ao centro do modelo: acha o ponto 3D sob o mouse (ou
-  // usa o alvo da órbita se o raio não acertar a malha) e escala tanto a
-  // posição da câmera quanto o alvo a partir desse pivô, mantendo o ponto
-  // fixo na tela.
-  function handleWheelZoom(e) {
-    if (!mesh) return;
-    e.preventDefault();
-
-    const rect = canvasEl.getBoundingClientRect();
-    pointerNdc.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    pointerNdc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-    raycaster.setFromCamera(pointerNdc, camera);
-
-    const hits = raycaster.intersectObject(mesh, false);
-    const pivot = hits.length ? hits[0].point : controls.target.clone();
-
-    const zoomSpeed = 1.1;
-    // Trackpads às vezes mandam deltaY muito grande num só evento; sem limite
-    // por evento a câmera podia pular quase até (ou pra dentro) do modelo
-    // numa scrollada só, o que "bugava" a visualização.
-    const passoZoom = THREE.MathUtils.clamp(e.deltaY * 0.0015 * zoomSpeed, -0.6, 0.6);
-    const factor = Math.exp(passoZoom);
-
-    // Câmera e alvo escalam juntos em torno do pivô pelo mesmo fator: a
-    // distância câmera-alvo muda exatamente por "factor", sem depender da
-    // distância até o pivô (que pode ficar perto de zero e, se usada num
-    // denominador, gera saltos numéricos gigantes; bug já visto em produção).
-    camera.position.sub(pivot).multiplyScalar(factor).add(pivot);
-    controls.target.sub(pivot).multiplyScalar(factor).add(pivot);
-
-    // Trava de segurança: o alvo da órbita nunca pode se afastar demais do
-    // centro fixo do modelo. Sem isso, uma sequência longa de zoom (sobretudo
-    // perto do limite máximo, onde o raio às vezes deixa de acertar a malha)
-    // podia fazer o alvo "andar" pra fora do modelo evento após evento, e a
-    // câmera sempre reorienta pro alvo, então o erro se acumulava até o
-    // modelo sumir da tela.
-    if (meshPivotWorld) {
-      const maxDistAlvoPivo = modelRadius * 1.5;
-      const alvoOffset = controls.target.clone().sub(meshPivotWorld);
-      const distAlvoPivo = alvoOffset.length();
-      if (distAlvoPivo > maxDistAlvoPivo) {
-        controls.target.copy(meshPivotWorld).addScaledVector(alvoOffset, maxDistAlvoPivo / distAlvoPivo);
-      }
-    }
-
-    // Único limite de segurança: manter a distância câmera-alvo dentro de
-    // [minDistance, maxDistance] (minDistance já garante que a câmera nunca
-    // entra na esfera envolvente do modelo, ver frameCameraToGeometry).
-    // Importante: capturar o deslocamento ANTES de mexer em camera.position.
-    // Encadear "camera.position.copy(target).add(camera.position.clone()...)"
-    // é uma armadilha clássica, pois o .copy() já mutou camera.position antes
-    // do .clone() rodar, colapsando câmera e alvo no mesmo ponto.
-    const offset = camera.position.clone().sub(controls.target);
-    const dist = offset.length();
-    if (dist < controls.minDistance || dist > controls.maxDistance) {
-      const clampedDist = THREE.MathUtils.clamp(dist, controls.minDistance, controls.maxDistance);
-      camera.position.copy(controls.target).addScaledVector(offset, clampedDist / dist);
-    }
-
-    controls.update();
-    needsRender = true;
-  }
-
-  function resizeRenderer() {
-    const wrap = canvasEl.parentElement;
-    const largura = wrap.clientWidth || 320;
-    const altura = Math.max(420, Math.round(largura * 0.72));
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.setSize(largura, altura, false);
-    camera.aspect = largura / altura;
-    camera.updateProjectionMatrix();
-    needsRender = true;
-  }
-
-  function animate() {
-    requestAnimationFrame(animate);
-    controls.update();
-    if (needsRender) {
-      renderer.render(scene, camera);
-      needsRender = false;
-    }
-  }
-
-  function frameCameraToGeometry() {
-    mesh.geometry.computeBoundingSphere();
-    const sphere = mesh.geometry.boundingSphere;
-    const radius = sphere.radius || 1;
-    modelRadius = radius;
-    camera.near = Math.max(radius / 100, 0.01);
-    camera.far = radius * 20;
-    camera.updateProjectionMatrix();
-    // minDistance >= raio da esfera envolvente: garante que a câmera nunca
-    // consiga entrar no volume do modelo, mesmo em formas não-esféricas
-    // (ex.: um cubo tem raio inscrito bem menor que o raio da esfera
-    // circunscrita), evita a câmera atravessar a malha ao dar zoom demais.
-    controls.minDistance = radius * 1.05;
-    controls.maxDistance = radius * 8;
-    recentralizarVista();
-  }
-
-  // Reposiciona a câmera no enquadramento padrão, sem mexer no giro que o
-  // usuário já deu no modelo, útil pra "se achar" de novo depois de perder o
-  // objeto de vista com muito zoom/pan. meshPivotWorld é fixo desde a carga
-  // do arquivo, então serve de referência estável mesmo com o objeto girado.
-  function recentralizarVista() {
-    if (!mesh || !meshPivotWorld) return;
-    const radius = modelRadius;
-    camera.position.set(
-      meshPivotWorld.x + radius * 1.6,
-      meshPivotWorld.y + radius * 1.2,
-      meshPivotWorld.z + radius * 1.6
-    );
-    controls.target.copy(meshPivotWorld);
-    controls.update();
-    needsRender = true;
+    if (viewer) return;
+    viewer = criarViewerBasico(canvasEl, { onClique: handleCanvasClick });
   }
 
   // -------------------------------------------------------------------------
@@ -266,95 +116,12 @@ if (root) {
     return { triCount, positions };
   }
 
-  function computeFaceNormals(positions, triCount) {
-    const normals = new Float32Array(triCount * 3);
-    for (let t = 0; t < triCount; t++) {
-      const b = t * 9;
-      const p0x = positions[b], p0y = positions[b + 1], p0z = positions[b + 2];
-      const p1x = positions[b + 3], p1y = positions[b + 4], p1z = positions[b + 5];
-      const p2x = positions[b + 6], p2y = positions[b + 7], p2z = positions[b + 8];
-      const ux = p1x - p0x, uy = p1y - p0y, uz = p1z - p0z;
-      const vx = p2x - p0x, vy = p2y - p0y, vz = p2z - p0z;
-      let nx = uy * vz - uz * vy;
-      let ny = uz * vx - ux * vz;
-      let nz = ux * vy - uy * vx;
-      const len = Math.hypot(nx, ny, nz) || 1;
-      nx /= len; ny /= len; nz /= len;
-      normals[t * 3] = nx;
-      normals[t * 3 + 1] = ny;
-      normals[t * 3 + 2] = nz;
-    }
-    return normals;
-  }
+  // computeFaceNormals/expandFaceNormalsToCorners moram em
+  // three-viewer-basico.js (compartilhadas com o Split 3MF).
 
-  function expandFaceNormalsToCorners(faceNormals, triCount) {
-    const out = new Float32Array(triCount * 9);
-    for (let t = 0; t < triCount; t++) {
-      const nx = faceNormals[t * 3], ny = faceNormals[t * 3 + 1], nz = faceNormals[t * 3 + 2];
-      for (let c = 0; c < 3; c++) {
-        const base = t * 9 + c * 3;
-        out[base] = nx;
-        out[base + 1] = ny;
-        out[base + 2] = nz;
-      }
-    }
-    return out;
-  }
-
-  // Dá pra ter até 3 vizinhos por triângulo (um por aresta). Vértices são
-  // "soldados" por posição quantizada pra achar arestas compartilhadas, já
-  // que a geometria do viewer não compartilha vértices entre triângulos.
-  function buildAdjacencyAndExportIndex(positions, triCount) {
-    const FATOR_QUANTIZACAO = 1e4; // ~0.0001mm de tolerância pra "mesmo ponto"
-    const keyToIndex = new Map();
-    const exportVertices = [];
-    const cornerExportIndex = new Int32Array(triCount * 3);
-
-    for (let i = 0; i < triCount * 3; i++) {
-      const base = i * 3;
-      const x = positions[base], y = positions[base + 1], z = positions[base + 2];
-      const chave = Math.round(x * FATOR_QUANTIZACAO) + "," + Math.round(y * FATOR_QUANTIZACAO) + "," + Math.round(z * FATOR_QUANTIZACAO);
-      let idx = keyToIndex.get(chave);
-      if (idx === undefined) {
-        idx = exportVertices.length;
-        exportVertices.push([x, y, z]);
-        keyToIndex.set(chave, idx);
-      }
-      cornerExportIndex[i] = idx;
-    }
-
-    const adjacencySets = new Array(triCount);
-    for (let t = 0; t < triCount; t++) adjacencySets[t] = new Set();
-
-    const edgeMap = new Map();
-    function edgeKey(a, b) {
-      return a < b ? a + "_" + b : b + "_" + a;
-    }
-
-    for (let t = 0; t < triCount; t++) {
-      const i0 = cornerExportIndex[t * 3];
-      const i1 = cornerExportIndex[t * 3 + 1];
-      const i2 = cornerExportIndex[t * 3 + 2];
-      const arestas = [[i0, i1], [i1, i2], [i2, i0]];
-      for (let e = 0; e < arestas.length; e++) {
-        const chave = edgeKey(arestas[e][0], arestas[e][1]);
-        let lista = edgeMap.get(chave);
-        if (!lista) {
-          lista = [];
-          edgeMap.set(chave, lista);
-        }
-        for (let j = 0; j < lista.length; j++) {
-          const outro = lista[j];
-          adjacencySets[t].add(outro);
-          adjacencySets[outro].add(t);
-        }
-        lista.push(t);
-      }
-    }
-
-    const adjacency = adjacencySets.map((s) => Array.from(s));
-    return { adjacency, exportVertices, cornerExportIndex };
-  }
+  // buildAdjacencyAndExportIndex mora em model-parser.js
+  // (ModelParser.buildAdjacencyAndExportIndex): é geometria pura, sem
+  // DOM/Three.js, reaproveitável por outras ferramentas.
 
   // Compartilhada por balde e seleção mágica: BFS a partir do triângulo
   // clicado. `compararComOrigem` decide contra qual normal cada vizinho é
@@ -366,7 +133,7 @@ if (root) {
   //    região fica presa a uma vizinhança realmente próxima do clique, sem a
   //    deriva acumulada de passo a passo que faria a mesma tolerância
   //    "vazar" por uma superfície curva inteira.
-  function floodFillByNormalTolerance(startTri, toleranceDeg, adjacency, faceNormals, triCount, compararComOrigem) {
+  function floodFillByNormalTolerance(startTri, toleranceDeg, adjacency, faceNormals, triCount, compararComOrigem, filtroVisivel) {
     // Pequena margem: normais de triângulos coplanares raramente são
     // bit-idênticas (erro de ponto flutuante do produto vetorial), então com
     // tolerância 0° o "dot >= 1" exato quase nunca passava mesmo entre
@@ -387,6 +154,7 @@ if (root) {
       for (let i = 0; i < vizinhos.length; i++) {
         const n = vizinhos[i];
         if (visited[n]) continue;
+        if (filtroVisivel && !filtroVisivel.has(n)) continue;
         const nx = faceNormals[n * 3], ny = faceNormals[n * 3 + 1], nz = faceNormals[n * 3 + 2];
         const dot = cx * nx + cy * ny + cz * nz;
         if (dot >= toleranceCos) {
@@ -405,27 +173,8 @@ if (root) {
   // -------------------------------------------------------------------------
 
   function refreshColorBuffer() {
-    const colorAttr = state.geometry.getAttribute("color");
-    const arr = colorAttr.array;
-    for (let t = 0; t < state.triCount; t++) {
-      let r = state.baseColors[t * 3];
-      let g = state.baseColors[t * 3 + 1];
-      let b = state.baseColors[t * 3 + 2];
-      if (state.selection.has(t)) {
-        r = (r + HIGHLIGHT_COLOR[0]) / 2;
-        g = (g + HIGHLIGHT_COLOR[1]) / 2;
-        b = (b + HIGHLIGHT_COLOR[2]) / 2;
-      }
-      const base = t * 9;
-      const rN = r / 255, gN = g / 255, bN = b / 255;
-      for (let c = 0; c < 3; c++) {
-        arr[base + c * 3] = rN;
-        arr[base + c * 3 + 1] = gN;
-        arr[base + c * 3 + 2] = bN;
-      }
-    }
-    colorAttr.needsUpdate = true;
-    needsRender = true;
+    aplicarCoresComDestaque(state.geometry, state.triCount, state.baseColors, (t) => state.selection.has(t));
+    viewer.requestRender();
   }
 
   function hexToRgb(hex) {
@@ -582,88 +331,143 @@ if (root) {
     limparSelecaoBtn.disabled = n === 0;
   }
 
-  const raycaster = new THREE.Raycaster();
-  const pointerNdc = new THREE.Vector2();
-  let pointerDownPos = null;
-
   // -------------------------------------------------------------------------
-  // Trackball: gira o próprio objeto (não a câmera) livremente em qualquer
-  // direção, como se você estivesse segurando uma bola nas mãos. O ponto que
-  // você clica fica "grudado" no cursor durante todo o arraste, em vez de
-  // orbitar em torno de um eixo vertical fixo (o que travava ao tentar virar
-  // o objeto de frente/costas segurando um ponto fora do centro, como a mão
-  // de um boneco em pé).
+  // Abas de chapa (3MF multi-plate): barra "Todos" + uma aba por chapa. Fica
+  // oculta quando o arquivo não tem metadado de chapa (state.chapas === null,
+  // o caso mais comum hoje: STL ou 3MF de uma chapa só), preservando o
+  // comportamento anterior à risca.
   // -------------------------------------------------------------------------
-  let meshPivotLocal = null; // centro geométrico do modelo, em espaço local
-  let meshPivotWorld = null; // ponto do mundo onde esse centro deve sempre ficar
-  let trackballDrag = null; // { ndc0: {x,y}, qStart: Quaternion }
 
-  // Projeção clássica de "virtual trackball" (Chen/Mountford/Sellen): mapeia
-  // um ponto 2D normalizado de tela pra um ponto 3D numa esfera/hemisfério
-  // virtual, indo pra uma folha hiperbólica quando o cursor sai do círculo
-  // central, isso evita comportamento estranho perto das bordas.
-  function trackballPoint(x, y) {
-    const d2 = x * x + y * y;
-    const z = d2 <= 0.5 ? Math.sqrt(1 - d2) : 0.5 / Math.sqrt(d2);
-    return new THREE.Vector3(x, y, z).normalize();
-  }
-
-  function updateMeshPivotPosition() {
-    mesh.position.copy(meshPivotWorld).sub(meshPivotLocal.clone().applyQuaternion(mesh.quaternion));
-  }
-
-  function ndcFromEvent(e) {
-    const rect = canvasEl.getBoundingClientRect();
-    return {
-      x: ((e.clientX - rect.left) / rect.width) * 2 - 1,
-      y: -((e.clientY - rect.top) / rect.height) * 2 + 1
-    };
-  }
-
-  canvasEl.addEventListener("pointerdown", (e) => {
-    pointerDownPos = [e.clientX, e.clientY];
-    if (e.button === 0 && mesh) {
-      trackballDrag = { ndc0: ndcFromEvent(e), qStart: mesh.quaternion.clone() };
-      canvasEl.setPointerCapture(e.pointerId);
+  function renderAbasChapa() {
+    if (!state || !state.chapas) {
+      abasEl.hidden = true;
+      abasEl.innerHTML = "";
+      return;
     }
-  });
 
-  canvasEl.addEventListener("pointermove", (e) => {
-    if (!trackballDrag || !mesh) return;
-    const ndc1 = ndcFromEvent(e);
-    const p0 = trackballPoint(trackballDrag.ndc0.x, trackballDrag.ndc0.y);
-    const p1 = trackballPoint(ndc1.x, ndc1.y);
-    const axisView = new THREE.Vector3().crossVectors(p0, p1);
-    if (axisView.lengthSq() < 1e-9) return;
-    const angle = Math.acos(THREE.MathUtils.clamp(p0.dot(p1), -1, 1));
-    const axisWorld = axisView.normalize().applyQuaternion(camera.quaternion);
-    const q = new THREE.Quaternion().setFromAxisAngle(axisWorld, angle);
-    mesh.quaternion.copy(q).multiply(trackballDrag.qStart);
-    updateMeshPivotPosition();
-    needsRender = true;
-  });
+    abasEl.innerHTML = "";
+    abasEl.hidden = false;
 
-  canvasEl.addEventListener("pointercancel", () => {
-    trackballDrag = null;
-  });
+    function criarAba(indice, rotulo) {
+      const ativa = state.chapaAtivaIndice === indice;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "cor3mf-aba" + (ativa ? " is-ativa" : "");
+      btn.setAttribute("role", "tab");
+      btn.setAttribute("aria-selected", ativa ? "true" : "false");
+      btn.dataset.chapa = indice === null ? "" : String(indice);
+      btn.textContent = rotulo;
+      btn.addEventListener("click", () => setChapaAtiva(indice));
+      return btn;
+    }
 
-  canvasEl.addEventListener("pointerup", (e) => {
-    trackballDrag = null;
-    if (!pointerDownPos) return;
-    const dx = e.clientX - pointerDownPos[0];
-    const dy = e.clientY - pointerDownPos[1];
-    pointerDownPos = null;
-    if (Math.hypot(dx, dy) > 5) return; // foi arraste (girar), não clique
-    handleCanvasClick(e);
-  });
+    abasEl.appendChild(criarAba(null, "Todos"));
+    state.chapas.forEach((chapa) => {
+      abasEl.appendChild(criarAba(chapa.indice, "Modelo " + chapa.indice));
+    });
+  }
+
+  // Reescreve, em cada triângulo, a posição real (chapa visível) ou um ponto
+  // degenerado (chapa oculta: os 3 vértices colapsam no pivô do modelo, área
+  // zero -> invisível e não raycastável de forma útil). Não mexe em
+  // baseColors/cor nem na câmera: trocar de aba não perde pintura já feita
+  // nem reseta o enquadramento que o usuário escolheu.
+  function aplicarFiltroDeVisibilidade() {
+    if (!state) return;
+    const posArr = state.geometry.attributes.position.array;
+
+    if (state.chapaAtivaIndice === null || !state.chapas) {
+      posArr.set(state.positionsOriginais);
+    } else {
+      const visiveis = state.triangulosPorChapa && state.triangulosPorChapa.get(state.chapaAtivaIndice);
+      const meshPivotLocal = viewer.getPivotLocal();
+      const pivotX = meshPivotLocal ? meshPivotLocal.x : 0;
+      const pivotY = meshPivotLocal ? meshPivotLocal.y : 0;
+      const pivotZ = meshPivotLocal ? meshPivotLocal.z : 0;
+      for (let t = 0; t < state.triCount; t++) {
+        const base = t * 9;
+        if (visiveis && visiveis.has(t)) {
+          for (let i = 0; i < 9; i++) posArr[base + i] = state.positionsOriginais[base + i];
+        } else {
+          for (let c = 0; c < 3; c++) {
+            posArr[base + c * 3] = pivotX;
+            posArr[base + c * 3 + 1] = pivotY;
+            posArr[base + c * 3 + 2] = pivotZ;
+          }
+        }
+      }
+    }
+
+    state.geometry.attributes.position.needsUpdate = true;
+    state.geometry.computeBoundingSphere();
+    viewer.requestRender();
+  }
+
+  // Bbox (em espaço local, a partir das posições reais em positionsOriginais)
+  // dos triângulos da chapa `indice`, usado só pra enquadrar a câmera nela.
+  function computeChapaPivotERaio(indice) {
+    const visiveis = state.triangulosPorChapa && state.triangulosPorChapa.get(indice);
+    if (!visiveis || !visiveis.size) return null;
+    let minX = Infinity, minY = Infinity, minZ = Infinity;
+    let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+    visiveis.forEach((t) => {
+      const base = t * 9;
+      for (let c = 0; c < 3; c++) {
+        const x = state.positionsOriginais[base + c * 3];
+        const y = state.positionsOriginais[base + c * 3 + 1];
+        const z = state.positionsOriginais[base + c * 3 + 2];
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+        if (z < minZ) minZ = z;
+        if (z > maxZ) maxZ = z;
+      }
+    });
+    const pivotLocal = new THREE.Vector3((minX + maxX) / 2, (minY + maxY) / 2, (minZ + maxZ) / 2);
+    const radius = pivotLocal.distanceTo(new THREE.Vector3(minX, minY, minZ)) || 1;
+    return { pivotLocal, radius };
+  }
+
+  // Reenquadra a câmera na chapa ativa (ou no modelo inteiro, se `indice` for
+  // null), via viewer.focarEm (three-viewer-basico.js): mesmo esquema de
+  // near/far/min/maxDistance de frameToGeometry, e também move o pivô do
+  // trackball pra chapa em foco, senão o clamp de deriva do zoom prenderia a
+  // câmera perto do centro do modelo inteiro mesmo com uma chapa distante em
+  // foco.
+  function atualizarFocoDaChapa(indice) {
+    let pivotLocalNovo = state.pivotLocalTodos;
+    let raioNovo = state.radiusTodos;
+    if (indice !== null) {
+      const foco = computeChapaPivotERaio(indice);
+      if (foco) {
+        pivotLocalNovo = foco.pivotLocal;
+        raioNovo = foco.radius;
+      }
+    }
+    viewer.focarEm(pivotLocalNovo, raioNovo);
+  }
+
+  function setChapaAtiva(indice) {
+    if (!state) return;
+    state.chapaAtivaIndice = indice;
+    if (state.selection.size) {
+      state.selection.clear();
+    }
+    aplicarFiltroDeVisibilidade();
+    atualizarFocoDaChapa(indice);
+    renderAbasChapa();
+    refreshColorBuffer();
+    updateSelectionUI();
+  }
+
+  // Raycaster, trackball (giro do objeto) e detecção de clique vs. arraste
+  // moram em three-viewer-basico.js; o viewer chama handleCanvasClick num
+  // clique de verdade (opção onClique de criarViewerBasico).
 
   function handleCanvasClick(e) {
-    if (!state || !mesh) return;
-    const rect = canvasEl.getBoundingClientRect();
-    pointerNdc.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    pointerNdc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-    raycaster.setFromCamera(pointerNdc, camera);
-    const hits = raycaster.intersectObject(mesh, false);
+    if (!state || !viewer || !viewer.mesh) return;
+    const hits = viewer.intersect(e);
     if (!hits.length) return;
 
     const triIndex = hits[0].faceIndex;
@@ -673,7 +477,10 @@ if (root) {
     // face plana clicada (e a granularidade fina de malhas orgânicas) sem
     // vazar pras faces vizinhas nem depender de deriva acumulada.
     const toleranceDeg = isBalde ? BALDE_TOLERANCIA_DEG : Number(toleranciaInput.value);
-    const regiao = floodFillByNormalTolerance(triIndex, toleranceDeg, state.adjacency, state.faceNormals, state.triCount, isBalde);
+    const filtroVisivel = state.chapaAtivaIndice !== null && state.triangulosPorChapa
+      ? state.triangulosPorChapa.get(state.chapaAtivaIndice)
+      : null;
+    const regiao = floodFillByNormalTolerance(triIndex, toleranceDeg, state.adjacency, state.faceNormals, state.triCount, isBalde, filtroVisivel);
 
     if (currentTool === "balde") {
       paintTriangles(regiao, hexToRgb(corAtivaHex()));
@@ -692,36 +499,19 @@ if (root) {
     initSceneOnce();
 
     const { triCount, positions } = buildGeometryData(triangulos);
+    // Cópia imutável das posições reais, capturada antes de qualquer filtro de
+    // visibilidade por chapa (ver aplicarFiltroDeVisibilidade): é a fonte de
+    // verdade usada tanto para restaurar "Todos" quanto para reescrever, na
+    // troca de aba, os 9 floats de cada triângulo visível.
+    const positionsOriginais = positions.slice();
     const faceNormals = computeFaceNormals(positions, triCount);
-    const { adjacency, exportVertices, cornerExportIndex } = buildAdjacencyAndExportIndex(positions, triCount);
+    const { adjacency, exportVertices, cornerExportIndex } = ModelParser.buildAdjacencyAndExportIndex(positions, triCount);
 
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute("normal", new THREE.BufferAttribute(expandFaceNormalsToCorners(faceNormals, triCount), 3));
-    geometry.setAttribute("color", new THREE.BufferAttribute(new Float32Array(triCount * 9), 3));
-
-    const material = new THREE.MeshStandardMaterial({
-      vertexColors: true,
-      roughness: 0.65,
-      metalness: 0.05,
-      side: THREE.DoubleSide
-    });
-
-    if (mesh) {
-      scene.remove(mesh);
-      mesh.geometry.dispose();
-      mesh.material.dispose();
-    }
-    mesh = new THREE.Mesh(geometry, material);
-    mesh.quaternion.identity();
-    scene.add(mesh);
-
-    // Pivô do trackball: o centro geométrico do modelo, fixo no mundo. O
-    // objeto sempre gira em torno dele, não importa qual ponto você "agarra".
-    geometry.computeBoundingSphere();
-    meshPivotLocal = geometry.boundingSphere.center.clone();
-    meshPivotWorld = meshPivotLocal.clone();
-    updateMeshPivotPosition();
+    // setMesh descarta a mesh anterior, zera o giro e fixa o pivô do
+    // trackball no centro geométrico do modelo (ver three-viewer-basico.js).
+    const mesh = criarMeshTriangulos(positions, faceNormals, triCount);
+    const geometry = mesh.geometry;
+    viewer.setMesh(mesh);
 
     const baseColors = new Uint8ClampedArray(triCount * 3);
     for (let i = 0; i < triCount; i++) {
@@ -741,6 +531,7 @@ if (root) {
       cornerExportIndex,
       exportVertices,
       undoStack: [],
+      positionsOriginais,
       // O slot 1 começa com a mesma cor cinza do "não pintado" (DEFAULT_COLOR).
       // Assim dá pra recolorir de uma vez toda a área ainda não pintada só
       // trocando a cor desse slot (mesmo mecanismo de replace do editor de
@@ -754,9 +545,36 @@ if (root) {
       zip: (origem && origem.zip) || null
     };
 
+    // Chapas (plates) detectadas num 3MF multi-plate (ver detectarChapas em
+    // processarArquivo): guardado no estado pro seletor de chapa na UI
+    // (abas), null quando o arquivo não tem esse metadado (STL, 3MF
+    // single-plate). triangulosPorChapa é derivado uma única vez aqui, não
+    // recalculado a cada clique.
+    state.chapas = (origem && origem.chapas) || null;
+    state.chapaAtivaIndice = null; // null = "Todos"
+    // mapearTriangulosParaChapas devolve arrays (ordem de varredura); aqui
+    // viram Set pra permitir teste O(1) de pertencimento tanto no filtro de
+    // visibilidade (aplicarFiltroDeVisibilidade) quanto no BFS de
+    // balde/seleção mágica (floodFillByNormalTolerance).
+    if (state.chapas) {
+      state.triangulosPorChapa = new Map();
+      ModelParser.mapearTriangulosParaChapas(state.triangleOrigins, state.chapas).forEach((lista, indice) => {
+        state.triangulosPorChapa.set(indice, new Set(lista));
+      });
+    } else {
+      state.triangulosPorChapa = null;
+    }
+
     renderPaleta();
     refreshColorBuffer();
-    frameCameraToGeometry();
+    viewer.frameToGeometry();
+    // Snapshot do pivô/raio de "Todos" (modelo inteiro), capturado logo após
+    // frameToGeometry (que os calculou a partir da geometria ainda sem
+    // filtro nenhum aplicado) — usado por atualizarFocoDaChapa pra voltar a
+    // esse enquadramento sempre que o usuário volta pra aba "Todos".
+    state.pivotLocalTodos = viewer.getPivotLocal();
+    state.radiusTodos = viewer.getRaio();
+    renderAbasChapa();
 
     const grande = triCount >= AVISO_TRIANGULOS_GRANDE;
     avisoGrandeEl.hidden = !grande;
@@ -784,14 +602,34 @@ if (root) {
       const modelFile = ModelParser.localizarModeloRaiz(zip);
       if (!modelFile) throw new Error("3dmodel.model não encontrado no pacote 3MF");
       const rootPath = modelFile.name;
+      const modelSettingsEntry = ModelParser.localizarArquivoUnico(zip, "model_settings.config");
+      const modelSettingsPromise = modelSettingsEntry ? modelSettingsEntry.async("text") : Promise.resolve(null);
       return modelFile.async("text").then((modelText) =>
-        ModelParser.extractTriangles3MF(zip, modelText, rootPath).then((resultado) => ({
-          triangulos: resultado.triangulos,
-          origins: resultado.origins,
-          zip
-        }))
+        Promise.all([ModelParser.extractTriangles3MF(zip, modelText, rootPath), modelSettingsPromise]).then(
+          ([resultado, modelSettingsText]) => ({
+            triangulos: resultado.triangulos,
+            origins: resultado.origins,
+            zip,
+            modelSettingsText
+          })
+        )
       );
     });
+  }
+
+  // Detecta as chapas (plates) de um pacote 3MF multi-plate a partir do texto
+  // de Metadata/model_settings.config, casando cada objectId com o índice de
+  // chapa a que pertence. Retorna null quando o arquivo não tem metadados de
+  // chapa (STL, 3MF single-plate ou 3MF sem esse metadado), caso em que a
+  // ferramenta continua se comportando como hoje (uma "chapa" implícita só).
+  function detectarChapas(modelSettingsText, triangleOrigins) {
+    if (!modelSettingsText) return null;
+    const plateAssignments = ModelParser.parsePlateAssignments(modelSettingsText);
+    if (!plateAssignments) return null;
+    return plateAssignments.map((objectIds, indice) => ({
+      indice: indice + 1,
+      objectIds: new Set(objectIds)
+    }));
   }
 
   function processarArquivo(file) {
@@ -812,10 +650,11 @@ if (root) {
     extrairTriangulosDoArquivo(file)
       .then((resultado) => {
         if (!resultado.triangulos.length) throw new Error("nenhuma geometria encontrada no arquivo");
+        resultado.chapas = detectarChapas(resultado.modelSettingsText, resultado.origins);
         buildState(resultado.triangulos, file.name, resultado);
         painel.hidden = false;
-        resizeRenderer();
-        frameCameraToGeometry();
+        viewer.resize();
+        viewer.frameToGeometry();
       })
       .catch((err) => {
         if (window.console && console.error) console.error("Colorir 3MF:", err);
@@ -834,87 +673,11 @@ if (root) {
   // monta um pacote novo do zero.
   // -------------------------------------------------------------------------
 
-  function rgbToHex3mf(c) {
-    return "#" + toHexByte(c[0]) + toHexByte(c[1]) + toHexByte(c[2]) + "ff";
-  }
-
   function nomeArquivoSaida(nomeOriginal) {
     return nomeOriginal.replace(/\.(stl|3mf)$/i, "") + "-colorido.3mf";
   }
 
   const baixarBlob = ModelParser.baixarBlob;
-
-  const NS_MATERIAL = "http://schemas.microsoft.com/3dmanufacturing/material/2015/02";
-  const filhoDireto = ModelParser.directChild;
-  const filhosDiretos = ModelParser.directChildren;
-  const acharObjectPorId = ModelParser.findObjectElement;
-
-  // Compara pelo nome local (ignorando prefixo de namespace), necessário para
-  // achar <m:colorgroup> já existentes no arquivo, cujo prefixo pode variar
-  // (ou nem existir, se o pacote original declarou a extensão com outro
-  // prefixo/namespace default).
-  function filhosDiretosPorNomeLocal(el, nomeLocal) {
-    const out = [];
-    for (let i = 0; i < el.childNodes.length; i++) {
-      const n = el.childNodes[i];
-      if (n.nodeType === 1 && n.localName && n.localName.toLowerCase() === nomeLocal) out.push(n);
-    }
-    return out;
-  }
-
-  // Bambu Studio/OrcaSlicer ignoram o pid/p1 padrão do 3MF (extensão de
-  // materiais) em pacotes que reconhecem como projeto nativo, e só pintam a
-  // partir do atributo proprietário "paint_color" (mesma serialização do
-  // slic3rpe:mmu_segmentation do PrusaSlicer). Para um triângulo inteiro e não
-  // dividido, o valor é: 2 bits de "não dividido" (00) + o estado (índice do
-  // slot de filamento, 1-based; valores 0-2 cabem em 2 bits, valores >=3 usam
-  // um "escape" 11 seguido de nibbles de extensão, cada 0xF valendo +15 até o
-  // nibble final somar o resto), tudo em uma string hex com os nibbles em
-  // ordem invertida (o último caractere é o primeiro nibble do fluxo).
-  function filamentIndexParaPaintColor(indice1Based) {
-    const nibbles = [];
-    if (indice1Based < 3) {
-      nibbles.push(indice1Based << 2);
-    } else {
-      nibbles.push(3 << 2);
-      let resto = indice1Based - 3;
-      while (resto >= 15) {
-        nibbles.push(15);
-        resto -= 15;
-      }
-      nibbles.push(resto);
-    }
-    return nibbles
-      .reverse()
-      .map((n) => n.toString(16).toUpperCase())
-      .join("");
-  }
-
-  function rgbParaHexBambu(c) {
-    return ("#" + toHexByte(c[0]) + toHexByte(c[1]) + toHexByte(c[2])).toUpperCase();
-  }
-
-  // Fábrica de indexador de cores: devolve uma função que atribui a cada cor
-  // distinta (r,g,b) um índice sequencial na ordem de primeira aparição,
-  // usada tanto para montar o <m:colorgroup> ao remendar um .3mf existente
-  // quanto ao gerar um pacote novo do zero a partir de um STL.
-  function criarIndexadorDeCores() {
-    const colorToIndex = new Map();
-    const cores = [];
-    return {
-      cores,
-      indiceDaCor(r, g, b) {
-        const chave = r + "," + g + "," + b;
-        let idx = colorToIndex.get(chave);
-        if (idx === undefined) {
-          idx = cores.length;
-          cores.push([r, g, b]);
-          colorToIndex.set(chave, idx);
-        }
-        return idx;
-      }
-    };
-  }
 
   // Monta a paleta final de filamentos. Se sobrar alguma área ainda não
   // pintada (triângulo com a cor cinza default), o slot 1 fica reservado pra
@@ -948,153 +711,6 @@ if (root) {
     cores.forEach((c, i) => slotPorCor.set(c[0] + "," + c[1] + "," + c[2], i + offset));
 
     return { paleta, slotPorCor };
-  }
-
-  // Reconstrói Metadata/project_settings.config para ter exatamente um slot de
-  // filamento por cor da paleta (slot 1 = cinza default, os demais = cores
-  // pintadas), em vez de aproximar a pintura aos slots de AMS que já
-  // existiam no projeto. Todo ajuste de configuração que não seja a própria
-  // cor (perfil de temperatura, tipo de material, id do preset etc.) é clonado
-  // do slot 0 original, que no fluxo do Bambu Studio já é o "Bambu PLA Basic".
-  // Assim os novos slots herdam o mesmo preset/perfil de impressora do
-  // projeto, sem a ferramenta precisar adivinhar qual variante do PLA Basic
-  // usar.
-  function reconstruirProjectSettings(cfgOriginal, paleta) {
-    const nAntigo = Array.isArray(cfgOriginal.filament_colour) ? cfgOriginal.filament_colour.length : 0;
-    if (!nAntigo) return null;
-
-    const cfg = JSON.parse(JSON.stringify(cfgOriginal));
-    const n = paleta.length;
-
-    Object.keys(cfg).forEach((chave) => {
-      const valor = cfg[chave];
-      if (Array.isArray(valor) && valor.length === nAntigo) {
-        cfg[chave] = new Array(n).fill(valor[0]);
-      }
-    });
-
-    cfg.filament_colour = paleta.map(rgbParaHexBambu);
-    cfg.filament_multi_colour = cfg.filament_colour.slice();
-    cfg.filament_colour_type = new Array(n).fill("1");
-    cfg.filament_self_index = paleta.map((_, i) => String(i + 1));
-    cfg.filament_map = new Array(n).fill("1");
-
-    return cfg;
-  }
-
-  // Ajusta, no texto do Metadata/model_settings.config, as listas
-  // filament_maps/filament_volume_maps (uma entrada por slot de filamento)
-  // para o novo número de slots, e força o extrusor/filamento padrão de cada
-  // object para o slot 1 (o cinza). O slot original podia apontar para um
-  // índice que deixou de existir (ou que agora é outra cor) depois da
-  // reconstrução da paleta.
-  function ajustarFilamentMapsNoModelSettings(xmlText, n) {
-    const mapaFilamentos = new Array(n).fill("1").join(" ");
-    const mapaVolumes = new Array(n).fill("0").join(" ");
-    return xmlText
-      .replace(/(<metadata\s+key="filament_maps"\s+value=")[^"]*(")/g, "$1" + mapaFilamentos + "$2")
-      .replace(/(<metadata\s+key="filament_volume_maps"\s+value=")[^"]*(")/g, "$1" + mapaVolumes + "$2")
-      .replace(/(<metadata\s+key="extruder"\s+value=")[^"]*(")/g, "$11$2");
-  }
-
-  // Edita, no texto XML de um dos arquivos .model do pacote original, só os
-  // <triangle> das regiões pintadas (adiciona pid/p1 e um <m:colorgroup> novo
-  // com id que não colida com nenhum recurso já existente nesse arquivo, e,
-  // quando o pacote tem slots de filamento configurados, também paint_color,
-  // sem o qual Bambu Studio/OrcaSlicer não mostram a cor). Tudo mais no XML
-  // (metadados, outros objects, extensões desconhecidas) permanece intacto.
-  function injetarCoresNoXml(xmlText, porObjeto, slotPorCor) {
-    const doc = new DOMParser().parseFromString(xmlText, "application/xml");
-    const modelEl = doc.documentElement;
-
-    if (!modelEl.getAttribute("xmlns:m")) {
-      modelEl.setAttribute("xmlns:m", NS_MATERIAL);
-    }
-
-    const resourcesEl = filhoDireto(modelEl, "resources");
-    if (!resourcesEl) return xmlText;
-
-    const idsUsados = new Set();
-    (function coletarIds(el) {
-      for (let i = 0; i < el.childNodes.length; i++) {
-        const n = el.childNodes[i];
-        if (n.nodeType === 1) {
-          const id = n.getAttribute && n.getAttribute("id");
-          if (id) idsUsados.add(id);
-          coletarIds(n);
-        }
-      }
-    })(resourcesEl);
-
-    let colorGroupId = 900001;
-    while (idsUsados.has(String(colorGroupId))) colorGroupId++;
-
-    const { cores, indiceDaCor } = criarIndexadorDeCores();
-
-    porObjeto.forEach((lista, objectId) => {
-      const objectEl = acharObjectPorId(doc, objectId);
-      if (!objectEl) return;
-      const meshEl = filhoDireto(objectEl, "mesh");
-      if (!meshEl) return;
-      const trianglesEl = filhoDireto(meshEl, "triangles");
-      if (!trianglesEl) return;
-      const triEls = filhosDiretos(trianglesEl, "triangle");
-      lista.forEach(({ localIndex, r, g, b }) => {
-        const triEl = triEls[localIndex];
-        if (!triEl) return;
-        const pIndex = indiceDaCor(r, g, b);
-        triEl.setAttribute("pid", String(colorGroupId));
-        triEl.setAttribute("p1", String(pIndex));
-        // Sempre limpa o paint_color que já existia no triângulo (pintura
-        // feita antes, direto no Bambu Studio) para a exportação refletir só
-        // o que foi pintado nesta ferramenta, sem misturar as duas pinturas.
-        triEl.removeAttribute("paint_color");
-        const foiPintado = r !== DEFAULT_COLOR[0] || g !== DEFAULT_COLOR[1] || b !== DEFAULT_COLOR[2];
-        if (slotPorCor && foiPintado) {
-          const slot = slotPorCor.get(r + "," + g + "," + b);
-          if (slot) triEl.setAttribute("paint_color", filamentIndexParaPaintColor(slot));
-        }
-      });
-    });
-
-    if (cores.length) {
-      const colorGroupEl = doc.createElementNS(NS_MATERIAL, "m:colorgroup");
-      colorGroupEl.setAttribute("id", String(colorGroupId));
-      cores.forEach((c) => {
-        const colorEl = doc.createElementNS(NS_MATERIAL, "m:color");
-        colorEl.setAttribute("color", rgbToHex3mf(c));
-        colorGroupEl.appendChild(colorEl);
-      });
-      resourcesEl.insertBefore(colorGroupEl, resourcesEl.firstChild);
-    }
-
-    // Limpa colorgroups órfãos: qualquer <m:colorgroup> que já existia no
-    // arquivo (do pacote original ou de uma exportação anterior desta mesma
-    // ferramenta) e cujo id não é mais referenciado por nenhum pid no
-    // documento. Sem isso, cada export acumula um novo colorgroup morto no
-    // <resources>. Preserva colorgroups ainda referenciados por outra coisa
-    // (ex.: pid de object para cor padrão do objeto inteiro).
-    const pidsEmUso = new Set();
-    (function coletarPids(el) {
-      for (let i = 0; i < el.childNodes.length; i++) {
-        const n = el.childNodes[i];
-        if (n.nodeType === 1) {
-          const pid = n.getAttribute && n.getAttribute("pid");
-          if (pid) pidsEmUso.add(pid);
-          coletarPids(n);
-        }
-      }
-    })(modelEl);
-    filhosDiretosPorNomeLocal(resourcesEl, "colorgroup").forEach((cg) => {
-      const id = cg.getAttribute("id");
-      if (id && !pidsEmUso.has(id)) resourcesEl.removeChild(cg);
-    });
-
-    // Serializar o Document inteiro (em vez de só o elemento raiz) já inclui
-    // a declaração <?xml ...?> em navegadores baseados em Chromium. Repeti-la
-    // aqui geraria uma segunda declaração e um XML inválido.
-    const serializado = new XMLSerializer().serializeToString(doc);
-    return /^<\?xml/.test(serializado) ? serializado : '<?xml version="1.0" encoding="UTF-8"?>\n' + serializado;
   }
 
   // Caminho usado quando o arquivo de origem é um .3mf: reabre o zip
@@ -1135,7 +751,7 @@ if (root) {
       ? configEntry.async("text").then((texto) => {
           try {
             const cfgOriginal = JSON.parse(texto);
-            const novoCfg = reconstruirProjectSettings(cfgOriginal, paleta);
+            const novoCfg = ThreeMFWriter.reconstruirProjectSettings(cfgOriginal, paleta);
             if (novoCfg) {
               zip.file(configEntry.name, JSON.stringify(novoCfg, null, 4));
               return novoCfg.filament_colour.length;
@@ -1155,7 +771,7 @@ if (root) {
         ? modelSettingsEntry
             .async("text")
             .then((xmlText) => {
-              zip.file(modelSettingsEntry.name, ajustarFilamentMapsNoModelSettings(xmlText, numSlots || 1));
+              zip.file(modelSettingsEntry.name, ThreeMFWriter.ajustarFilamentMapsNoModelSettings(xmlText, numSlots || 1));
             })
         : Promise.resolve();
 
@@ -1165,7 +781,7 @@ if (root) {
           const entry = zip.file(path);
           if (!entry) return Promise.resolve();
           return entry.async("text").then((xmlText) => {
-            zip.file(path, injetarCoresNoXml(xmlText, porArquivo.get(path), slotPorCorAtivo));
+            zip.file(path, ThreeMFWriter.injetarCoresNoXml(xmlText, porArquivo.get(path), slotPorCorAtivo));
           });
         })
       ]);
@@ -1196,56 +812,19 @@ if (root) {
   function exportarModeloDoZero() {
     outEl.textContent = "Gerando arquivo 3MF...";
 
-    const { cores, indiceDaCor } = criarIndexadorDeCores();
-
-    const linhasTriangulos = new Array(state.triCount);
+    const triangulos = new Array(state.triCount);
     for (let t = 0; t < state.triCount; t++) {
-      const v1 = state.cornerExportIndex[t * 3];
-      const v2 = state.cornerExportIndex[t * 3 + 1];
-      const v3 = state.cornerExportIndex[t * 3 + 2];
-      const r = state.baseColors[t * 3], g = state.baseColors[t * 3 + 1], b = state.baseColors[t * 3 + 2];
-      const pIndex = indiceDaCor(r, g, b);
-      linhasTriangulos[t] = '<triangle v1="' + v1 + '" v2="' + v2 + '" v3="' + v3 + '" pid="1" p1="' + pIndex + '"/>';
+      triangulos[t] = {
+        v1: state.cornerExportIndex[t * 3],
+        v2: state.cornerExportIndex[t * 3 + 1],
+        v3: state.cornerExportIndex[t * 3 + 2],
+        color: [state.baseColors[t * 3], state.baseColors[t * 3 + 1], state.baseColors[t * 3 + 2]]
+      };
     }
 
-    const linhasVertices = state.exportVertices.map((v) => '<vertex x="' + v[0] + '" y="' + v[1] + '" z="' + v[2] + '"/>');
-    const linhasCores = cores.map((c) => "<m:color color=\"" + rgbToHex3mf(c) + "\"/>");
-
-    const modelXml =
-      '<?xml version="1.0" encoding="UTF-8"?>\n' +
-      '<model unit="millimeter" xml:lang="pt-BR" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" xmlns:m="http://schemas.microsoft.com/3dmanufacturing/material/2015/02">\n' +
-      "  <resources>\n" +
-      '    <m:colorgroup id="1">\n' +
-      linhasCores.map((l) => "      " + l + "\n").join("") +
-      "    </m:colorgroup>\n" +
-      '    <object id="2" type="model">\n' +
-      "      <mesh>\n" +
-      "        <vertices>\n" +
-      linhasVertices.map((l) => "          " + l + "\n").join("") +
-      "        </vertices>\n" +
-      "        <triangles>\n" +
-      linhasTriangulos.map((l) => "          " + l + "\n").join("") +
-      "        </triangles>\n" +
-      "      </mesh>\n" +
-      "    </object>\n" +
-      "  </resources>\n" +
-      "  <build>\n" +
-      '    <item objectid="2"/>\n' +
-      "  </build>\n" +
-      "</model>\n";
-
-    const contentTypesXml =
-      '<?xml version="1.0" encoding="UTF-8"?>\n' +
-      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">\n' +
-      '  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>\n' +
-      '  <Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/>\n' +
-      "</Types>\n";
-
-    const relsXml =
-      '<?xml version="1.0" encoding="UTF-8"?>\n' +
-      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">\n' +
-      '  <Relationship Target="/3D/3dmodel.model" Id="rel0" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/>\n' +
-      "</Relationships>\n";
+    const { modelXml, contentTypesXml, relsXml } = ThreeMFWriter.montarModeloDoZero([
+      { objectId: 2, vertices: state.exportVertices, triangulos: triangulos }
+    ]);
 
     const zip = new JSZip();
     zip.file("[Content_Types].xml", contentTypesXml);
@@ -1326,7 +905,9 @@ if (root) {
     updateSelectionUI();
   });
 
-  recentralizarBtn.addEventListener("click", () => recentralizarVista());
+  recentralizarBtn.addEventListener("click", () => {
+    if (viewer) viewer.recentralizarVista();
+  });
   avisoGrandeFecharBtn.addEventListener("click", () => { avisoGrandeEl.hidden = true; });
 
   desfazerBtn.addEventListener("click", () => undo());

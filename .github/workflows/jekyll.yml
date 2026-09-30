@@ -25,6 +25,9 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: "20"
+          cache: "npm"
+      - name: Install JS dependencies
+        run: npm ci
       - name: Run JS unit tests
         run: node --test test/
       - name: Setup Ruby

@@ -1,17 +1,17 @@
 ---
 layout: default
-title: "Colorir 3MF"
-description: "Pinte um STL ou 3MF sem cor direto no navegador, com balde, seleção mágica por tolerância e color picker livre, e baixe já como um projeto 3MF colorido."
-permalink: /colorir-3mf/
+title: "Split 3MF"
+description: "Separe um arquivo 3MF com várias chapas ou objetos em arquivos individuais, direto no navegador, sem enviar nada a um servidor."
+permalink: /split-3mf/
 pwa: true
 ---
 
 <section class="section section-calc">
   <div class="container cor3mf-container">
     <header class="section-header section-header-center reveal">
-      <h1>Colorir 3MF</h1>
+      <h1>Split 3MF</h1>
       <p>
-        Envie um STL ou 3MF sem cor, pinte as regiões que quiser girando o modelo em 3D e baixe já como um projeto 3MF colorido.
+        Envie um 3MF com várias chapas ou objetos e baixe cada um separadamente, pronto pra fatiar individualmente.
       </p>
       <div class="conv3mf-privacidade">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -22,7 +22,7 @@ pwa: true
       </div>
     </header>
     {% include pwa-toast.html %}
-    {% include colorir-3mf-tool.html %}
+    {% include split-3mf-tool.html %}
 
     <div class="instagram-follow reveal">
       <svg class="instagram-follow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -42,14 +42,19 @@ pwa: true
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.2/dist/jszip.min.js" integrity="sha384-DdGlNq+wVXAn83gXqwyeFHB7iyXy6L0rLrNzgDmhKWPjiJLg9vj6qosYmZmkMfQ+" crossorigin="anonymous" defer></script>
 <script src="{{ '/assets/js/model-parser.js' | relative_url }}?v={{ '/assets/js/model-parser.js' | asset_hash }}" defer></script>
 <script src="{{ '/assets/js/threemf-writer.js' | relative_url }}?v={{ '/assets/js/threemf-writer.js' | asset_hash }}" defer></script>
+<script src="{{ '/assets/js/mesh-clip.js' | relative_url }}?v={{ '/assets/js/mesh-clip.js' | asset_hash }}" defer></script>
 <script type="importmap">
 {
   "imports": {
     "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
     "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/",
-    "wisky3d/three-viewer-basico.js": "{{ '/assets/js/three-viewer-basico.js' | relative_url }}?v={{ '/assets/js/three-viewer-basico.js' | asset_hash }}"
+    "earcut": "https://cdn.jsdelivr.net/npm/earcut@3.2.4/src/earcut.js",
+    "three-mesh-bvh": "https://cdn.jsdelivr.net/npm/three-mesh-bvh@0.9.15/src/index.js",
+    "three-bvh-csg": "https://cdn.jsdelivr.net/npm/three-bvh-csg@0.0.16/src/index.js",
+    "wisky3d/three-viewer-basico.js": "{{ '/assets/js/three-viewer-basico.js' | relative_url }}?v={{ '/assets/js/three-viewer-basico.js' | asset_hash }}",
+    "wisky3d/pin-connectors.js": "{{ '/assets/js/pin-connectors.js' | relative_url }}?v={{ '/assets/js/pin-connectors.js' | asset_hash }}"
   }
 }
 </script>
-<script type="module" src="{{ '/assets/js/colorir-3mf.js' | relative_url }}?v={{ '/assets/js/colorir-3mf.js' | asset_hash }}"></script>
+<script type="module" src="{{ '/assets/js/split-3mf.js' | relative_url }}?v={{ '/assets/js/split-3mf.js' | asset_hash }}"></script>
 <script src="{{ '/assets/js/pwa.js' | relative_url }}?v={{ '/assets/js/pwa.js' | asset_hash }}" defer></script>
