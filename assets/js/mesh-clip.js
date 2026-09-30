@@ -118,6 +118,26 @@ window.Wisky3D = window.Wisky3D || {};
     var todosNaoNegativos = sinais.every(function (s) { return s >= 0; });
     var todosNaoPositivos = sinais.every(function (s) { return s <= 0; });
 
+    if (todosNaoNegativos && todosNaoPositivos) {
+      // Triângulo inteiro coplanar ao plano (os 3 sinais são 0: corte a
+      // 0%/100% sobre uma face, ou na altura de um degrau). Decide pela
+      // normal do próprio triângulo: se ela aponta contra a normal do plano,
+      // a face olha para o lado negativo, então o sólido está do lado
+      // positivo e a face pertence à malha desse lado; e vice-versa. Mandar
+      // sempre para o lado positivo deixava uma folha dupla de volume 0
+      // (face + tampa) num lado que deveria ficar vazio.
+      var e1 = [p[1][0] - p[0][0], p[1][1] - p[0][1], p[1][2] - p[0][2]];
+      var e2 = [p[2][0] - p[0][0], p[2][1] - p[0][1], p[2][2] - p[0][2]];
+      var nTri = [
+        e1[1] * e2[2] - e1[2] * e2[1],
+        e1[2] * e2[0] - e1[0] * e2[2],
+        e1[0] * e2[1] - e1[1] * e2[0]
+      ];
+      var alinhamento = nTri[0] * plano.normal[0] + nTri[1] * plano.normal[1] + nTri[2] * plano.normal[2];
+      empurrarTriSeValido(alinhamento > 0 ? ladoNegativo : ladoPositivo, p[0], p[1], p[2]);
+      return { ladoPositivo: ladoPositivo, ladoNegativo: ladoNegativo, arestasDeCorte: arestasDeCorte };
+    }
+
     if (todosNaoNegativos || todosNaoPositivos) {
       // Triângulo inteiro de um lado (inclui casos com vértices no plano).
       var listaDestino = todosNaoNegativos ? ladoPositivo : ladoNegativo;

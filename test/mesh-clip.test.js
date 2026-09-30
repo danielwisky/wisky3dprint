@@ -545,3 +545,82 @@ test("clipMalha com tampa em peca com furo (anel quadrado) conserva volume e ger
   const areaTampa = somarAreaTriangulos(resultado.tampaLadoPositivo);
   assert.ok(Math.abs(areaTampa - 12) < 1e-9, `tampa do anel deve ter área 16 - 4 = 12 (obtido ${areaTampa})`);
 });
+
+// -----------------------------------------------------------------------
+// Faces coplanares ao plano de corte (correção do achado Important 1 da
+// revisão da Task 13): corte a 0%/100% e corte na altura de um degrau.
+// -----------------------------------------------------------------------
+
+test("clipTriangulo com triangulo coplanar decide o lado pela normal do proprio triangulo", () => {
+  const plano = { normal: [0, 0, 1], ponto: [0, 0, 0] };
+  const normalParaCima = [[0, 0, 0], [1, 0, 0], [0, 1, 0]]; // normal +z
+  const normalParaBaixo = [[0, 0, 0], [0, 1, 0], [1, 0, 0]]; // normal -z
+
+  const r1 = MeshClip.clipTriangulo(normalParaCima, plano);
+  assert.equal(r1.ladoNegativo.length, 1, "face olhando para +normal pertence ao sólido do lado negativo");
+  assert.equal(r1.ladoPositivo.length, 0);
+
+  const r2 = MeshClip.clipTriangulo(normalParaBaixo, plano);
+  assert.equal(r2.ladoPositivo.length, 1, "face olhando para -normal pertence ao sólido do lado positivo");
+  assert.equal(r2.ladoNegativo.length, 0);
+});
+
+for (const [pct, ladoCheio, ladoVazio] of [[100, "ladoNegativo", "ladoPositivo"], [0, "ladoPositivo", "ladoNegativo"]]) {
+  test(`clipMalha com corte a ${pct}% sobre uma face do cubo nao gera lado degenerado de volume 0`, () => {
+    const cubo = criarCuboUnitario();
+    const plano = MeshClip.definirPlanoDeCorte("x", pct, 0, CUBO_BBOX);
+    const resultado = MeshClip.clipMalha(cubo, null, plano);
+
+    assert.equal(resultado[ladoVazio].triangulos.length, 0, `${ladoVazio} deve ficar vazio (sem folha dupla face + tampa)`);
+    assert.equal(resultado[ladoCheio].triangulos.length, cubo.length, `${ladoCheio} fica com o cubo inteiro, sem tampa`);
+    assert.equal(resultado.tampaLadoPositivo.length, 0);
+    assert.equal(resultado.tampaLadoNegativo.length, 0);
+    assert.ok(Math.abs(volumeAssinado(resultado[ladoCheio].triangulos) - 1) < 1e-9);
+  });
+}
+
+// Peça em "L" 3D (degrau): base 2x1x1 (x em [0,2], z em [0,1]) + torre
+// 1x1x1 sobre ela (x em [0,1], z em [1,2]); y em [0,1]. Volume 3. O topo do
+// degrau (z = 1, x em [1,2]) é uma face inteira na altura z = 1.
+function criarPecaComDegrau() {
+  const tris = [];
+  const quad = (a, b, c, d) => { tris.push([a, b, c], [a, c, d]); };
+  quad([0, 0, 0], [0, 1, 0], [2, 1, 0], [2, 0, 0]); // base z=0 (-z)
+  quad([1, 0, 1], [2, 0, 1], [2, 1, 1], [1, 1, 1]); // topo do degrau z=1 (+z)
+  quad([0, 0, 2], [1, 0, 2], [1, 1, 2], [0, 1, 2]); // topo da torre z=2 (+z)
+  quad([2, 0, 0], [2, 1, 0], [2, 1, 1], [2, 0, 1]); // parede x=2 (+x)
+  quad([1, 0, 1], [1, 1, 1], [1, 1, 2], [1, 0, 2]); // parede x=1 da torre (+x)
+  quad([0, 0, 0], [0, 0, 2], [0, 1, 2], [0, 1, 0]); // parede x=0 (-x)
+  // Paredes y=0 (-y) e y=1 (+y), em 3 quadrados cada (sem T-junction em z=1).
+  for (const [x0, x1, z0, z1] of [[0, 1, 0, 1], [1, 2, 0, 1], [0, 1, 1, 2]]) {
+    quad([x0, 0, z0], [x1, 0, z0], [x1, 0, z1], [x0, 0, z1]);
+    quad([x0, 1, z0], [x0, 1, z1], [x1, 1, z1], [x1, 1, z0]);
+  }
+  return tris;
+}
+
+test("clipMalha com corte exatamente na altura de um degrau divide a peca sem folha espuria", () => {
+  const tris = criarPecaComDegrau();
+  assert.ok(Math.abs(volumeAssinado(tris) - 3) < 1e-9, "fixture: volume 3 com normais para fora");
+
+  const bbox = { minX: 0, maxX: 2, minY: 0, maxY: 1, minZ: 0, maxZ: 2 };
+  const plano = MeshClip.definirPlanoDeCorte("z", 50, 0, bbox); // z = 1
+  const resultado = testarConservacaoDeVolume(tris, plano);
+
+  // Base (lado negativo, abaixo) com volume 2; torre (lado positivo) com 1.
+  assert.ok(Math.abs(volumeAssinado(resultado.ladoNegativo.triangulos) - 2) < 1e-9);
+  assert.ok(Math.abs(volumeAssinado(resultado.ladoPositivo.triangulos) - 1) < 1e-9);
+
+  // O topo do degrau fica na base; a torre não recebe nenhum triângulo
+  // coplanar fora da sua seção (x em [0,1]).
+  const folhaNaTorre = resultado.ladoPositivo.triangulos.filter((t) => {
+    const c = centroide(t);
+    return t.every((p) => Math.abs(p[2] - 1) < 1e-9) && c[0] > 1;
+  });
+  assert.equal(folhaNaTorre.length, 0, "topo do degrau não deve ir para o lado da torre");
+
+  // Tampas: seção 1x1 de cada lado, com a normal apontando para fora.
+  assert.ok(Math.abs(somarAreaTriangulos(resultado.tampaLadoPositivo) - 1) < 1e-9);
+  assert.ok(resultado.tampaLadoPositivo.every((t) => normalDoTriangulo(t)[2] < 0), "tampa da torre olha para -z");
+  assert.ok(resultado.tampaLadoNegativo.every((t) => normalDoTriangulo(t)[2] > 0), "tampa da base olha para +z");
+});
