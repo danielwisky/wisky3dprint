@@ -299,60 +299,9 @@ if (root) {
     return out;
   }
 
-  // Dá pra ter até 3 vizinhos por triângulo (um por aresta). Vértices são
-  // "soldados" por posição quantizada pra achar arestas compartilhadas, já
-  // que a geometria do viewer não compartilha vértices entre triângulos.
-  function buildAdjacencyAndExportIndex(positions, triCount) {
-    const FATOR_QUANTIZACAO = 1e4; // ~0.0001mm de tolerância pra "mesmo ponto"
-    const keyToIndex = new Map();
-    const exportVertices = [];
-    const cornerExportIndex = new Int32Array(triCount * 3);
-
-    for (let i = 0; i < triCount * 3; i++) {
-      const base = i * 3;
-      const x = positions[base], y = positions[base + 1], z = positions[base + 2];
-      const chave = Math.round(x * FATOR_QUANTIZACAO) + "," + Math.round(y * FATOR_QUANTIZACAO) + "," + Math.round(z * FATOR_QUANTIZACAO);
-      let idx = keyToIndex.get(chave);
-      if (idx === undefined) {
-        idx = exportVertices.length;
-        exportVertices.push([x, y, z]);
-        keyToIndex.set(chave, idx);
-      }
-      cornerExportIndex[i] = idx;
-    }
-
-    const adjacencySets = new Array(triCount);
-    for (let t = 0; t < triCount; t++) adjacencySets[t] = new Set();
-
-    const edgeMap = new Map();
-    function edgeKey(a, b) {
-      return a < b ? a + "_" + b : b + "_" + a;
-    }
-
-    for (let t = 0; t < triCount; t++) {
-      const i0 = cornerExportIndex[t * 3];
-      const i1 = cornerExportIndex[t * 3 + 1];
-      const i2 = cornerExportIndex[t * 3 + 2];
-      const arestas = [[i0, i1], [i1, i2], [i2, i0]];
-      for (let e = 0; e < arestas.length; e++) {
-        const chave = edgeKey(arestas[e][0], arestas[e][1]);
-        let lista = edgeMap.get(chave);
-        if (!lista) {
-          lista = [];
-          edgeMap.set(chave, lista);
-        }
-        for (let j = 0; j < lista.length; j++) {
-          const outro = lista[j];
-          adjacencySets[t].add(outro);
-          adjacencySets[outro].add(t);
-        }
-        lista.push(t);
-      }
-    }
-
-    const adjacency = adjacencySets.map((s) => Array.from(s));
-    return { adjacency, exportVertices, cornerExportIndex };
-  }
+  // buildAdjacencyAndExportIndex mora em model-parser.js
+  // (ModelParser.buildAdjacencyAndExportIndex): é geometria pura, sem
+  // DOM/Three.js, reaproveitável por outras ferramentas.
 
   // Compartilhada por balde e seleção mágica: BFS a partir do triângulo
   // clicado. `compararComOrigem` decide contra qual normal cada vizinho é
@@ -838,7 +787,7 @@ if (root) {
     // troca de aba, os 9 floats de cada triângulo visível.
     const positionsOriginais = positions.slice();
     const faceNormals = computeFaceNormals(positions, triCount);
-    const { adjacency, exportVertices, cornerExportIndex } = buildAdjacencyAndExportIndex(positions, triCount);
+    const { adjacency, exportVertices, cornerExportIndex } = ModelParser.buildAdjacencyAndExportIndex(positions, triCount);
 
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));

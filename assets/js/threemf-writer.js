@@ -86,17 +86,32 @@ window.Wisky3D = window.Wisky3D || {};
     };
   }
 
-  // Compara pelo nome local (ignorando prefixo de namespace), necessário para
-  // achar <m:colorgroup> já existentes no arquivo, cujo prefixo pode variar
-  // (ou nem existir, se o pacote original declarou a extensão com outro
-  // prefixo/namespace default).
-  function filhosDiretosPorNomeLocal(el, nomeLocal) {
-    var out = [];
-    for (var i = 0; i < el.childNodes.length; i++) {
-      var n = el.childNodes[i];
-      if (n.nodeType === 1 && n.localName && n.localName.toLowerCase() === nomeLocal) out.push(n);
-    }
-    return out;
+  // Busca de filhos por nome local (ignora prefixo de namespace, ex.:
+  // "m:colorgroup"), necessário porque o prefixo da extensão de materiais
+  // pode variar (ou nem existir) entre pacotes. Vive em model-parser.js
+  // (ModelParser.filhosDiretosPorNomeLocal) pra ser reaproveitada também por
+  // lerCorPorTriangulo, em vez de duplicada aqui.
+  var filhosDiretosPorNomeLocal = ModelParser.filhosDiretosPorNomeLocal;
+
+  // Inverso de filamentIndexParaPaintColor (ver comentário acima): decodifica
+  // o hex de "paint_color" de volta pro índice de filamento 1-based. Os
+  // nibbles no hex vêm em ordem invertida (último caractere é o primeiro
+  // nibble do fluxo), então primeiro desfaz essa inversão. O 1º nibble
+  // (depois de desinvertido) carrega o estado nos 2 bits mais altos: valores
+  // 0/1/2 são o próprio índice (encoding sem escape, triângulo não dividido);
+  // valor 3 é o escape "índice >= 3", e o índice final é 3 + soma de todos os
+  // nibbles seguintes (cada um valendo até 15, exatamente o inverso do
+  // "resto -= 15" da codificação).
+  function paintColorParaFilamentIndex(hex) {
+    var nibbles = hex
+      .split("")
+      .map(function (c) { return parseInt(c, 16); })
+      .reverse();
+    var estado = nibbles[0] >> 2;
+    if (estado < 3) return estado;
+    var resto = 0;
+    for (var i = 1; i < nibbles.length; i++) resto += nibbles[i];
+    return 3 + resto;
   }
 
   // Edita, no texto XML de um dos arquivos .model do pacote original, só os
@@ -325,6 +340,7 @@ window.Wisky3D = window.Wisky3D || {};
     rgbToHex3mf: rgbToHex3mf,
     rgbParaHexBambu: rgbParaHexBambu,
     filamentIndexParaPaintColor: filamentIndexParaPaintColor,
+    paintColorParaFilamentIndex: paintColorParaFilamentIndex,
     criarIndexadorDeCores: criarIndexadorDeCores,
     injetarCoresNoXml: injetarCoresNoXml,
     reconstruirProjectSettings: reconstruirProjectSettings,

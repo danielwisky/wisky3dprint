@@ -194,6 +194,21 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     return null;
   }
 
+  // Compara pelo nome local (ignorando prefixo de namespace, ex.: "m:color"),
+  // necessário pra achar elementos de extensões do 3MF (m:colorgroup,
+  // m:color) cujo prefixo pode variar (ou nem existir, se o pacote declarou a
+  // extensão com outro prefixo/namespace default). Compartilhado com
+  // threemf-writer.js (limpeza de colorgroups órfãos) e com
+  // lerCorPorTriangulo abaixo, pra não duplicar essa busca.
+  function filhosDiretosPorNomeLocal(el, nomeLocal) {
+    var out = [];
+    for (var i = 0; i < el.childNodes.length; i++) {
+      var n = el.childNodes[i];
+      if (n.nodeType === 1 && n.localName && n.localName.toLowerCase() === nomeLocal) out.push(n);
+    }
+    return out;
+  }
+
   function bboxVazio() {
     return { minX: Infinity, minY: Infinity, minZ: Infinity, maxX: -Infinity, maxY: -Infinity, maxZ: -Infinity };
   }
@@ -587,6 +602,183 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     return porChapa;
   }
 
+  // Dá pra ter até 3 vizinhos por triângulo (um por aresta). Vértices são
+  // "soldados" por posição quantizada pra achar arestas compartilhadas, já
+  // que a geometria não-indexada usada pelo viewer não compartilha vértices
+  // entre triângulos. Geometria pura (sem THREE.js/DOM), por isso mora aqui e
+  // não em colorir-3mf.js, que só chama esta função.
+  function buildAdjacencyAndExportIndex(positions, triCount) {
+    var FATOR_QUANTIZACAO = 1e4; // ~0.0001mm de tolerância pra "mesmo ponto"
+    var keyToIndex = new Map();
+    var exportVertices = [];
+    var cornerExportIndex = new Int32Array(triCount * 3);
+
+    for (var i = 0; i < triCount * 3; i++) {
+      var base = i * 3;
+      var x = positions[base], y = positions[base + 1], z = positions[base + 2];
+      var chave = Math.round(x * FATOR_QUANTIZACAO) + "," + Math.round(y * FATOR_QUANTIZACAO) + "," + Math.round(z * FATOR_QUANTIZACAO);
+      var idx = keyToIndex.get(chave);
+      if (idx === undefined) {
+        idx = exportVertices.length;
+        exportVertices.push([x, y, z]);
+        keyToIndex.set(chave, idx);
+      }
+      cornerExportIndex[i] = idx;
+    }
+
+    var adjacencySets = new Array(triCount);
+    for (var t = 0; t < triCount; t++) adjacencySets[t] = new Set();
+
+    var edgeMap = new Map();
+    function edgeKey(a, b) {
+      return a < b ? a + "_" + b : b + "_" + a;
+    }
+
+    for (var t2 = 0; t2 < triCount; t2++) {
+      var i0 = cornerExportIndex[t2 * 3];
+      var i1 = cornerExportIndex[t2 * 3 + 1];
+      var i2 = cornerExportIndex[t2 * 3 + 2];
+      var arestas = [[i0, i1], [i1, i2], [i2, i0]];
+      for (var e = 0; e < arestas.length; e++) {
+        var chave2 = edgeKey(arestas[e][0], arestas[e][1]);
+        var lista = edgeMap.get(chave2);
+        if (!lista) {
+          lista = [];
+          edgeMap.set(chave2, lista);
+        }
+        for (var j = 0; j < lista.length; j++) {
+          var outro = lista[j];
+          adjacencySets[t2].add(outro);
+          adjacencySets[outro].add(t2);
+        }
+        lista.push(t2);
+      }
+    }
+
+    var adjacency = adjacencySets.map(function (s) { return Array.from(s); });
+    return { adjacency: adjacency, exportVertices: exportVertices, cornerExportIndex: cornerExportIndex };
+  }
+
+  // Cor default (cinza) de área sem pintura/atribuição de cor explícita.
+  // Mesmo valor de ThreeMFWriter.DEFAULT_COLOR (fonte histórica dessa
+  // constante, ver comentário lá), duplicado aqui como literal porque
+  // model-parser.js carrega antes de threemf-writer.js na ordem de <script>
+  // das páginas que usam os dois módulos, então não dá pra referenciar
+  // ThreeMFWriter.DEFAULT_COLOR na hora que este módulo é avaliado.
+  var DEFAULT_COLOR = [176, 176, 190];
+
+  function hexColorParaRgb(hex) {
+    if (!hex) return null;
+    var h = hex.replace("#", "");
+    if (h.length < 6) return null;
+    return [parseInt(h.substr(0, 2), 16), parseInt(h.substr(2, 2), 16), parseInt(h.substr(4, 2), 16)];
+  }
+
+  // Acha <m:colorgroup id="pid"> dentro de <resources> do doc informado,
+  // comparando por nome local (ver filhosDiretosPorNomeLocal) porque o
+  // prefixo do namespace de materiais pode variar entre pacotes.
+  function acharColorGroupPorId(doc, pid) {
+    var resourcesEl = directChild(doc.documentElement, "resources");
+    if (!resourcesEl) return null;
+    var grupos = filhosDiretosPorNomeLocal(resourcesEl, "colorgroup");
+    for (var i = 0; i < grupos.length; i++) {
+      if (grupos[i].getAttribute("id") === String(pid)) return grupos[i];
+    }
+    return null;
+  }
+
+  // Lê a cor "de verdade" de cada triângulo originado de extractTriangles3MF
+  // (via `origins`, ver resolveObjectTriangles), reabrindo o(s) arquivo(s)
+  // .model de onde eles vieram quando necessário (mesmo padrão de resolução
+  // de p:path que resolveObjectRecursivo usa pra components externos: cache
+  // de doc por path, reaberto do zip só na primeira vez) e olhando o
+  // <triangle> exato (índice `origin.localIndex` dentro de
+  // <mesh><triangles>) pra decidir a cor:
+  //  - pid/p1: resolve contra <m:colorgroup id="pid"> em <resources>,
+  //    decodificando o hex "#RRGGBBAA" do <m:color> de índice p1.
+  //  - sem pid mas com paint_color (extensão proprietária Bambu/OrcaSlicer):
+  //    decodifica o índice de filamento (ThreeMFWriter.paintColorParaFilamentIndex,
+  //    inverso de filamentIndexParaPaintColor) e mapeia pra cor via
+  //    `projectSettingsConfig.filament_colour[indice-1]` ("#RRGGBB" do Bambu
+  //    Studio). Sem projectSettingsConfig (ou sem entrada nesse índice), cai
+  //    na cor default (fallback neutro).
+  //  - nenhum dos dois: cor default (`corDefault` ou DEFAULT_COLOR) — área
+  //    não pintada, herda o extrusor/filamento padrão do objeto.
+  // Retorna Promise<Uint8ClampedArray(origins.length*3)>, mesmo formato/ordem
+  // de state.baseColors em colorir-3mf.js (triângulo i -> [i*3, i*3+1, i*3+2]).
+  function lerCorPorTriangulo(zip, modelDoc, origins, projectSettingsConfig, corDefault) {
+    var DEFAULT = corDefault || DEFAULT_COLOR;
+    var out = new Uint8ClampedArray(origins.length * 3);
+
+    function setColor(i, rgb) {
+      var c = rgb || DEFAULT;
+      out[i * 3] = c[0];
+      out[i * 3 + 1] = c[1];
+      out[i * 3 + 2] = c[2];
+    }
+
+    var rootFile = localizarModeloRaiz(zip);
+    var rootPath = rootFile ? rootFile.name : null;
+    var docCache = {};
+
+    function getDoc(path) {
+      if (path === rootPath || path === null || path === undefined) return Promise.resolve(modelDoc);
+      if (docCache[path]) return docCache[path];
+      var entry = zip.file(path);
+      if (!entry) return Promise.resolve(null);
+      var promessa = entry.async("text").then(parseXmlDoc);
+      docCache[path] = promessa;
+      return promessa;
+    }
+
+    var promises = origins.map(function (origin, i) {
+      if (!origin) {
+        setColor(i, DEFAULT);
+        return Promise.resolve();
+      }
+      return getDoc(origin.path).then(function (doc) {
+        if (!doc) {
+          setColor(i, DEFAULT);
+          return;
+        }
+        var objectEl = findObjectElement(doc, origin.objectId);
+        var meshEl = objectEl && directChild(objectEl, "mesh");
+        var trianglesEl = meshEl && directChild(meshEl, "triangles");
+        var triEls = trianglesEl ? directChildren(trianglesEl, "triangle") : [];
+        var triEl = triEls[origin.localIndex];
+        if (!triEl) {
+          setColor(i, DEFAULT);
+          return;
+        }
+
+        var pid = triEl.getAttribute("pid");
+        var p1 = triEl.getAttribute("p1");
+        if (pid && p1 !== null && p1 !== "") {
+          var colorGroupEl = acharColorGroupPorId(doc, pid);
+          var colorEls = colorGroupEl ? filhosDiretosPorNomeLocal(colorGroupEl, "color") : [];
+          var colorEl = colorEls[parseInt(p1, 10)];
+          setColor(i, colorEl ? hexColorParaRgb(colorEl.getAttribute("color")) : null);
+          return;
+        }
+
+        var paintColor = triEl.getAttribute("paint_color");
+        if (paintColor) {
+          var ThreeMFWriter = window.Wisky3D && window.Wisky3D.ThreeMFWriter;
+          var indice = ThreeMFWriter && ThreeMFWriter.paintColorParaFilamentIndex(paintColor);
+          var hexBambu = indice && projectSettingsConfig && Array.isArray(projectSettingsConfig.filament_colour)
+            ? projectSettingsConfig.filament_colour[indice - 1]
+            : null;
+          setColor(i, hexBambu ? hexColorParaRgb(hexBambu) : null);
+          return;
+        }
+
+        setColor(i, DEFAULT);
+      });
+    });
+
+    return Promise.all(promises).then(function () { return out; });
+  }
+
   window.Wisky3D.ModelParser = {
     parseSTL: parseSTL,
     computeBoundingBox: computeBoundingBox,
@@ -597,6 +789,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     directChild: directChild,
     directChildren: directChildren,
     findObjectElement: findObjectElement,
+    filhosDiretosPorNomeLocal: filhosDiretosPorNomeLocal,
     localizarModeloRaiz: localizarModeloRaiz,
     localizarArquivoUnico: localizarArquivoUnico,
     baixarBlob: baixarBlob,
@@ -605,6 +798,9 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     parse3MFPerfil: parse3MFPerfil,
     parsePlateAssignments: parsePlateAssignments,
     calcularChapas: calcularChapas,
-    mapearTriangulosParaChapas: mapearTriangulosParaChapas
+    mapearTriangulosParaChapas: mapearTriangulosParaChapas,
+    buildAdjacencyAndExportIndex: buildAdjacencyAndExportIndex,
+    DEFAULT_COLOR: DEFAULT_COLOR,
+    lerCorPorTriangulo: lerCorPorTriangulo
   };
 })();
