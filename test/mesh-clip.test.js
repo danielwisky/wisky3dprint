@@ -144,6 +144,34 @@ test("clipTriangulo caso 2 de um lado + 1 do outro gera 1 triangulo na minoria e
   }
 });
 
+test("clipTriangulo caso 2+1 com quad assimetrico escolhe a diagonal que maximiza a menor area (evita lasca fina)", () => {
+  // Triângulo bem assimétrico: v0 isolado do lado negativo, v1/v2 do lado
+  // positivo com alturas bem diferentes em relação ao plano. O quad da
+  // maioria resultante tem duas triangulações possíveis com áreas mínimas
+  // bem diferentes (~13.89 vs ~11.11) — este caso pressiona o código a de
+  // fato escolher a diagonal certa, não apenas evitar área zero.
+  const plano = { normal: [1, 0, 0], ponto: [5, 0, 0] };
+  const tri = [[0, 0, 0], [10, 0, 0], [9, 10, 0]];
+  const resultado = MeshClip.clipTriangulo(tri, plano);
+
+  assert.equal(resultado.ladoNegativo.length, 1, "minoria gera 1 triângulo");
+  assert.equal(resultado.ladoPositivo.length, 2, "maioria gera 2 triângulos");
+
+  const areasMaioria = resultado.ladoPositivo.map((t) => somarAreaTriangulos([t]));
+  const menorAreaMaioria = Math.min(...areasMaioria);
+
+  // A diagonal "boa" (opção A) dá área mínima ~13.89; a diagonal "ruim"
+  // (opção B) dá área mínima ~11.11. Afirma que a escolhida é a boa.
+  assert.ok(
+    menorAreaMaioria > 13,
+    `deveria escolher a diagonal que maximiza a menor área (obtido ${menorAreaMaioria}, esperado >13, a diagonal ruim daria ~11.11)`
+  );
+
+  const areaOriginal = somarAreaTriangulos([tri]);
+  const areaResultante = somarAreaTriangulos(resultado.ladoNegativo.concat(resultado.ladoPositivo));
+  assert.ok(Math.abs(areaOriginal - areaResultante) < 1e-6, "área deve ser preservada");
+});
+
 // -----------------------------------------------------------------------
 // clipMalha — cubo unitário
 // -----------------------------------------------------------------------

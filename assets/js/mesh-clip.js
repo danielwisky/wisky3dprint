@@ -129,6 +129,14 @@ window.Wisky3D = window.Wisky3D || {};
     // pois esse caso já foi tratado acima como "todos do mesmo lado").
     // Identifica o vértice isolado (minoria): aquele cujo sinal difere dos
     // outros dois.
+    // Nota: quando um vértice está exatamente sobre o plano (sinal 0) e os
+    // outros dois em lados opostos, os 3 sinais são todos diferentes entre
+    // si e o código cai no "else" (idxIsolado = 1) — que não necessariamente
+    // aponta para o vértice sobre o plano. Isso não é um bug: uma das duas
+    // triangulações do "quad" da maioria degenera (um dos pontos de
+    // interseção coincide com o próprio vértice no plano), gerando um
+    // triângulo espúrio de área ~0 que é descartado por empurrarTriSeValido,
+    // sobrando exatamente os 2 triângulos geometricamente corretos.
     var idxIsolado;
     if (sinais[0] === sinais[1]) {
       idxIsolado = 2;
