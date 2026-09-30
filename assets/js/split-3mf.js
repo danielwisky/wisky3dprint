@@ -82,7 +82,7 @@
     }
 
     // Popula #split3mf-lista com um card por unidade detectada (rótulo +
-    // dimensões + botão de download individual).
+    // dimensões + botão de download individual + botão "Separar por cor").
     function renderListaUnidades(unidades) {
       listaEl.innerHTML = "";
       unidades.forEach(function (unidade) {
@@ -103,6 +103,9 @@
           card.appendChild(dimsEl);
         }
 
+        const acoes = document.createElement("div");
+        acoes.className = "split3mf-card-acoes";
+
         const baixarBtn = document.createElement("button");
         baixarBtn.type = "button";
         baixarBtn.className = "btn btn-secondary split3mf-card-baixar";
@@ -115,9 +118,234 @@
             mostrarErro("Não foi possível gerar o arquivo dessa unidade.");
           });
         });
-        card.appendChild(baixarBtn);
+        acoes.appendChild(baixarBtn);
+
+        const subunidadesEl = document.createElement("div");
+        subunidadesEl.className = "split3mf-subunidades";
+        subunidadesEl.hidden = true;
+
+        const corBtn = document.createElement("button");
+        corBtn.type = "button";
+        corBtn.className = "btn btn-secondary split3mf-card-separar-cor";
+        corBtn.textContent = "Separar por cor";
+        corBtn.addEventListener("click", function () {
+          corBtn.disabled = true;
+          const textoOriginal = corBtn.textContent;
+          corBtn.textContent = "Analisando cores...";
+          separarUnidadePorCor(unidade).then(function (grupos) {
+            renderSubunidadesDeCor(subunidadesEl, grupos);
+            subunidadesEl.hidden = false;
+          }).catch(function (err) {
+            if (window.console && console.error) console.error("Split 3MF:", err);
+            mostrarErro("Não foi possível separar essa unidade por cor.");
+          }).then(function () {
+            corBtn.disabled = false;
+            corBtn.textContent = textoOriginal;
+          });
+        });
+        acoes.appendChild(corBtn);
+
+        card.appendChild(acoes);
+        card.appendChild(subunidadesEl);
 
         listaEl.appendChild(card);
+      });
+    }
+
+    // Converte um array de triângulos (formato de ModelParser.parseSTL /
+    // extractTriangles3MF: [[ [x,y,z], [x,y,z], [x,y,z] ], ...]) pro formato
+    // plano Float32Array(triCount*9) que ModelParser.buildAdjacencyAndExportIndex
+    // espera — mesmo layout que buildGeometryData monta em colorir-3mf.js,
+    // reimplementado aqui em miniatura porque aquela função é local àquele
+    // módulo (acoplada ao THREE.js/viewer) e não é exportada.
+    function flattenTriangulos(triangulos) {
+      const positions = new Float32Array(triangulos.length * 9);
+      triangulos.forEach(function (tri, t) {
+        const base = t * 9;
+        for (let c = 0; c < 3; c++) {
+          positions[base + c * 3] = tri[c][0];
+          positions[base + c * 3 + 1] = tri[c][1];
+          positions[base + c * 3 + 2] = tri[c][2];
+        }
+      });
+      return positions;
+    }
+
+    // Une (via union-find) triângulos vizinhos que têm exatamente a mesma
+    // cor, formando regiões de cor contígua. `adjacency` (ver
+    // ModelParser.buildAdjacencyAndExportIndex) é a lista de triângulos
+    // vizinhos por aresta compartilhada; `corPorTriangulo` (ver
+    // ModelParser.lerCorPorTriangulo) é um Uint8ClampedArray(triCount*3) com
+    // a cor RGB de cada triângulo. Retorna Map<raizDoGrupo, number[]> com os
+    // índices de triângulo de cada grupo.
+    function agruparPorCorContigua(adjacency, corPorTriangulo, triCount) {
+      const parent = new Int32Array(triCount);
+      for (let i = 0; i < triCount; i++) parent[i] = i;
+
+      function find(i) {
+        while (parent[i] !== i) {
+          parent[i] = parent[parent[i]];
+          i = parent[i];
+        }
+        return i;
+      }
+
+      function union(a, b) {
+        const ra = find(a), rb = find(b);
+        if (ra !== rb) parent[ra] = rb;
+      }
+
+      function mesmaCor(a, b) {
+        const ba = a * 3, bb = b * 3;
+        return corPorTriangulo[ba] === corPorTriangulo[bb]
+          && corPorTriangulo[ba + 1] === corPorTriangulo[bb + 1]
+          && corPorTriangulo[ba + 2] === corPorTriangulo[bb + 2];
+      }
+
+      for (let t = 0; t < triCount; t++) {
+        const vizinhos = adjacency[t] || [];
+        for (let i = 0; i < vizinhos.length; i++) {
+          const v = vizinhos[i];
+          if (mesmaCor(t, v)) union(t, v);
+        }
+      }
+
+      const grupos = new Map();
+      for (let t = 0; t < triCount; t++) {
+        const raiz = find(t);
+        let lista = grupos.get(raiz);
+        if (!lista) {
+          lista = [];
+          grupos.set(raiz, lista);
+        }
+        lista.push(t);
+      }
+      return grupos;
+    }
+
+    // Converte [r,g,b] (0-255) pra "#rrggbb", usado na amostra visual de cor
+    // de cada sub-unidade.
+    function rgbParaHex(rgb) {
+      function byte(n) {
+        return n.toString(16).padStart(2, "0");
+      }
+      return "#" + byte(rgb[0]) + byte(rgb[1]) + byte(rgb[2]);
+    }
+
+    // Extrai os triângulos de uma unidade (filtrando por objectIds via
+    // origin.topObjectId, mesmo campo que mapearTriangulosParaChapas usa pra
+    // casar triângulo -> chapa), lê a cor real de cada um
+    // (ModelParser.lerCorPorTriangulo, reaproveitando Metadata/
+    // project_settings.config se existir) e agrupa por região de cor
+    // contígua (agruparPorCorContigua). Retorna um array de
+    // `{ rotulo, cor, bbox, triangulos }` (um por grupo), ordenado por
+    // tamanho decrescente (grupo com mais triângulos primeiro) só pra dar
+    // uma ordem estável e previsível na UI.
+    function separarUnidadePorCor(unidade) {
+      const idsUnidade = unidade.objectIds.map(String);
+
+      return ModelParser.extractTriangles3MF(state.zip, state.modelText, state.modelPath).then(function (resultado) {
+        const triangulos = [];
+        const origins = [];
+        resultado.origins.forEach(function (origin, i) {
+          const topId = origin && (origin.topObjectId !== undefined ? origin.topObjectId : origin.objectId);
+          if (origin && idsUnidade.indexOf(String(topId)) !== -1) {
+            triangulos.push(resultado.triangulos[i]);
+            origins.push(origin);
+          }
+        });
+
+        const triCount = triangulos.length;
+        if (!triCount) return [];
+
+        const configEntry = ModelParser.localizarArquivoUnico(state.zip, "project_settings.config");
+        const configPromise = configEntry
+          ? configEntry.async("text").then(function (texto) {
+              try {
+                return JSON.parse(texto);
+              } catch (e) {
+                return null;
+              }
+            })
+          : Promise.resolve(null);
+
+        const modelDoc = new DOMParser().parseFromString(state.modelText, "application/xml");
+
+        return configPromise.then(function (projectSettingsConfig) {
+          return ModelParser.lerCorPorTriangulo(state.zip, modelDoc, origins, projectSettingsConfig).then(function (corPorTriangulo) {
+            const positions = flattenTriangulos(triangulos);
+            const { adjacency } = ModelParser.buildAdjacencyAndExportIndex(positions, triCount);
+            const grupos = agruparPorCorContigua(adjacency, corPorTriangulo, triCount);
+
+            const listaGrupos = Array.from(grupos.values()).map(function (indices) {
+              const triangulosDoGrupo = indices.map(function (i) { return triangulos[i]; });
+              const primeiro = indices[0] * 3;
+              const cor = [corPorTriangulo[primeiro], corPorTriangulo[primeiro + 1], corPorTriangulo[primeiro + 2]];
+              return {
+                cor: cor,
+                bbox: ModelParser.computeBoundingBox(triangulosDoGrupo),
+                triangulos: triangulosDoGrupo
+              };
+            });
+
+            listaGrupos.sort(function (a, b) { return b.triangulos.length - a.triangulos.length; });
+            listaGrupos.forEach(function (grupo, i) { grupo.rotulo = "Cor " + (i + 1); });
+            return listaGrupos;
+          });
+        });
+      });
+    }
+
+    // Renderiza os grupos de cor (ver separarUnidadePorCor) como sub-cards
+    // dentro do container da unidade, seguindo o mesmo padrão visual dos
+    // cards de unidade (título + dimensões), acrescido de uma amostra de cor.
+    // Sem botão de download por ora: a exportação de fato de cada grupo (um
+    // novo objeto/mesh 3MF só com esses triângulos) é responsabilidade de
+    // uma etapa posterior do plano (consome ThreeMFWriter.montarModeloDoZero).
+    function renderSubunidadesDeCor(container, grupos) {
+      container.innerHTML = "";
+      if (!grupos.length) {
+        const vazio = document.createElement("div");
+        vazio.className = "split3mf-card-dims";
+        vazio.textContent = "Nenhuma região de cor encontrada nessa unidade.";
+        container.appendChild(vazio);
+        return;
+      }
+
+      grupos.forEach(function (grupo) {
+        const subcard = document.createElement("div");
+        subcard.className = "split3mf-card split3mf-subcard";
+
+        const titulo = document.createElement("div");
+        titulo.className = "split3mf-card-titulo";
+
+        // Sem folha de CSS dedicada ao Split 3MF ainda (nenhuma classe
+        // split3mf-* tem regras em assets/css/ até esta task), então o
+        // tamanho/formato do quadrado de cor é inline aqui mesmo — senão o
+        // <span> fica sem dimensão e a amostra não aparece.
+        const amostra = document.createElement("span");
+        amostra.className = "split3mf-cor-amostra";
+        amostra.style.background = rgbParaHex(grupo.cor);
+        amostra.style.display = "inline-block";
+        amostra.style.width = "14px";
+        amostra.style.height = "14px";
+        amostra.style.borderRadius = "3px";
+        amostra.style.marginRight = "6px";
+        amostra.style.verticalAlign = "middle";
+        amostra.style.border = "1px solid rgba(0,0,0,0.15)";
+        titulo.appendChild(amostra);
+        titulo.appendChild(document.createTextNode(grupo.rotulo));
+        subcard.appendChild(titulo);
+
+        const dims = formatarBBoxMm(grupo.bbox);
+        if (dims) {
+          const dimsEl = document.createElement("div");
+          dimsEl.className = "split3mf-card-dims";
+          dimsEl.textContent = dims;
+          subcard.appendChild(dimsEl);
+        }
+
+        container.appendChild(subcard);
       });
     }
 
@@ -259,7 +487,8 @@
     // restante do módulo não roda fora de uma página com #split3mf no DOM.
     window.Wisky3D = window.Wisky3D || {};
     window.Wisky3D.Split3MF = {
-      filtrarBuildParaObjectIds: filtrarBuildParaObjectIds
+      filtrarBuildParaObjectIds: filtrarBuildParaObjectIds,
+      agruparPorCorContigua: agruparPorCorContigua
     };
 
     // -------------------------------------------------------------------------
