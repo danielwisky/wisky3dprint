@@ -979,6 +979,14 @@ async function adicionarConectorNoCorte(pecaAId, pecaBId, plano, pontoDeAncorage
 function costurarDaGeometria(geometry, origem) {
   const pos = geometry.getAttribute("position");
   if (!pos || !pos.count) return null;
+  // Guarda contra regressão silenciosa: se um upgrade do three-bvh-csg
+  // parar de preservar o tipo de array de entrada (ver Float64ArrayCSG),
+  // o CSG passaria a rodar em Float32 sem erro nenhum — só ~4/600 cortes
+  // sucessivos pelo eixo do pino abririam buraco, um defeito raro e tardio
+  // demais pra pegar em teste manual. Falhar alto e claro aqui em vez disso.
+  if (!(pos.array instanceof Float64Array)) {
+    throw new Error("CSG não rodou em Float64 — possível mudança de comportamento em three-bvh-csg (ver Float64ArrayCSG)");
+  }
   const soup = geometriaParaSoup(geometry, origem);
   // A costura decide por limiar (solda, altura de agulha, distância
   // vértice-aresta); um caso na beira do limiar pode sobrar com poucas
