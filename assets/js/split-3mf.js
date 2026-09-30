@@ -582,9 +582,14 @@
 
     // Reconstrói um pacote 3MF novo contendo só a unidade pedida: copia todo
     // arquivo do zip original (bytes intactos) exceto o 3dmodel.model (que é
-    // reescrito com só os <item> da unidade) e o model_settings.config (que é
-    // simplesmente omitido — não faz sentido pra um recorte de uma chapa só,
-    // e nenhum fatiador exige esse arquivo pra abrir o pacote).
+    // reescrito com só os <item> da unidade). O model_settings.config é
+    // mantido intacto (não filtrado): no formato Bambu/Orca ele também
+    // carrega o tipo de cada part (modifier/negative-volume/support-blocker)
+    // por object id, não só a distribuição em chapas — omiti-lo faria um
+    // modifier reimportado virar geometria sólida, silenciosamente. Sobra
+    // metadado de chapa/objeto que não existe mais no pacote, mas fatiadores
+    // ignoram entradas de object id ausente; é um custo bem menor que perder
+    // o tipo de uma part.
     function exportarUnidadePreservandoPacote(unidade) {
       const zipNovo = new JSZip();
       const modelXmlFiltrado = filtrarBuildParaObjectIds(state.modelText, unidade.objectIds);
@@ -593,7 +598,6 @@
       state.zip.forEach(function (relPath, file) {
         if (file.dir) return;
         if (relPath === state.modelPath) return;
-        if (state.modelSettingsPath && relPath === state.modelSettingsPath) return;
         copias.push(
           file.async("uint8array").then(function (dados) {
             zipNovo.file(relPath, dados);
@@ -1131,7 +1135,7 @@
         card.classList.toggle("is-selecionada", "p:" + card.dataset.pecaId === state.alvoCorte);
       });
 
-      cortarBtn.disabled = !state.alvoCorte || state.cortando;
+      cortarBtn.disabled = !state.alvoCorte || state.cortando || !!state.adicionandoConector;
       atualizarCoresDaVisualizacao();
       atualizarPreviewDoPlano();
     }
@@ -1316,7 +1320,7 @@
     // novo, deixando o estado como estava.
     function cortarAlvoAtual() {
       const estado = state;
-      if (!estado || !estado.alvoCorte || estado.cortando) return;
+      if (!estado || !estado.alvoCorte || estado.cortando || estado.adicionandoConector) return;
       const alvo = estado.alvoCorte;
       const p = lerParametrosDeCorte();
       let pecaProvisoriaId = null;
@@ -1367,7 +1371,7 @@
     }
 
     function descartarCortes() {
-      if (!state) return;
+      if (!state || state.adicionandoConector) return;
       state.pecas = [];
       state.alvoCorte = null;
       state.ultimoCorte = null;
@@ -1521,6 +1525,11 @@
       estado.adicionandoConector = true;
       adicionarConectorBtn.disabled = true;
       adicionarConectorBtn.textContent = "Adicionando...";
+      // Cortar/descartar cortes ficam bloqueados enquanto o conector calcula:
+      // do contrário a lista de peças pode mudar sob os pés do CSG, aplicando
+      // o pino/furo numa peça já obsoleta (ver ledger, Important I1).
+      cortarBtn.disabled = true;
+      descartarCortesBtn.disabled = true;
       mostrarErro("");
 
       // Mesmo respiro de cortarAlvoAtual antes do trabalho síncrono (CSG).
@@ -1559,7 +1568,11 @@
       }).then(function () {
         estado.adicionandoConector = false;
         adicionarConectorBtn.textContent = "Adicionar conector";
-        if (state === estado) renderConector();
+        if (state === estado) {
+          cortarBtn.disabled = !estado.alvoCorte || estado.cortando;
+          descartarCortesBtn.disabled = false;
+          renderConector();
+        }
       });
     }
 

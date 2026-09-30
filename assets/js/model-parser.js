@@ -757,6 +757,14 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     var rootFile = localizarModeloRaiz(zip);
     var rootPath = rootFile ? rootFile.name : null;
     var docCache = {};
+    // Cache da lista de <triangle> de cada object, por path+objectId: sem
+    // isso, achar o triângulo de índice `localIndex` custava uma varredura de
+    // TODOS os <object> do doc (findObjectElement) + a reconstrução da lista
+    // inteira de triângulos do object (directChildren) A CADA triângulo —
+    // custo quadrático no nº de triângulos do object (medido: ~87s em 40k
+    // triângulos, ~350s em 80k). Com o cache, cada object é resolvido uma
+    // única vez e o acesso por índice é O(1).
+    var triElsCache = {};
 
     function getDoc(path) {
       if (path === rootPath || path === null || path === undefined) return Promise.resolve(modelDoc);
@@ -766,6 +774,17 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
       var promessa = entry.async("text").then(parseXmlDoc);
       docCache[path] = promessa;
       return promessa;
+    }
+
+    function getTriEls(doc, path, objectId) {
+      var chave = (path || "") + "#" + objectId;
+      if (triElsCache[chave]) return triElsCache[chave];
+      var objectEl = findObjectElement(doc, objectId);
+      var meshEl = objectEl && directChild(objectEl, "mesh");
+      var trianglesEl = meshEl && directChild(meshEl, "triangles");
+      var triEls = trianglesEl ? directChildren(trianglesEl, "triangle") : [];
+      triElsCache[chave] = triEls;
+      return triEls;
     }
 
     var promises = origins.map(function (origin, i) {
@@ -778,10 +797,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
           setColor(i, DEFAULT);
           return;
         }
-        var objectEl = findObjectElement(doc, origin.objectId);
-        var meshEl = objectEl && directChild(objectEl, "mesh");
-        var trianglesEl = meshEl && directChild(meshEl, "triangles");
-        var triEls = trianglesEl ? directChildren(trianglesEl, "triangle") : [];
+        var triEls = getTriEls(doc, origin.path, origin.objectId);
         var triEl = triEls[origin.localIndex];
         if (!triEl) {
           setColor(i, DEFAULT);
