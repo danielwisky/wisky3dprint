@@ -440,3 +440,25 @@ test("regressão: cortes aleatórios (semente fixa, com cortes sucessivos) em cu
   });
   assert.ok(cortes > 200, "cortes efetivos: " + cortes);
 });
+
+// Cubo 10 com a face x+ dividida em leque a partir de um vértice central
+// (10, 5, 5 + desvio): com o plano em z = 5, esse vértice fica a `desvio`
+// do plano.
+function cuboComVerticeQuaseNoPlano(desvio) {
+  const tris = cubo(10).filter(function (t, i) { return i !== 10 && i !== 11; }); // tira a face x+
+  const c = [10, 5, 5 + desvio], a = [10, 0, 0], b = [10, 10, 0], cc = [10, 10, 10], d = [10, 0, 10];
+  tris.push([a, b, c], [b, cc, c], [cc, d, c], [d, a, c]);
+  return tris;
+}
+
+test("regressão (Task 15): vértice a ~1e-8 do plano (dentro do EPS de classificação) não abre a tampa", () => {
+  [1.4e-8, -1.4e-8, 5e-8, -9e-8, 0].forEach(function (desvio) {
+    const peca = pecaDe(cuboComVerticeQuaseNoPlano(desvio));
+    assertManifoldFechada(peca);
+    const r = cortarPeca(peca, "z", 50, 0, { earcutFn: earcut, novaIdentidade: contadorDeIdentidades() });
+    assertManifoldFechada(r.negativo);
+    assertManifoldFechada(r.positivo);
+    assertExportacaoManifold([r.negativo, r.positivo]);
+    assert.ok(Math.abs(r.negativo.volumeMm3 + r.positivo.volumeMm3 - 1000) < 1e-5);
+  });
+});

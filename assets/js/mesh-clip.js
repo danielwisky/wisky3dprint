@@ -143,6 +143,18 @@ window.Wisky3D = window.Wisky3D || {};
       if (v < -EPS) return -1;
       return 0;
     });
+    // Vértice classificado como "no plano" (|d| <= EPS) passa a ter d = 0
+    // exato (fix Task 15). Sem isso, um vértice a ~1e-8 do plano contava
+    // como "no plano" pra classificação, mas interpolarNaAresta (que só
+    // devolve o próprio extremo com d === 0) gerava um ponto de corte novo a
+    // ~1e-8 dele — ou até extrapolado além dele — enquanto os triângulos
+    // vizinhos que tinham esse vértice "de um lado só" o mantinham como
+    // estava: T-junction e tampa aberta. Aparece em cortes que passam por
+    // vértices com ruído de ponto flutuante (ex. pontos gerados pelo CSG
+    // dos conectores, ou malhas vindas de STL em float32).
+    for (var s = 0; s < 3; s++) {
+      if (sinais[s] === 0) d[s] = 0;
+    }
 
     var todosNaoNegativos = sinais.every(function (s) { return s >= 0; });
     var todosNaoPositivos = sinais.every(function (s) { return s <= 0; });
