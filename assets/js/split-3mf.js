@@ -587,9 +587,10 @@
     // carrega o tipo de cada part (modifier/negative-volume/support-blocker)
     // por object id, não só a distribuição em chapas — omiti-lo faria um
     // modifier reimportado virar geometria sólida, silenciosamente. Sobra
-    // metadado de chapa/objeto que não existe mais no pacote, mas fatiadores
-    // ignoram entradas de object id ausente; é um custo bem menor que perder
-    // o tipo de uma part.
+    // metadado de chapa/objeto que não existe mais no pacote (não confirmado
+    // com um arquivo real como Bambu Studio/OrcaSlicer reagem a uma entrada
+    // de object id ausente); é um custo assumido como bem menor que perder o
+    // tipo de uma part, mas ainda não validado contra um import real.
     function exportarUnidadePreservandoPacote(unidade) {
       const zipNovo = new JSZip();
       const modelXmlFiltrado = filtrarBuildParaObjectIds(state.modelText, unidade.objectIds);

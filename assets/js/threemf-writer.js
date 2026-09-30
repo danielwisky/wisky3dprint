@@ -110,8 +110,10 @@ window.Wisky3D = window.Wisky3D || {};
   // subdividido, e são os 2 bits BAIXOS do 1º nibble (não os altos) que
   // sinalizam subdivisão, seguidos pelos filhos na árvore. Este decoder não
   // percorre essa árvore: um paint_color subdividido de um arquivo externo
-  // é lido como um índice de filamento plausível, mas errado (cor de
-  // preview/exportação imprecisa nessa fronteira, não corrupção de dados).
+  // é lido como se os bits altos do 1º nibble fossem a cor — um índice de
+  // filamento errado (ou a cor default, se esses bits derem 0), não
+  // corrupção de dados, mas cor de preview/exportação imprecisa nessa
+  // fronteira.
   // Corrigir direito exige um arquivo real com pincelamento do Bambu/Orca
   // pra validar contra — não disponível neste ambiente; ver ledger da SDD
   // (achado I2 da revisão final do branch).
