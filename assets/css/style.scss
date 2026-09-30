@@ -3669,7 +3669,8 @@ body.img-lightbox-open { overflow: hidden; }
   overflow: hidden;
   background: var(--surface);
 }
-#cor3mf-canvas {
+#cor3mf-canvas,
+#split3mf-canvas {
   display: block;
   width: 100%;
   touch-action: none;
@@ -3732,6 +3733,14 @@ body.img-lightbox-open { overflow: hidden; }
   &:hover {
     opacity: 1;
   }
+}
+.split3mf-canvas-wrap {
+  margin-bottom: 1.25rem;
+}
+.split3mf-card.is-selecionada {
+  outline: 2px solid #ffd633;
+  outline-offset: 2px;
+  border-radius: 8px;
 }
 .cor3mf-toolbar {
   display: flex;

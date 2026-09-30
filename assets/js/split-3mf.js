@@ -3,8 +3,19 @@
 // arquivos individuais. Nesta etapa, o upload já detecta as unidades
 // separáveis (chapas, se o pacote tiver Metadata/model_settings.config com
 // mais de uma chapa; senão, um objeto de build de nível topo por unidade) e
-// lista suas dimensões — a geração dos arquivos separados de fato (download)
-// vem em tasks seguintes.
+// lista suas dimensões, com download por unidade/cor e uma visualização 3D
+// (Task 11) em que cada unidade aparece com uma cor e pode ser selecionada
+// com um clique.
+//
+// Carregado como <script type="module"> (split-3mf.html), mas sem import
+// estático: os testes (test/split-3mf-*.test.js) avaliam este arquivo com
+// `new Function(...)`, onde `import ... from` é erro de sintaxe. O viewer
+// (three-viewer-basico.js, ES module que depende do Three.js via importmap)
+// é carregado sob demanda com import() dinâmico, só quando um arquivo é
+// aberto, e uma falha nele (CDN fora do ar, WebGL indisponível) só esconde a
+// visualização 3D: a lista de unidades e os downloads continuam funcionando.
+// ModelParser/ThreeMFWriter continuam vindo de window.Wisky3D (scripts
+// clássicos com defer, que executam antes deste módulo, na ordem do HTML).
 // ---------------------------------------------------------------------------
 (function () {
   const root = document.getElementById("split3mf");
@@ -20,6 +31,16 @@
     const painel = document.getElementById("split3mf-painel");
     const listaEl = document.getElementById("split3mf-lista");
     const baixarTudoBtn = document.getElementById("split3mf-baixar-tudo");
+    const canvasWrapEl = document.getElementById("split3mf-canvas-wrap");
+    const canvasEl = document.getElementById("split3mf-canvas");
+    const recentralizarBtn = document.getElementById("split3mf-recentralizar");
+    const avisoGrandeEl = document.getElementById("split3mf-aviso-grande");
+    const avisoGrandeTextoEl = document.getElementById("split3mf-aviso-grande-texto");
+    const avisoGrandeFecharBtn = document.getElementById("split3mf-aviso-grande-fechar");
+
+    // Especificador do importmap (split-3mf.html/colorir-3mf.html), que já
+    // aponta pra URL com ?v=hash de cache-busting.
+    const VIEWER_MODULO = "wisky3d/three-viewer-basico.js";
 
     // Estado do arquivo carregado. `unidades` é a lista de chapas ou objetos
     // detectados (ver detectarUnidadesDeSplit); populado depois que
@@ -81,18 +102,65 @@
       });
     }
 
-    // Popula #split3mf-lista com um card por unidade detectada (rótulo +
-    // dimensões + botão de download individual + botão "Separar por cor").
+    // Quadradinho de cor ao lado do título de um card (unidade ou grupo de
+    // cor). Sem folha de CSS dedicada ao Split 3MF pra isso, então o
+    // tamanho/formato é inline aqui mesmo — senão o <span> fica sem dimensão
+    // e a amostra não aparece.
+    function criarAmostraCor(rgb) {
+      const amostra = document.createElement("span");
+      amostra.className = "split3mf-cor-amostra";
+      amostra.style.background = rgbParaHex(rgb);
+      amostra.style.display = "inline-block";
+      amostra.style.width = "14px";
+      amostra.style.height = "14px";
+      amostra.style.borderRadius = "3px";
+      amostra.style.marginRight = "6px";
+      amostra.style.verticalAlign = "middle";
+      amostra.style.border = "1px solid rgba(0,0,0,0.15)";
+      return amostra;
+    }
+
+    // Cor de identificação da unidade de índice `i` na visualização 3D (e na
+    // amostra do card correspondente): matizes espaçados pelo ângulo áureo,
+    // o que mantém cores vizinhas bem distintas pra qualquer número de
+    // unidades, sem precisar de uma paleta fixa com tamanho máximo.
+    function corDaUnidade(i) {
+      const h = ((200 + i * 137.508) % 360) / 360;
+      const sat = 0.6;
+      const lum = 0.55;
+      const q = lum + sat - lum * sat;
+      const p = 2 * lum - q;
+      function canal(t) {
+        if (t < 0) t += 1;
+        if (t > 1) t -= 1;
+        if (t < 1 / 6) return p + (q - p) * 6 * t;
+        if (t < 1 / 2) return q;
+        if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+        return p;
+      }
+      return [
+        Math.round(canal(h + 1 / 3) * 255),
+        Math.round(canal(h) * 255),
+        Math.round(canal(h - 1 / 3) * 255)
+      ];
+    }
+
+    // Popula #split3mf-lista com um card por unidade detectada (amostra da
+    // cor da unidade no viewer + rótulo + dimensões + botão de download
+    // individual + botão "Separar por cor"). Retorna os cards na mesma ordem
+    // de `unidades`, pra destacar o card da unidade selecionada no viewer.
     function renderListaUnidades(unidades) {
       listaEl.innerHTML = "";
-      unidades.forEach(function (unidade) {
+      const cards = [];
+      unidades.forEach(function (unidade, indice) {
         const card = document.createElement("div");
         card.className = "split3mf-card";
         card.dataset.unidadeId = String(unidade.id);
 
         const titulo = document.createElement("div");
         titulo.className = "split3mf-card-titulo";
-        titulo.textContent = unidade.rotulo;
+        titulo.appendChild(criarAmostraCor(corDaUnidade(indice)));
+        titulo.appendChild(document.createTextNode(unidade.rotulo));
         card.appendChild(titulo);
 
         const dims = formatarBBoxMm(unidade.bbox);
@@ -149,7 +217,9 @@
         card.appendChild(subunidadesEl);
 
         listaEl.appendChild(card);
+        cards.push(card);
       });
+      return cards;
     }
 
     // Converte um array de triângulos (formato de ModelParser.parseSTL /
@@ -225,6 +295,13 @@
 
     // Converte [r,g,b] (0-255) pra "#rrggbb", usado na amostra visual de cor
     // de cada sub-unidade.
+    // objectid do <item> de build de nível topo de onde veio o triângulo
+    // (o que as unidades guardam em objectIds); cai no objectId do próprio
+    // object quando o parser não registrou topObjectId.
+    function topObjectIdDe(origin) {
+      return origin.topObjectId !== undefined ? origin.topObjectId : origin.objectId;
+    }
+
     function rgbParaHex(rgb) {
       function byte(n) {
         return n.toString(16).padStart(2, "0");
@@ -333,7 +410,7 @@
         const triangulos = [];
         const origins = [];
         resultado.origins.forEach(function (origin, i) {
-          const topId = origin && (origin.topObjectId !== undefined ? origin.topObjectId : origin.objectId);
+          const topId = origin && topObjectIdDe(origin);
           if (origin && idsUnidade.indexOf(String(topId)) !== -1) {
             triangulos.push(resultado.triangulos[i]);
             origins.push(origin);
@@ -413,21 +490,7 @@
         const titulo = document.createElement("div");
         titulo.className = "split3mf-card-titulo";
 
-        // Sem folha de CSS dedicada ao Split 3MF ainda (nenhuma classe
-        // split3mf-* tem regras em assets/css/ até esta task), então o
-        // tamanho/formato do quadrado de cor é inline aqui mesmo — senão o
-        // <span> fica sem dimensão e a amostra não aparece.
-        const amostra = document.createElement("span");
-        amostra.className = "split3mf-cor-amostra";
-        amostra.style.background = rgbParaHex(grupo.cor);
-        amostra.style.display = "inline-block";
-        amostra.style.width = "14px";
-        amostra.style.height = "14px";
-        amostra.style.borderRadius = "3px";
-        amostra.style.marginRight = "6px";
-        amostra.style.verticalAlign = "middle";
-        amostra.style.border = "1px solid rgba(0,0,0,0.15)";
-        titulo.appendChild(amostra);
+        titulo.appendChild(criarAmostraCor(grupo.cor));
         titulo.appendChild(document.createTextNode(grupo.rotulo));
         subcard.appendChild(titulo);
 
@@ -554,6 +617,126 @@
       });
     }
 
+    // -------------------------------------------------------------------------
+    // Visualização 3D (Task 11): o arquivo inteiro numa BufferGeometry
+    // não-indexada, cada triângulo com a cor da unidade (chapa/objeto) a que
+    // pertence; clique num triângulo seleciona essa unidade (destaque no
+    // viewer, mesmo HIGHLIGHT_COLOR da seleção do Colorir 3MF, e no card da
+    // lista). state.unidadeSelecionadaIndice (índice em state.unidades, ou
+    // null) é o que as próximas tasks usam pra escolher o que cortar.
+    // -------------------------------------------------------------------------
+
+    // Promise<{ modulo, viewer }>: importa three-viewer-basico.js e cria o
+    // viewer uma única vez (reusado entre arquivos). Se falhar, zera o cache
+    // pra que o próximo arquivo tente de novo.
+    let viewerPromise = null;
+    function obterViewer() {
+      if (!viewerPromise) {
+        viewerPromise = import(VIEWER_MODULO).then(function (modulo) {
+          return { modulo: modulo, viewer: modulo.criarViewerBasico(canvasEl, { onClique: handleCanvasClick }) };
+        });
+        viewerPromise.catch(function () {
+          viewerPromise = null;
+        });
+      }
+      return viewerPromise;
+    }
+
+    function atualizarCoresDaVisualizacao() {
+      const vis = state && state.visualizacao;
+      if (!vis) return;
+      const selecionada = state.unidadeSelecionadaIndice;
+      vis.modulo.aplicarCoresComDestaque(vis.geometry, vis.triCount, vis.baseColors, function (t) {
+        return selecionada !== null && vis.unidadePorTriangulo[t] === selecionada;
+      });
+      vis.viewer.requestRender();
+    }
+
+    function selecionarUnidade(indice) {
+      if (!state) return;
+      state.unidadeSelecionadaIndice = indice;
+      (state.cards || []).forEach(function (card, i) {
+        card.classList.toggle("is-selecionada", i === indice);
+      });
+      atualizarCoresDaVisualizacao();
+    }
+
+    // Clique (não arraste) no canvas: seleciona a unidade do triângulo
+    // clicado; clicar de novo na unidade já selecionada desfaz a seleção.
+    // Triângulos fora de qualquer unidade (cinza) não selecionam nada.
+    function handleCanvasClick(e) {
+      const vis = state && state.visualizacao;
+      if (!vis) return;
+      const hits = vis.viewer.intersect(e);
+      if (!hits.length) return;
+      const indice = vis.unidadePorTriangulo[hits[0].faceIndex];
+      if (indice < 0) return;
+      selecionarUnidade(indice === state.unidadeSelecionadaIndice ? null : indice);
+    }
+
+    // Lê todos os triângulos do pacote (mesmo extractTriangles3MF usado em
+    // separarUnidadePorCor, sem filtro), pinta cada um com a cor da sua
+    // unidade (casando origin.topObjectId com unidade.objectIds; cinza
+    // DEFAULT_COLOR quando não pertence a nenhuma) e exibe no viewer.
+    // `estado` é o state do arquivo que disparou a montagem: se outro
+    // arquivo for aberto no meio-tempo, o resultado antigo é descartado.
+    function montarVisualizacao(estado) {
+      return ModelParser.extractTriangles3MF(estado.zip, estado.modelText, estado.modelPath).then(function (resultado) {
+        if (state !== estado) return;
+        const triangulos = resultado.triangulos;
+        const triCount = triangulos.length;
+        if (!triCount) {
+          canvasWrapEl.hidden = true;
+          return;
+        }
+
+        const indicePorObjectId = new Map();
+        estado.unidades.forEach(function (unidade, i) {
+          unidade.objectIds.forEach(function (id) {
+            if (!indicePorObjectId.has(String(id))) indicePorObjectId.set(String(id), i);
+          });
+        });
+        const coresUnidades = estado.unidades.map(function (unidade, i) { return corDaUnidade(i); });
+
+        const unidadePorTriangulo = new Int32Array(triCount);
+        const baseColors = new Uint8ClampedArray(triCount * 3);
+        for (let t = 0; t < triCount; t++) {
+          const origin = resultado.origins[t];
+          const indice = origin ? indicePorObjectId.get(String(topObjectIdDe(origin))) : undefined;
+          const cor = indice !== undefined ? coresUnidades[indice] : ThreeMFWriter.DEFAULT_COLOR;
+          unidadePorTriangulo[t] = indice !== undefined ? indice : -1;
+          baseColors[t * 3] = cor[0];
+          baseColors[t * 3 + 1] = cor[1];
+          baseColors[t * 3 + 2] = cor[2];
+        }
+
+        return obterViewer().then(function (v) {
+          if (state !== estado) return;
+          const positions = flattenTriangulos(triangulos);
+          const faceNormals = v.modulo.computeFaceNormals(positions, triCount);
+          const mesh = v.modulo.criarMeshTriangulos(positions, faceNormals, triCount);
+          estado.visualizacao = {
+            viewer: v.viewer,
+            modulo: v.modulo,
+            geometry: mesh.geometry,
+            triCount: triCount,
+            baseColors: baseColors,
+            unidadePorTriangulo: unidadePorTriangulo
+          };
+          v.viewer.setMesh(mesh);
+          atualizarCoresDaVisualizacao();
+          v.viewer.resize();
+          v.viewer.frameToGeometry();
+
+          const grande = triCount >= v.modulo.AVISO_TRIANGULOS_GRANDE;
+          avisoGrandeEl.hidden = !grande;
+          if (grande) {
+            avisoGrandeTextoEl.textContent = "Modelo com " + triCount.toLocaleString("pt-BR") + " triângulos, a visualização 3D pode ficar um pouco mais lenta.";
+          }
+        });
+      });
+    }
+
     function processarArquivo(file) {
       if (!file) return;
       if (!/\.3mf$/i.test(file.name)) {
@@ -592,10 +775,23 @@
                   modelSettingsPath: modelSettingsEntry ? modelSettingsEntry.name : null,
                   modelSettingsText: modelSettingsText,
                   modo: resultado.modo,
-                  unidades: resultado.unidades
+                  unidades: resultado.unidades,
+                  unidadeSelecionadaIndice: null,
+                  visualizacao: null
                 };
-                renderListaUnidades(state.unidades);
+                state.cards = renderListaUnidades(state.unidades);
                 painel.hidden = false;
+
+                // Fora da cadeia principal de propósito: a lista e os
+                // downloads já estão prontos aqui, e uma falha na
+                // visualização 3D não deve virar erro de leitura do arquivo.
+                const estadoAtual = state;
+                canvasWrapEl.hidden = false;
+                avisoGrandeEl.hidden = true;
+                montarVisualizacao(estadoAtual).catch(function (err) {
+                  if (window.console && console.error) console.error("Split 3MF (visualização 3D):", err);
+                  if (state === estadoAtual) canvasWrapEl.hidden = true;
+                });
               });
             });
           });
@@ -646,6 +842,12 @@
       const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
       processarArquivo(file);
     });
+
+    recentralizarBtn.addEventListener("click", () => {
+      const vis = state && state.visualizacao;
+      if (vis) vis.viewer.recentralizarVista();
+    });
+    avisoGrandeFecharBtn.addEventListener("click", () => { avisoGrandeEl.hidden = true; });
 
     if (baixarTudoBtn) {
       baixarTudoBtn.addEventListener("click", () => {

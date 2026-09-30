@@ -10,6 +10,24 @@
   <p class="calc-modelo-erro" id="split3mf-erro" hidden></p>
 
   <div id="split3mf-painel" hidden>
+    <p class="cor3mf-hint">Arraste com o botão esquerdo para girar o modelo. Clique numa peça para selecioná-la; cada chapa/objeto aparece com uma cor.</p>
+
+    <div class="cor3mf-canvas-wrap split3mf-canvas-wrap" id="split3mf-canvas-wrap">
+      <canvas id="split3mf-canvas" aria-label="Visualização 3D do modelo"></canvas>
+      <button type="button" class="cor3mf-recentralizar" id="split3mf-recentralizar" title="Recentralizar vista" aria-label="Recentralizar vista">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 9V5a1 1 0 0 1 1-1h4"></path>
+          <path d="M20 9V5a1 1 0 0 0-1-1h-4"></path>
+          <path d="M4 15v4a1 1 0 0 0 1 1h4"></path>
+          <path d="M20 15v4a1 1 0 0 1-1 1h-4"></path>
+        </svg>
+      </button>
+      <div class="cor3mf-aviso-grande" id="split3mf-aviso-grande" hidden>
+        <span id="split3mf-aviso-grande-texto"></span>
+        <button type="button" class="cor3mf-aviso-grande-fechar" id="split3mf-aviso-grande-fechar" aria-label="Fechar aviso">&times;</button>
+      </div>
+    </div>
+
     <div id="split3mf-lista" class="calc-section"></div>
 
     <div class="calc-result-box">

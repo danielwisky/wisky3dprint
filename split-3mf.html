@@ -42,5 +42,14 @@ pwa: true
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.2/dist/jszip.min.js" integrity="sha384-DdGlNq+wVXAn83gXqwyeFHB7iyXy6L0rLrNzgDmhKWPjiJLg9vj6qosYmZmkMfQ+" crossorigin="anonymous" defer></script>
 <script src="{{ '/assets/js/model-parser.js' | relative_url }}?v={{ '/assets/js/model-parser.js' | asset_hash }}" defer></script>
 <script src="{{ '/assets/js/threemf-writer.js' | relative_url }}?v={{ '/assets/js/threemf-writer.js' | asset_hash }}" defer></script>
-<script src="{{ '/assets/js/split-3mf.js' | relative_url }}?v={{ '/assets/js/split-3mf.js' | asset_hash }}" defer></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/",
+    "wisky3d/three-viewer-basico.js": "{{ '/assets/js/three-viewer-basico.js' | relative_url }}?v={{ '/assets/js/three-viewer-basico.js' | asset_hash }}"
+  }
+}
+</script>
+<script type="module" src="{{ '/assets/js/split-3mf.js' | relative_url }}?v={{ '/assets/js/split-3mf.js' | asset_hash }}"></script>
 <script src="{{ '/assets/js/pwa.js' | relative_url }}?v={{ '/assets/js/pwa.js' | asset_hash }}" defer></script>
