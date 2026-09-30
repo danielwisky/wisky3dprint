@@ -110,6 +110,9 @@
         baixarBtn.addEventListener("click", function () {
           exportarUnidadePreservandoPacote(unidade).then(function (resultado) {
             ModelParser.baixarBlob(resultado.blob, resultado.nome);
+          }).catch(function (err) {
+            if (window.console && console.error) console.error("Split 3MF:", err);
+            mostrarErro("Não foi possível gerar o arquivo dessa unidade.");
           });
         });
         card.appendChild(baixarBtn);
@@ -178,7 +181,7 @@
     // Sequencial (reduce/Promise-chain), mesmo estilo de gerarProjeto em
     // conversor-3mf.js, pra não disparar N reconstruções de zip em paralelo.
     function exportarTodasAsUnidades() {
-      if (!state || !state.unidades.length) return;
+      if (!state || !state.unidades.length) return Promise.resolve();
       const zipFinal = new JSZip();
 
       return state.unidades.reduce(function (promessa, unidade) {
@@ -286,7 +289,10 @@
 
     if (baixarTudoBtn) {
       baixarTudoBtn.addEventListener("click", () => {
-        exportarTodasAsUnidades();
+        exportarTodasAsUnidades().catch(function (err) {
+          if (window.console && console.error) console.error("Split 3MF:", err);
+          mostrarErro("Não foi possível gerar o arquivo .zip com todas as unidades.");
+        });
       });
     }
   }
