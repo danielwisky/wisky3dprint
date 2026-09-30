@@ -14,8 +14,13 @@ new Function(source)();
 
 const ModelParser = window.Wisky3D.ModelParser;
 
-function origin(objectId, localIndex) {
-  return { path: "3D/3dmodel.model", objectId: objectId, localIndex: localIndex };
+function origin(objectId, localIndex, rootObjectId) {
+  return {
+    path: "3D/3dmodel.model",
+    objectId: objectId,
+    rootObjectId: rootObjectId === undefined ? objectId : rootObjectId,
+    localIndex: localIndex
+  };
 }
 
 test("mapearTriangulosParaChapas agrupa triangulos por chapa de acordo com objectId", () => {
@@ -51,6 +56,27 @@ test("mapearTriangulosParaChapas ignora triangulos cujo objectId não bate com n
   const resultado = ModelParser.mapearTriangulosParaChapas(triangleOrigins, chapas);
 
   assert.deepEqual(resultado.get(1), [0]);
+  assert.deepEqual(resultado.get(2), [2]);
+});
+
+test("mapearTriangulosParaChapas usa rootObjectId (build item de topo), não objectId do object-folha", () => {
+  // Simula uma peça montada via <components>: o build item de topo é "10",
+  // mas a mesh de verdade vive num object aninhado "10-a" (objectId do
+  // leaf). model_settings.config só conhece o id de topo ("10"), então o
+  // agrupamento por chapa precisa comparar contra rootObjectId, não objectId.
+  const triangleOrigins = [
+    origin("10-a", 0, "10"),
+    origin("10-a", 1, "10"),
+    origin("20", 0, "20")
+  ];
+  const chapas = [
+    { indice: 1, objectIds: new Set(["10"]) },
+    { indice: 2, objectIds: new Set(["20"]) }
+  ];
+
+  const resultado = ModelParser.mapearTriangulosParaChapas(triangleOrigins, chapas);
+
+  assert.deepEqual(resultado.get(1), [0, 1], "chapa 1 agrupa os triangulos do component aninhado pelo rootObjectId");
   assert.deepEqual(resultado.get(2), [2]);
 });
 

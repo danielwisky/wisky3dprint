@@ -977,7 +977,7 @@ if (root) {
   // chapa a que pertence. Retorna null quando o arquivo não tem metadados de
   // chapa (STL, 3MF single-plate ou 3MF sem esse metadado), caso em que a
   // ferramenta continua se comportando como hoje (uma "chapa" implícita só).
-  function detectarChapas(modelSettingsText, triangleOrigins) {
+  function detectarChapas(modelSettingsText) {
     if (!modelSettingsText) return null;
     const plateAssignments = ModelParser.parsePlateAssignments(modelSettingsText);
     if (!plateAssignments) return null;
@@ -1005,7 +1005,7 @@ if (root) {
     extrairTriangulosDoArquivo(file)
       .then((resultado) => {
         if (!resultado.triangulos.length) throw new Error("nenhuma geometria encontrada no arquivo");
-        resultado.chapas = detectarChapas(resultado.modelSettingsText, resultado.origins);
+        resultado.chapas = detectarChapas(resultado.modelSettingsText);
         buildState(resultado.triangulos, file.name, resultado);
         painel.hidden = false;
         resizeRenderer();

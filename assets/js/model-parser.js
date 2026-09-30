@@ -221,15 +221,23 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // multi-peça), compartilhada entre resolveObjectGeometry (só agrega
   // volume/área/bbox) e resolveObjectTriangles (retém os triângulos de
   // verdade, pra ferramenta de colorir). Pra cada mesh-folha encontrada,
-  // chama `onMesh(leafTriangles, localIndices, meshBbox, path, objectId)` com
-  // os triângulos já com transform acumulado aplicado; quem chamou decide o
-  // que fazer com eles (somar agregados ou empilhar num array de saída).
-  // `path` é o arquivo (dentro do zip) de onde o object desse nível veio,
-  // repassado como está pra components locais e trocado pelo p:path
-  // resolvido pra components externos.
-  function resolveObjectRecursivo(zip, docCache, doc, objectId, accumTransform, path, onMesh) {
+  // chama `onMesh(leafTriangles, localIndices, meshBbox, path, objectId,
+  // rootObjectId)` com os triângulos já com transform acumulado aplicado;
+  // quem chamou decide o que fazer com eles (somar agregados ou empilhar num
+  // array de saída). `path` é o arquivo (dentro do zip) de onde o object
+  // desse nível veio, repassado como está pra components locais e trocado
+  // pelo p:path resolvido pra components externos. `rootObjectId` é o
+  // objectid do build item de nível topo (o que aparece em <build><item>),
+  // constante ao longo de toda a recursão por <components> — diferente de
+  // `objectId`, que muda a cada nível e no leaf é o do object que de fato
+  // contém a <mesh>. Precisamos dos dois porque model_settings.config
+  // (chapas) referencia o build item de topo, enquanto a exportação
+  // (ThreeMFWriter) precisa do objectId do object-folha pra achar o
+  // <triangle> exato a recolorir.
+  function resolveObjectRecursivo(zip, docCache, doc, objectId, accumTransform, path, onMesh, rootObjectId) {
     var objectEl = findObjectElement(doc, objectId);
     if (!objectEl) return Promise.resolve();
+    if (rootObjectId === undefined) rootObjectId = objectId;
 
     var meshEl = directChild(objectEl, "mesh");
     if (meshEl) {
@@ -258,7 +266,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
           localIndices.push(localIndex);
         }
       });
-      if (vertexEls.length) onMesh(leafTriangles, localIndices, meshBbox, path, objectId);
+      if (vertexEls.length) onMesh(leafTriangles, localIndices, meshBbox, path, objectId, rootObjectId);
     }
 
     var componentsEl = directChild(objectEl, "components");
@@ -280,10 +288,10 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
           docCache[normalizedPath] = docPromise;
         }
         return docPromise.then(function (extDoc) {
-          return resolveObjectRecursivo(zip, docCache, extDoc, childObjectId, combined, normalizedPath, onMesh);
+          return resolveObjectRecursivo(zip, docCache, extDoc, childObjectId, combined, normalizedPath, onMesh, rootObjectId);
         });
       }
-      return resolveObjectRecursivo(zip, docCache, doc, childObjectId, combined, path, onMesh);
+      return resolveObjectRecursivo(zip, docCache, doc, childObjectId, combined, path, onMesh, rootObjectId);
     });
 
     return Promise.all(promises);
@@ -377,15 +385,18 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // aplicado) em vez de só agregados. Usado pela ferramenta de colorir, que
   // precisa da malha de verdade pra pintar, não só volume/bbox.
   // `outOrigins` acompanha `outTriangulos` índice a índice com {path,
-  // objectId, localIndex}. localIndex é a posição do triângulo dentro do
-  // <triangles> original daquele object/arquivo. Isso permite, na exportação,
-  // reabrir o pacote 3MF original e escrever a cor de volta nos <triangle>
-  // exatos de onde vieram, em vez de reconstruir o pacote do zero.
+  // objectId, rootObjectId, localIndex}. localIndex é a posição do triângulo
+  // dentro do <triangles> original daquele object/arquivo; `objectId` é o
+  // object-folha (usado na exportação pra reabrir o pacote 3MF original e
+  // escrever a cor de volta no <triangle> exato de onde veio); `rootObjectId`
+  // é o objectid do build item de nível topo (usado pra casar o triângulo com
+  // a chapa/plate a que pertence, ver mapearTriangulosParaChapas) — os dois
+  // divergem quando o object de topo é montado via <components> aninhados.
   function resolveObjectTriangles(zip, docCache, doc, objectId, accumTransform, outTriangulos, path, outOrigins) {
-    function onMesh(leafTriangles, localIndices, meshBbox, meshPath, meshObjectId) {
+    function onMesh(leafTriangles, localIndices, meshBbox, meshPath, meshObjectId, rootObjectId) {
       leafTriangles.forEach(function (tri, i) {
         outTriangulos.push(tri);
-        outOrigins.push({ path: meshPath, objectId: meshObjectId, localIndex: localIndices[i] });
+        outOrigins.push({ path: meshPath, objectId: meshObjectId, rootObjectId: rootObjectId, localIndex: localIndices[i] });
       });
     }
 
@@ -534,14 +545,19 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   }
 
   // Agrupa índices de triângulo por chapa, numa única varredura de
-  // `triangleOrigins` (formato `{path, objectId, localIndex}` por triângulo,
-  // ver resolveObjectTriangles/extractTriangles3MF). Pra cada triângulo,
-  // compara o objectId da origem contra o `objectIds` (Set) de cada chapa em
-  // `chapas` (formato `{indice, objectIds}`, ver detectarChapas em
-  // colorir-3mf.js) e empilha o índice do triângulo na chapa correspondente.
-  // Um triângulo cujo objectId não bate com nenhuma chapa simplesmente não
-  // entra em nenhum grupo (não deveria acontecer na prática, já que toda peça
-  // pertence a alguma chapa, mas não lança erro se acontecer).
+  // `triangleOrigins` (formato `{path, objectId, rootObjectId, localIndex}`
+  // por triângulo, ver resolveObjectTriangles/extractTriangles3MF). Pra cada
+  // triângulo, compara o `rootObjectId` da origem (o objectid do build item
+  // de nível topo, não o do object-folha que contém a mesh) contra o
+  // `objectIds` (Set) de cada chapa em `chapas` (formato `{indice,
+  // objectIds}`, ver detectarChapas em colorir-3mf.js) e empilha o índice do
+  // triângulo na chapa correspondente. Usar rootObjectId em vez de objectId é
+  // necessário porque model_settings.config referencia o build item de topo,
+  // enquanto peças montadas via <components> aninhados têm um objectId de
+  // leaf-mesh diferente. Um triângulo cujo rootObjectId não bate com nenhuma
+  // chapa simplesmente não entra em nenhum grupo (não deveria acontecer na
+  // prática, já que todo build item pertence a alguma chapa, mas não lança
+  // erro se acontecer).
   function mapearTriangulosParaChapas(triangleOrigins, chapas) {
     var porChapa = new Map();
     chapas.forEach(function (chapa) { porChapa.set(chapa.indice, []); });
@@ -550,7 +566,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
       var origin = triangleOrigins[t];
       if (!origin) continue;
       for (var i = 0; i < chapas.length; i++) {
-        if (chapas[i].objectIds.has(origin.objectId)) {
+        if (chapas[i].objectIds.has(origin.rootObjectId)) {
           porChapa.get(chapas[i].indice).push(t);
           break;
         }
