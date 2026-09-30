@@ -132,8 +132,8 @@
           corBtn.disabled = true;
           const textoOriginal = corBtn.textContent;
           corBtn.textContent = "Analisando cores...";
-          separarUnidadePorCor(unidade).then(function (grupos) {
-            renderSubunidadesDeCor(subunidadesEl, grupos);
+          separarUnidadePorCor(unidade).then(function (resultado) {
+            renderSubunidadesDeCor(subunidadesEl, resultado, unidade);
             subunidadesEl.hidden = false;
           }).catch(function (err) {
             if (window.console && console.error) console.error("Split 3MF:", err);
@@ -232,15 +232,100 @@
       return "#" + byte(rgb[0]) + byte(rgb[1]) + byte(rgb[2]);
     }
 
+    // Monta, a partir de grupos de cor já calculados (Map<raiz, number[]> de
+    // índices de triângulo, ver agruparPorCorContigua), um pacote 3MF novo do
+    // zero com um <object> por grupo (Task 10). Reindexa os vértices de cada
+    // grupo pra um espaço local (mesma técnica de "soldar" vértices por
+    // posição quantizada de ModelParser.buildAdjacencyAndExportIndex — aqui
+    // reaproveitada função a função, sem duplicar a quantização) e delega a
+    // montagem do XML pra ThreeMFWriter.montarModeloDoZero, que já sabe gerar
+    // <resources>/<build>/colorgroup compartilhado pra múltiplos objects.
+    // `triangulos` é o array pleno (mesmo formato de parseSTL/extractTriangles3MF)
+    // de onde os índices de cada grupo foram tirados; `corPorTriangulo` é o
+    // Uint8ClampedArray(triCount*3) com a cor de cada um desses triângulos
+    // (mesmo índice). Retorna `{ modelXml, contentTypesXml, relsXml }` (ver
+    // ThreeMFWriter.montarModeloDoZero) — quem chama decide como empacotar
+    // isso num .3mf de verdade (ver zipar3MFDoZero).
+    function exportarGruposDeCorComoObjects(gruposDeCor, triangulos, corPorTriangulo) {
+      let proximoObjectId = 1;
+      const objetos = [];
+
+      gruposDeCor.forEach(function (indices) {
+        const triangulosDoGrupo = indices.map(function (i) { return triangulos[i]; });
+        const positions = flattenTriangulos(triangulosDoGrupo);
+        const { exportVertices, cornerExportIndex } = ModelParser.buildAdjacencyAndExportIndex(
+          positions,
+          triangulosDoGrupo.length
+        );
+
+        const primeiro = indices[0] * 3;
+        const cor = [corPorTriangulo[primeiro], corPorTriangulo[primeiro + 1], corPorTriangulo[primeiro + 2]];
+
+        const triangulosDoObjeto = [];
+        for (let t = 0; t < triangulosDoGrupo.length; t++) {
+          triangulosDoObjeto.push({
+            v1: cornerExportIndex[t * 3],
+            v2: cornerExportIndex[t * 3 + 1],
+            v3: cornerExportIndex[t * 3 + 2],
+            color: cor
+          });
+        }
+
+        objetos.push({ objectId: proximoObjectId++, vertices: exportVertices, triangulos: triangulosDoObjeto });
+      });
+
+      return ThreeMFWriter.montarModeloDoZero(objetos);
+    }
+
+    // Empacota o resultado de montarModeloDoZero/exportarGruposDeCorComoObjects
+    // (`{ modelXml, contentTypesXml, relsXml }`) num .3mf de verdade (mesma
+    // estrutura mínima de pacote OPC usada em colorir-3mf.js na exportação a
+    // partir de STL: [Content_Types].xml + _rels/.rels + 3D/3dmodel.model).
+    // Diferente de exportarUnidadePreservandoPacote (Task 7), aqui não existe
+    // pacote original pra copiar bytes: os grupos de cor não são objects reais
+    // do arquivo de entrada, então o .3mf de saída é sempre gerado do zero.
+    function zipar3MFDoZero(partes, nomeArquivo) {
+      const zipNovo = new JSZip();
+      zipNovo.file("[Content_Types].xml", partes.contentTypesXml);
+      zipNovo.file("_rels/.rels", partes.relsXml);
+      zipNovo.file("3D/3dmodel.model", partes.modelXml);
+      return zipNovo.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } })
+        .then(function (blob) {
+          return { nome: nomeArquivo, blob: blob };
+        });
+    }
+
+    // Exporta um único grupo de cor como seu próprio .3mf (1 object), pro
+    // botão de download individual de cada sub-card de cor.
+    function exportarGrupoDeCorIndividual(nomeBase, grupo, triangulos, corPorTriangulo) {
+      const mapaUnico = new Map([[0, grupo.indices]]);
+      const partes = exportarGruposDeCorComoObjects(mapaUnico, triangulos, corPorTriangulo);
+      const slug = grupo.rotulo.toLowerCase().replace(/\s+/g, "-");
+      return zipar3MFDoZero(partes, nomeBase + "-" + slug + ".3mf");
+    }
+
+    // Exporta todos os grupos de cor de uma unidade como um único .3mf com N
+    // objects (um por grupo) — o caso "baixar tudo junto pra inspecionar no
+    // fatiador" descrito na Task 10.
+    function exportarTodosGruposDeCorComoArquivo(nomeBase, grupos, triangulos, corPorTriangulo) {
+      const mapa = new Map(grupos.map(function (grupo, i) { return [i, grupo.indices]; }));
+      const partes = exportarGruposDeCorComoObjects(mapa, triangulos, corPorTriangulo);
+      return zipar3MFDoZero(partes, nomeBase + "-cores.3mf");
+    }
+
     // Extrai os triângulos de uma unidade (filtrando por objectIds via
     // origin.topObjectId, mesmo campo que mapearTriangulosParaChapas usa pra
     // casar triângulo -> chapa), lê a cor real de cada um
     // (ModelParser.lerCorPorTriangulo, reaproveitando Metadata/
     // project_settings.config se existir) e agrupa por região de cor
-    // contígua (agruparPorCorContigua). Retorna um array de
-    // `{ rotulo, cor, bbox, triangulos }` (um por grupo), ordenado por
-    // tamanho decrescente (grupo com mais triângulos primeiro) só pra dar
-    // uma ordem estável e previsível na UI.
+    // contígua (agruparPorCorContigua). Resolve com
+    // `{ grupos, triangulos, corPorTriangulo }`: `grupos` é um array de
+    // `{ rotulo, cor, bbox, triangulos, indices }` (um por grupo, ordenado por
+    // tamanho decrescente — grupo com mais triângulos primeiro, só pra dar
+    // uma ordem estável e previsível na UI); `triangulos`/`corPorTriangulo`
+    // são os arrays completos da unidade (mesmo índice de `indices` de cada
+    // grupo), guardados aqui pra permitir exportar os grupos depois
+    // (exportarGruposDeCorComoObjects) sem recalcular tudo de novo.
     function separarUnidadePorCor(unidade) {
       const idsUnidade = unidade.objectIds.map(String);
 
@@ -284,13 +369,14 @@
               return {
                 cor: cor,
                 bbox: ModelParser.computeBoundingBox(triangulosDoGrupo),
-                triangulos: triangulosDoGrupo
+                triangulos: triangulosDoGrupo,
+                indices: indices
               };
             });
 
             listaGrupos.sort(function (a, b) { return b.triangulos.length - a.triangulos.length; });
             listaGrupos.forEach(function (grupo, i) { grupo.rotulo = "Cor " + (i + 1); });
-            return listaGrupos;
+            return { grupos: listaGrupos, triangulos: triangulos, corPorTriangulo: corPorTriangulo };
           });
         });
       });
@@ -298,12 +384,18 @@
 
     // Renderiza os grupos de cor (ver separarUnidadePorCor) como sub-cards
     // dentro do container da unidade, seguindo o mesmo padrão visual dos
-    // cards de unidade (título + dimensões), acrescido de uma amostra de cor.
-    // Sem botão de download por ora: a exportação de fato de cada grupo (um
-    // novo objeto/mesh 3MF só com esses triângulos) é responsabilidade de
-    // uma etapa posterior do plano (consome ThreeMFWriter.montarModeloDoZero).
-    function renderSubunidadesDeCor(container, grupos) {
+    // cards de unidade (título + dimensões), acrescido de uma amostra de cor
+    // e de um botão de download individual (1 object por grupo, ver
+    // exportarGrupoDeCorIndividual). Quando há mais de um grupo, acrescenta
+    // também um botão pra baixar todos os grupos juntos num único .3mf com N
+    // objects (exportarTodosGruposDeCorComoArquivo) — útil pra inspecionar
+    // todas as regiões de cor de uma vez no fatiador (ver brief da Task 10).
+    // `resultado` é o objeto `{ grupos, triangulos, corPorTriangulo }`
+    // devolvido por separarUnidadePorCor; `unidade` só é usada pra montar o
+    // nome-base do arquivo baixado.
+    function renderSubunidadesDeCor(container, resultado, unidade) {
       container.innerHTML = "";
+      const grupos = resultado.grupos;
       if (!grupos.length) {
         const vazio = document.createElement("div");
         vazio.className = "split3mf-card-dims";
@@ -311,6 +403,8 @@
         container.appendChild(vazio);
         return;
       }
+
+      const nomeBase = state.file.name.replace(/\.3mf$/i, "") + "-" + unidade.rotulo.toLowerCase().replace(/\s+/g, "-");
 
       grupos.forEach(function (grupo) {
         const subcard = document.createElement("div");
@@ -345,8 +439,42 @@
           subcard.appendChild(dimsEl);
         }
 
+        const baixarGrupoBtn = document.createElement("button");
+        baixarGrupoBtn.type = "button";
+        baixarGrupoBtn.className = "btn btn-secondary split3mf-card-baixar";
+        baixarGrupoBtn.textContent = "Baixar";
+        baixarGrupoBtn.addEventListener("click", function () {
+          exportarGrupoDeCorIndividual(nomeBase, grupo, resultado.triangulos, resultado.corPorTriangulo)
+            .then(function (arquivo) {
+              ModelParser.baixarBlob(arquivo.blob, arquivo.nome);
+            })
+            .catch(function (err) {
+              if (window.console && console.error) console.error("Split 3MF:", err);
+              mostrarErro("Não foi possível gerar o arquivo desse grupo de cor.");
+            });
+        });
+        subcard.appendChild(baixarGrupoBtn);
+
         container.appendChild(subcard);
       });
+
+      if (grupos.length > 1) {
+        const baixarTodosBtn = document.createElement("button");
+        baixarTodosBtn.type = "button";
+        baixarTodosBtn.className = "btn btn-secondary split3mf-baixar-cores";
+        baixarTodosBtn.textContent = "Baixar todos os grupos (objects separados)";
+        baixarTodosBtn.addEventListener("click", function () {
+          exportarTodosGruposDeCorComoArquivo(nomeBase, grupos, resultado.triangulos, resultado.corPorTriangulo)
+            .then(function (arquivo) {
+              ModelParser.baixarBlob(arquivo.blob, arquivo.nome);
+            })
+            .catch(function (err) {
+              if (window.console && console.error) console.error("Split 3MF:", err);
+              mostrarErro("Não foi possível gerar o arquivo com todos os grupos de cor.");
+            });
+        });
+        container.appendChild(baixarTodosBtn);
+      }
     }
 
     // Remove, do <build> de xmlText, todo <item> cujo objectid não esteja em
@@ -483,12 +611,15 @@
     }
 
     // Exposto em window.Wisky3D só pra permitir teste unitário de
-    // filtrarBuildParaObjectIds (test/split-3mf-build-filter.test.js) — o
-    // restante do módulo não roda fora de uma página com #split3mf no DOM.
+    // filtrarBuildParaObjectIds (test/split-3mf-build-filter.test.js),
+    // agruparPorCorContigua (test/split-3mf-color-groups.test.js) e
+    // exportarGruposDeCorComoObjects (test/split-3mf-color-export.test.js) —
+    // o restante do módulo não roda fora de uma página com #split3mf no DOM.
     window.Wisky3D = window.Wisky3D || {};
     window.Wisky3D.Split3MF = {
       filtrarBuildParaObjectIds: filtrarBuildParaObjectIds,
-      agruparPorCorContigua: agruparPorCorContigua
+      agruparPorCorContigua: agruparPorCorContigua,
+      exportarGruposDeCorComoObjects: exportarGruposDeCorComoObjects
     };
 
     // -------------------------------------------------------------------------
