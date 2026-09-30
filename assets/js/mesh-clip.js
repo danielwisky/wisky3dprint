@@ -646,6 +646,9 @@ window.Wisky3D = window.Wisky3D || {};
     coletarLoopDeContorno: coletarLoopDeContorno,
     classificarLoopsExternoEFuros: classificarLoopsExternoEFuros,
     triangularPoligonoPlanar: triangularPoligonoPlanar,
+    // Exposto pra reuso pela costura do resultado do CSG em
+    // pin-connectors.js (Task 15), em vez de reimplementar a solda.
+    criarSoldadorDeVertices: criarSoldadorDeVertices,
     COR_TAMPA_PADRAO: COR_TAMPA_PADRAO
   };
 })();

@@ -63,6 +63,29 @@
       </div>
       <p class="calc-field-hint">A tampa da área cortada é uma superfície plana simples — não reproduz suavização avançada de outras ferramentas.</p>
 
+      <div class="split3mf-conector" id="split3mf-conector" hidden>
+        <h3 class="calc-section-title">Conector de encaixe</h3>
+        <p class="calc-field-hint" id="split3mf-conector-descricao">Adiciona um pino cilíndrico numa das peças do último corte e o furo correspondente, com folga, na outra, no centro da seção cortada — pra encaixar as peças depois de impressas.</p>
+        <div class="calc-fields">
+          <div class="calc-field">
+            <label for="split3mf-conector-peca">Pino na peça</label>
+            <select id="split3mf-conector-peca"></select>
+          </div>
+          <div class="calc-field">
+            <label for="split3mf-conector-diametro">Diâmetro do pino (mm)</label>
+            <input type="number" id="split3mf-conector-diametro" min="1" max="50" step="0.1" value="5">
+          </div>
+          <div class="calc-field">
+            <label for="split3mf-conector-folga">Folga do furo (mm)</label>
+            <input type="number" id="split3mf-conector-folga" min="0" max="2" step="0.05" value="0.2">
+          </div>
+        </div>
+        <div class="split3mf-corte-acoes">
+          <button type="button" class="btn btn-gradient" id="split3mf-adicionar-conector">Adicionar conector</button>
+        </div>
+        <p class="calc-field-hint">O furo fica com o raio do pino + a folga (e a mesma folga a mais no fundo). O comprimento do pino é igual ao diâmetro, reduzido automaticamente se a peça for fina.</p>
+      </div>
+
       <div class="split3mf-pecas" id="split3mf-pecas" hidden>
         <h3 class="calc-section-title">Peças resultantes</h3>
         <div id="split3mf-pecas-lista"></div>

@@ -8,7 +8,9 @@
 // com um clique. A Task 14 acrescenta o corte por plano: qualquer unidade (e,
 // depois, qualquer peça resultante) pode ser cortada por um plano
 // (MeshClip, mesh-clip.js), com preview do plano no viewer, cortes
-// sucessivos e exportação das peças como .3mf gerado do zero.
+// sucessivos e exportação das peças como .3mf gerado do zero. A Task 15
+// acrescenta conectores de encaixe (pino + furo com folga, via CSG em
+// pin-connectors.js) entre as duas peças do último corte.
 //
 // Carregado como <script type="module"> (split-3mf.html), mas sem import
 // estático: os testes (test/split-3mf-*.test.js) avaliam este arquivo com
@@ -53,10 +55,18 @@
     const pecasEl = document.getElementById("split3mf-pecas");
     const pecasListaEl = document.getElementById("split3mf-pecas-lista");
     const baixarPecasBtn = document.getElementById("split3mf-baixar-pecas");
+    const conectorEl = document.getElementById("split3mf-conector");
+    const conectorPecaEl = document.getElementById("split3mf-conector-peca");
+    const conectorDiametroEl = document.getElementById("split3mf-conector-diametro");
+    const conectorFolgaEl = document.getElementById("split3mf-conector-folga");
+    const adicionarConectorBtn = document.getElementById("split3mf-adicionar-conector");
 
     // Especificador do importmap (split-3mf.html/colorir-3mf.html), que já
     // aponta pra URL com ?v=hash de cache-busting.
     const VIEWER_MODULO = "wisky3d/three-viewer-basico.js";
+    // Conectores (Task 15): ES module que por sua vez carrega Three.js e
+    // three-bvh-csg sob demanda (entradas do importmap de split-3mf.html).
+    const CONECTORES_MODULO = "wisky3d/pin-connectors.js";
 
     // Estado do arquivo carregado. `unidades` é a lista de chapas ou objetos
     // detectados (ver detectarUnidadesDeSplit); populado depois que
@@ -821,6 +831,27 @@
       }));
     }
 
+    // Substitui, numa nova lista (a de entrada não é alterada), a peça do
+    // pino e a do furo pelas versões com conector devolvidas por
+    // PinConnectors.adicionarConectorNoCorte (`resultado.pecaA`/`pecaB`: soup
+    // + cores já costuradas). Cada peça mantém id/rótulo/unidade/origem (é a
+    // mesma peça, só com geometria nova), e a geometria passa pela mesma solda
+    // de criarPeca, com bbox/volume recalculados.
+    function aplicarConectorNasPecas(pecas, pecaPinoId, pecaFuroId, resultado) {
+      return pecas.map(function (peca) {
+        let nova = null;
+        if (peca.id === pecaPinoId) nova = resultado.pecaA;
+        else if (peca.id === pecaFuroId) nova = resultado.pecaB;
+        if (!nova) return peca;
+        return criarPeca({
+          id: peca.id,
+          rotulo: peca.rotulo,
+          unidadeId: peca.unidadeId,
+          origemPecaId: peca.origemPecaId
+        }, nova.triangulos, nova.cores);
+      });
+    }
+
     function centroDoBBox(bbox) {
       return [(bbox.minX + bbox.maxX) / 2, (bbox.minY + bbox.maxY) / 2, (bbox.minZ + bbox.maxZ) / 2];
     }
@@ -1237,6 +1268,17 @@
       return estado.coresPromise;
     }
 
+    let conectoresPromise = null;
+    function obterConectores() {
+      if (!conectoresPromise) {
+        conectoresPromise = import(CONECTORES_MODULO);
+        conectoresPromise.catch(function () {
+          conectoresPromise = null;
+        });
+      }
+      return conectoresPromise;
+    }
+
     function novaIdentidadeDePeca() {
       const id = state.proximoPecaId++;
       const numero = state.proximoNumeroPeca++;
@@ -1257,8 +1299,11 @@
         });
         estado.pecas = resultado.pecas;
         estado.alvoCorte = null;
+        // Conector (Task 15): oferecido entre as duas peças deste corte.
+        estado.ultimoCorte = { pecaNegativaId: resultado.novas[0].id, pecaPositivaId: resultado.novas[1].id, plano: resultado.plano };
         renderOpcoesDeAlvo();
         renderListaPecas();
+        renderConector();
         reconstruirVisualizacao();
         definirAlvoCorte(null);
         return resultado.novas;
@@ -1325,8 +1370,10 @@
       if (!state) return;
       state.pecas = [];
       state.alvoCorte = null;
+      state.ultimoCorte = null;
       renderOpcoesDeAlvo();
       renderListaPecas();
+      renderConector();
       reconstruirVisualizacao();
       definirAlvoCorte(null);
     }
@@ -1409,6 +1456,113 @@
       });
     }
 
+    // -------------------------------------------------------------------------
+    // Conector de encaixe (Task 15): pino numa peça do último corte + furo com
+    // folga na outra (PinConnectors, pin-connectors.js). Só aparece enquanto
+    // as duas peças do último corte continuam em state.pecas (cortar uma delas
+    // de novo troca o par pelo do novo corte).
+    // -------------------------------------------------------------------------
+
+    function pecaPorId(id) {
+      return state.pecas.find(function (p) { return p.id === id; });
+    }
+
+    function renderConector() {
+      const corte = state && state.ultimoCorte;
+      const pecaNeg = corte && pecaPorId(corte.pecaNegativaId);
+      const pecaPos = corte && pecaPorId(corte.pecaPositivaId);
+      if (!pecaNeg || !pecaPos) {
+        conectorEl.hidden = true;
+        return;
+      }
+      conectorEl.hidden = false;
+      const selecionada = conectorPecaEl.value;
+      conectorPecaEl.innerHTML = "";
+      [pecaNeg, pecaPos].forEach(function (peca) {
+        const opcao = document.createElement("option");
+        opcao.value = String(peca.id);
+        opcao.textContent = peca.rotulo;
+        conectorPecaEl.appendChild(opcao);
+      });
+      conectorPecaEl.value = selecionada === String(pecaPos.id) ? selecionada : String(pecaNeg.id);
+      adicionarConectorBtn.disabled = !!state.adicionandoConector;
+    }
+
+    // Texto pro usuário a partir de { ok:false, motivo } de
+    // adicionarConectorNoCorte / planejarConector.
+    function mensagemDeFalhaDoConector(resultado) {
+      if (resultado.motivo === "malha não fechada o suficiente") {
+        const d = [resultado.diagnosticoA, resultado.diagnosticoB].filter(Boolean);
+        const furos = d.reduce(function (s, x) { return s + x.furos; }, 0);
+        const naoManifold = d.reduce(function (s, x) { return s + x.naoManifold; }, 0);
+        return "Não foi possível adicionar o conector: a malha não está fechada o suficiente (" +
+          furos + " aresta(s) aberta(s), " + naoManifold + " não-manifold). O pino/furo integrado precisa de peças fechadas; " +
+          "as peças continuam sem conector (dá pra corrigir a malha no fatiador e colar um pino separado).";
+      }
+      if (resultado.motivo === "tempo esgotado") {
+        return "O cálculo do conector demorou demais e foi cancelado (malha muito grande). As peças continuam sem conector.";
+      }
+      return "Não foi possível adicionar o conector: " + resultado.motivo;
+    }
+
+    function adicionarConectorAtual() {
+      const estado = state;
+      const corte = estado && estado.ultimoCorte;
+      if (!corte || estado.adicionandoConector) return;
+      const pinoId = Number(conectorPecaEl.value);
+      const furoId = pinoId === corte.pecaNegativaId ? corte.pecaPositivaId : corte.pecaNegativaId;
+      const diametro = Number(conectorDiametroEl.value);
+      const folga = Number(conectorFolgaEl.value);
+      if (!(diametro > 0) || !(folga >= 0)) {
+        mostrarErro("Informe um diâmetro maior que zero e uma folga maior ou igual a zero.");
+        return;
+      }
+
+      estado.adicionandoConector = true;
+      adicionarConectorBtn.disabled = true;
+      adicionarConectorBtn.textContent = "Adicionando...";
+      mostrarErro("");
+
+      // Mesmo respiro de cortarAlvoAtual antes do trabalho síncrono (CSG).
+      new Promise(function (resolve) { setTimeout(resolve, 30); }).then(function () {
+        return obterConectores();
+      }).then(function (PinConnectors) {
+        if (state !== estado) return null;
+        const pecaPino = pecaPorId(pinoId);
+        const ancoragem = pecaPino && PinConnectors.calcularPontoDeAncoragem(pecaPino, corte.plano);
+        if (!ancoragem) return { ok: false, motivo: "não encontrei a seção do corte nessa peça." };
+        return PinConnectors.adicionarConectorNoCorte(pinoId, furoId, corte.plano, ancoragem.ponto, diametro, folga, {
+          pecas: estado.pecas
+        });
+      }).then(function (resultado) {
+        if (!resultado || state !== estado) return;
+        if (!resultado.ok) {
+          mostrarErro(mensagemDeFalhaDoConector(resultado));
+          return;
+        }
+        estado.pecas = aplicarConectorNasPecas(estado.pecas, pinoId, furoId, resultado);
+        // Um conector por corte: o ponto padrão (centro da seção) já está
+        // ocupado pelo pino.
+        estado.ultimoCorte = null;
+        renderOpcoesDeAlvo();
+        renderListaPecas();
+        renderConector();
+        reconstruirVisualizacao();
+        const defeitos = resultado.diagnosticoA.furos + resultado.diagnosticoA.naoManifold +
+          resultado.diagnosticoB.furos + resultado.diagnosticoB.naoManifold;
+        if (defeitos) {
+          mostrarErro("Conector adicionado, mas o resultado ficou com " + defeitos + " aresta(s) com defeito; o fatiador pode precisar reparar a malha.");
+        }
+      }).catch(function (err) {
+        if (window.console && console.error) console.error("Split 3MF (conector):", err);
+        if (state === estado) mostrarErro("Não foi possível adicionar o conector (falha ao carregar ou calcular o CSG).");
+      }).then(function () {
+        estado.adicionandoConector = false;
+        adicionarConectorBtn.textContent = "Adicionar conector";
+        if (state === estado) renderConector();
+      });
+    }
+
     function processarArquivo(file) {
       if (!file) return;
       if (!/\.3mf$/i.test(file.name)) {
@@ -1464,11 +1618,16 @@
                   proximoNumeroPeca: 1,
                   alvoCorte: null,
                   cortando: false,
-                  cardsPecas: []
+                  cardsPecas: [],
+                  // Conector (Task 15): { pecaNegativaId, pecaPositivaId,
+                  // plano } do último corte, ou null.
+                  ultimoCorte: null,
+                  adicionandoConector: false
                 };
                 state.cards = renderListaUnidades(state.unidades);
                 renderOpcoesDeAlvo();
                 renderListaPecas();
+                renderConector();
                 definirAlvoCorte(null);
                 painel.hidden = false;
 
@@ -1500,7 +1659,8 @@
     // filtrarBuildParaObjectIds (test/split-3mf-build-filter.test.js),
     // agruparPorCorContigua (test/split-3mf-color-groups.test.js) e
     // exportarGruposDeCorComoObjects (test/split-3mf-color-export.test.js) e
-    // da lógica pura do corte por plano (test/split-3mf-corte.test.js) — o
+    // da lógica pura do corte por plano (test/split-3mf-corte.test.js) e da
+    // aplicação do conector (test/pin-connectors.test.js) — o
     // restante do módulo não roda fora de uma página com #split3mf no DOM.
     window.Wisky3D = window.Wisky3D || {};
     window.Wisky3D.Split3MF = {
@@ -1514,7 +1674,8 @@
       cortarPeca: cortarPeca,
       substituirPecaPorCorte: substituirPecaPorCorte,
       montarModeloDasPecas: montarModeloDasPecas,
-      montarCenaDeCorte: montarCenaDeCorte
+      montarCenaDeCorte: montarCenaDeCorte,
+      aplicarConectorNasPecas: aplicarConectorNasPecas
     };
 
     // -------------------------------------------------------------------------
@@ -1561,6 +1722,7 @@
     corteAfastarEl.addEventListener("change", reconstruirVisualizacao);
     cortarBtn.addEventListener("click", cortarAlvoAtual);
     descartarCortesBtn.addEventListener("click", descartarCortes);
+    adicionarConectorBtn.addEventListener("click", adicionarConectorAtual);
     baixarPecasBtn.addEventListener("click", () => {
       if (!state || !state.pecas.length) return;
       exportarTodasAsPecas().then(function (arquivo) {

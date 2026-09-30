@@ -607,8 +607,23 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // que a geometria não-indexada usada pelo viewer não compartilha vértices
   // entre triângulos. Geometria pura (sem THREE.js/DOM), por isso mora aqui e
   // não em colorir-3mf.js, que só chama esta função.
-  function buildAdjacencyAndExportIndex(positions, triCount) {
-    var FATOR_QUANTIZACAO = 1e4; // ~0.0001mm de tolerância pra "mesmo ponto"
+  //
+  // `opcoes` (opcional, Task 15, mudança aditiva — sem ele o retorno e o
+  // custo são exatamente os de antes):
+  //  - fatorQuantizacao: grade da solda (default 1e4, ~0.0001 mm). O Split
+  //    3MF passa 1e5 pras peças cortadas, que já vêm soldadas nessa grade
+  //    (split-3mf.js FATOR_SOLDA) — requantizar mais grosso fundiria
+  //    vértices distintos de lascas finas e acusaria não-manifold à toa.
+  //  - contarArestas: se true, o retorno ganha `triangulosPorAresta`
+  //    (Map "a_b" -> nº de triângulos que usam a aresta não-orientada a-b;
+  //    malha fechada = exatamente 2 em toda aresta, furo = 1, não-manifold
+  //    = 3+) e `triangulosDegenerados` (triângulos com dois cantos no mesmo
+  //    vértice pós-solda, que ficam fora da contagem: colapsam num segmento
+  //    e não abrem nem fecham nada — mesmo critério de soldarTriangulos em
+  //    split-3mf.js). A lista de adjacência não muda.
+  function buildAdjacencyAndExportIndex(positions, triCount, opcoes) {
+    var FATOR_QUANTIZACAO = (opcoes && opcoes.fatorQuantizacao) || 1e4; // ~0.0001mm de tolerância pra "mesmo ponto"
+    var contarArestas = !!(opcoes && opcoes.contarArestas);
     var keyToIndex = new Map();
     var exportVertices = [];
     var cornerExportIndex = new Int32Array(triCount * 3);
@@ -656,7 +671,29 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     }
 
     var adjacency = adjacencySets.map(function (s) { return Array.from(s); });
-    return { adjacency: adjacency, exportVertices: exportVertices, cornerExportIndex: cornerExportIndex };
+    var resultado = { adjacency: adjacency, exportVertices: exportVertices, cornerExportIndex: cornerExportIndex };
+
+    if (contarArestas) {
+      var triangulosPorAresta = new Map();
+      var triangulosDegenerados = 0;
+      for (var t3 = 0; t3 < triCount; t3++) {
+        var a0 = cornerExportIndex[t3 * 3];
+        var a1 = cornerExportIndex[t3 * 3 + 1];
+        var a2 = cornerExportIndex[t3 * 3 + 2];
+        if (a0 === a1 || a1 === a2 || a0 === a2) {
+          triangulosDegenerados++;
+          continue;
+        }
+        var chaves = [edgeKey(a0, a1), edgeKey(a1, a2), edgeKey(a2, a0)];
+        for (var k = 0; k < 3; k++) {
+          triangulosPorAresta.set(chaves[k], (triangulosPorAresta.get(chaves[k]) || 0) + 1);
+        }
+      }
+      resultado.triangulosPorAresta = triangulosPorAresta;
+      resultado.triangulosDegenerados = triangulosDegenerados;
+    }
+
+    return resultado;
   }
 
   // Cor default (cinza) de área sem pintura/atribuição de cor explícita.
