@@ -4,7 +4,13 @@
 // por triângulo (3MF Materials and Properties Extension: colorgroup + pid/p1).
 // ---------------------------------------------------------------------------
 import * as THREE from "three";
-import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import {
+  criarViewerBasico,
+  computeFaceNormals,
+  criarMeshTriangulos,
+  aplicarCoresComDestaque,
+  AVISO_TRIANGULOS_GRANDE
+} from "wisky3d/three-viewer-basico.js";
 
 const root = document.getElementById("cor3mf");
 
@@ -41,8 +47,6 @@ if (root) {
   const abasEl = document.getElementById("cor3mf-abas");
 
   const DEFAULT_COLOR = ThreeMFWriter.DEFAULT_COLOR;
-  const HIGHLIGHT_COLOR = [255, 214, 51];
-  const AVISO_TRIANGULOS_GRANDE = 150000;
   const MAX_UNDO = 20;
   const PALETA_PRESETS = ["#3fb6e8", "#ff6b4a", "#8b7cf6", "#5cd65c", "#ffd633", "#ff4fa3", "#4dd0e1", "#ffa726"];
 
@@ -56,13 +60,10 @@ if (root) {
   const BALDE_TOLERANCIA_DEG = 8;
 
   let currentTool = "balde";
-  let renderer = null;
-  let scene = null;
-  let camera = null;
-  let controls = null;
-  let mesh = null;
-  let needsRender = true;
-  let modelRadius = 1; // raio da esfera envolvente do modelo, fixo desde o carregamento
+  // Viewer Three.js compartilhado (assets/js/three-viewer-basico.js): câmera,
+  // luzes, trackball, zoom no cursor, loop de render, enquadramento e resize.
+  // Criado só no primeiro arquivo carregado (initSceneOnce).
+  let viewer = null;
   let state = null;
   /*
    * state = {
@@ -90,157 +91,8 @@ if (root) {
   // -------------------------------------------------------------------------
 
   function initSceneOnce() {
-    if (renderer) return;
-    renderer = new THREE.WebGLRenderer({ canvas: canvasEl, antialias: true });
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x14161c);
-    camera = new THREE.PerspectiveCamera(45, 1, 0.1, 10000);
-
-    scene.add(new THREE.HemisphereLight(0xffffff, 0x3a3d47, 1.15));
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.85);
-    dirLight.position.set(1, 1.6, 1.2);
-    scene.add(dirLight);
-
-    controls = new OrbitControls(camera, renderer.domElement);
-    // Sem inércia (o modelo para na hora que solta o botão) e zoom controlado
-    // à mão (abaixo) pra aproximar/afastar em direção ao ponto sob o cursor.
-    controls.enableDamping = false;
-    controls.enableZoom = false;
-    // O giro é feito à mão (ver bloco "Trackball" abaixo), estilo trackball: gira o
-    // próprio objeto livremente em qualquer direção a partir do ponto
-    // agarrado, sem o eixo vertical fixo do esquema padrão do OrbitControls
-    // (que trava ao tentar virar o objeto de frente/costas a partir de um
-    // ponto fora do eixo central). O OrbitControls fica só com o botão
-    // direito (pan).
-    controls.enableRotate = false;
-    controls.mouseButtons = { LEFT: null, MIDDLE: null, RIGHT: THREE.MOUSE.PAN };
-    controls.addEventListener("change", () => {
-      needsRender = true;
-    });
-
-    canvasEl.addEventListener("wheel", handleWheelZoom, { passive: false });
-
-    window.addEventListener("resize", resizeRenderer);
-    resizeRenderer();
-    animate();
-  }
-
-  // Zoom em direção ao ponto sob o cursor (como no Bambu Studio), em vez de
-  // sempre em direção ao centro do modelo: acha o ponto 3D sob o mouse (ou
-  // usa o alvo da órbita se o raio não acertar a malha) e escala tanto a
-  // posição da câmera quanto o alvo a partir desse pivô, mantendo o ponto
-  // fixo na tela.
-  function handleWheelZoom(e) {
-    if (!mesh) return;
-    e.preventDefault();
-
-    const rect = canvasEl.getBoundingClientRect();
-    pointerNdc.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    pointerNdc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-    raycaster.setFromCamera(pointerNdc, camera);
-
-    const hits = raycaster.intersectObject(mesh, false);
-    const pivot = hits.length ? hits[0].point : controls.target.clone();
-
-    const zoomSpeed = 1.1;
-    // Trackpads às vezes mandam deltaY muito grande num só evento; sem limite
-    // por evento a câmera podia pular quase até (ou pra dentro) do modelo
-    // numa scrollada só, o que "bugava" a visualização.
-    const passoZoom = THREE.MathUtils.clamp(e.deltaY * 0.0015 * zoomSpeed, -0.6, 0.6);
-    const factor = Math.exp(passoZoom);
-
-    // Câmera e alvo escalam juntos em torno do pivô pelo mesmo fator: a
-    // distância câmera-alvo muda exatamente por "factor", sem depender da
-    // distância até o pivô (que pode ficar perto de zero e, se usada num
-    // denominador, gera saltos numéricos gigantes; bug já visto em produção).
-    camera.position.sub(pivot).multiplyScalar(factor).add(pivot);
-    controls.target.sub(pivot).multiplyScalar(factor).add(pivot);
-
-    // Trava de segurança: o alvo da órbita nunca pode se afastar demais do
-    // centro fixo do modelo. Sem isso, uma sequência longa de zoom (sobretudo
-    // perto do limite máximo, onde o raio às vezes deixa de acertar a malha)
-    // podia fazer o alvo "andar" pra fora do modelo evento após evento, e a
-    // câmera sempre reorienta pro alvo, então o erro se acumulava até o
-    // modelo sumir da tela.
-    if (meshPivotWorld) {
-      const maxDistAlvoPivo = modelRadius * 1.5;
-      const alvoOffset = controls.target.clone().sub(meshPivotWorld);
-      const distAlvoPivo = alvoOffset.length();
-      if (distAlvoPivo > maxDistAlvoPivo) {
-        controls.target.copy(meshPivotWorld).addScaledVector(alvoOffset, maxDistAlvoPivo / distAlvoPivo);
-      }
-    }
-
-    // Único limite de segurança: manter a distância câmera-alvo dentro de
-    // [minDistance, maxDistance] (minDistance já garante que a câmera nunca
-    // entra na esfera envolvente do modelo, ver frameCameraToGeometry).
-    // Importante: capturar o deslocamento ANTES de mexer em camera.position.
-    // Encadear "camera.position.copy(target).add(camera.position.clone()...)"
-    // é uma armadilha clássica, pois o .copy() já mutou camera.position antes
-    // do .clone() rodar, colapsando câmera e alvo no mesmo ponto.
-    const offset = camera.position.clone().sub(controls.target);
-    const dist = offset.length();
-    if (dist < controls.minDistance || dist > controls.maxDistance) {
-      const clampedDist = THREE.MathUtils.clamp(dist, controls.minDistance, controls.maxDistance);
-      camera.position.copy(controls.target).addScaledVector(offset, clampedDist / dist);
-    }
-
-    controls.update();
-    needsRender = true;
-  }
-
-  function resizeRenderer() {
-    const wrap = canvasEl.parentElement;
-    const largura = wrap.clientWidth || 320;
-    const altura = Math.max(420, Math.round(largura * 0.72));
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.setSize(largura, altura, false);
-    camera.aspect = largura / altura;
-    camera.updateProjectionMatrix();
-    needsRender = true;
-  }
-
-  function animate() {
-    requestAnimationFrame(animate);
-    controls.update();
-    if (needsRender) {
-      renderer.render(scene, camera);
-      needsRender = false;
-    }
-  }
-
-  function frameCameraToGeometry() {
-    mesh.geometry.computeBoundingSphere();
-    const sphere = mesh.geometry.boundingSphere;
-    const radius = sphere.radius || 1;
-    modelRadius = radius;
-    camera.near = Math.max(radius / 100, 0.01);
-    camera.far = radius * 20;
-    camera.updateProjectionMatrix();
-    // minDistance >= raio da esfera envolvente: garante que a câmera nunca
-    // consiga entrar no volume do modelo, mesmo em formas não-esféricas
-    // (ex.: um cubo tem raio inscrito bem menor que o raio da esfera
-    // circunscrita), evita a câmera atravessar a malha ao dar zoom demais.
-    controls.minDistance = radius * 1.05;
-    controls.maxDistance = radius * 8;
-    recentralizarVista();
-  }
-
-  // Reposiciona a câmera no enquadramento padrão, sem mexer no giro que o
-  // usuário já deu no modelo, útil pra "se achar" de novo depois de perder o
-  // objeto de vista com muito zoom/pan. meshPivotWorld é fixo desde a carga
-  // do arquivo, então serve de referência estável mesmo com o objeto girado.
-  function recentralizarVista() {
-    if (!mesh || !meshPivotWorld) return;
-    const radius = modelRadius;
-    camera.position.set(
-      meshPivotWorld.x + radius * 1.6,
-      meshPivotWorld.y + radius * 1.2,
-      meshPivotWorld.z + radius * 1.6
-    );
-    controls.target.copy(meshPivotWorld);
-    controls.update();
-    needsRender = true;
+    if (viewer) return;
+    viewer = criarViewerBasico(canvasEl, { onClique: handleCanvasClick });
   }
 
   // -------------------------------------------------------------------------
@@ -264,40 +116,8 @@ if (root) {
     return { triCount, positions };
   }
 
-  function computeFaceNormals(positions, triCount) {
-    const normals = new Float32Array(triCount * 3);
-    for (let t = 0; t < triCount; t++) {
-      const b = t * 9;
-      const p0x = positions[b], p0y = positions[b + 1], p0z = positions[b + 2];
-      const p1x = positions[b + 3], p1y = positions[b + 4], p1z = positions[b + 5];
-      const p2x = positions[b + 6], p2y = positions[b + 7], p2z = positions[b + 8];
-      const ux = p1x - p0x, uy = p1y - p0y, uz = p1z - p0z;
-      const vx = p2x - p0x, vy = p2y - p0y, vz = p2z - p0z;
-      let nx = uy * vz - uz * vy;
-      let ny = uz * vx - ux * vz;
-      let nz = ux * vy - uy * vx;
-      const len = Math.hypot(nx, ny, nz) || 1;
-      nx /= len; ny /= len; nz /= len;
-      normals[t * 3] = nx;
-      normals[t * 3 + 1] = ny;
-      normals[t * 3 + 2] = nz;
-    }
-    return normals;
-  }
-
-  function expandFaceNormalsToCorners(faceNormals, triCount) {
-    const out = new Float32Array(triCount * 9);
-    for (let t = 0; t < triCount; t++) {
-      const nx = faceNormals[t * 3], ny = faceNormals[t * 3 + 1], nz = faceNormals[t * 3 + 2];
-      for (let c = 0; c < 3; c++) {
-        const base = t * 9 + c * 3;
-        out[base] = nx;
-        out[base + 1] = ny;
-        out[base + 2] = nz;
-      }
-    }
-    return out;
-  }
+  // computeFaceNormals/expandFaceNormalsToCorners moram em
+  // three-viewer-basico.js (compartilhadas com o Split 3MF).
 
   // buildAdjacencyAndExportIndex mora em model-parser.js
   // (ModelParser.buildAdjacencyAndExportIndex): é geometria pura, sem
@@ -353,27 +173,8 @@ if (root) {
   // -------------------------------------------------------------------------
 
   function refreshColorBuffer() {
-    const colorAttr = state.geometry.getAttribute("color");
-    const arr = colorAttr.array;
-    for (let t = 0; t < state.triCount; t++) {
-      let r = state.baseColors[t * 3];
-      let g = state.baseColors[t * 3 + 1];
-      let b = state.baseColors[t * 3 + 2];
-      if (state.selection.has(t)) {
-        r = (r + HIGHLIGHT_COLOR[0]) / 2;
-        g = (g + HIGHLIGHT_COLOR[1]) / 2;
-        b = (b + HIGHLIGHT_COLOR[2]) / 2;
-      }
-      const base = t * 9;
-      const rN = r / 255, gN = g / 255, bN = b / 255;
-      for (let c = 0; c < 3; c++) {
-        arr[base + c * 3] = rN;
-        arr[base + c * 3 + 1] = gN;
-        arr[base + c * 3 + 2] = bN;
-      }
-    }
-    colorAttr.needsUpdate = true;
-    needsRender = true;
+    aplicarCoresComDestaque(state.geometry, state.triCount, state.baseColors, (t) => state.selection.has(t));
+    viewer.requestRender();
   }
 
   function hexToRgb(hex) {
@@ -579,6 +380,7 @@ if (root) {
       posArr.set(state.positionsOriginais);
     } else {
       const visiveis = state.triangulosPorChapa && state.triangulosPorChapa.get(state.chapaAtivaIndice);
+      const meshPivotLocal = viewer.getPivotLocal();
       const pivotX = meshPivotLocal ? meshPivotLocal.x : 0;
       const pivotY = meshPivotLocal ? meshPivotLocal.y : 0;
       const pivotZ = meshPivotLocal ? meshPivotLocal.z : 0;
@@ -598,7 +400,7 @@ if (root) {
 
     state.geometry.attributes.position.needsUpdate = true;
     state.geometry.computeBoundingSphere();
-    needsRender = true;
+    viewer.requestRender();
   }
 
   // Bbox (em espaço local, a partir das posições reais em positionsOriginais)
@@ -628,13 +430,12 @@ if (root) {
   }
 
   // Reenquadra a câmera na chapa ativa (ou no modelo inteiro, se `indice` for
-  // null), reaproveitando o mesmo esquema de near/far/min/maxDistance de
-  // frameCameraToGeometry. Também move o pivô do trackball (meshPivotLocal/
-  // meshPivotWorld) pra chapa em foco, senão o clamp de deriva do zoom (que
-  // usa meshPivotWorld como referência) prenderia a câmera perto do centro do
-  // modelo inteiro mesmo com uma chapa distante em foco.
+  // null), via viewer.focarEm (three-viewer-basico.js): mesmo esquema de
+  // near/far/min/maxDistance de frameToGeometry, e também move o pivô do
+  // trackball pra chapa em foco, senão o clamp de deriva do zoom prenderia a
+  // câmera perto do centro do modelo inteiro mesmo com uma chapa distante em
+  // foco.
   function atualizarFocoDaChapa(indice) {
-    mesh.updateMatrixWorld(true);
     let pivotLocalNovo = state.pivotLocalTodos;
     let raioNovo = state.radiusTodos;
     if (indice !== null) {
@@ -644,15 +445,7 @@ if (root) {
         raioNovo = foco.radius;
       }
     }
-    meshPivotLocal = pivotLocalNovo.clone();
-    meshPivotWorld = mesh.localToWorld(pivotLocalNovo.clone());
-    modelRadius = raioNovo;
-    camera.near = Math.max(modelRadius / 100, 0.01);
-    camera.far = modelRadius * 20;
-    camera.updateProjectionMatrix();
-    controls.minDistance = modelRadius * 1.05;
-    controls.maxDistance = modelRadius * 8;
-    recentralizarVista();
+    viewer.focarEm(pivotLocalNovo, raioNovo);
   }
 
   function setChapaAtiva(indice) {
@@ -668,88 +461,13 @@ if (root) {
     updateSelectionUI();
   }
 
-  const raycaster = new THREE.Raycaster();
-  const pointerNdc = new THREE.Vector2();
-  let pointerDownPos = null;
-
-  // -------------------------------------------------------------------------
-  // Trackball: gira o próprio objeto (não a câmera) livremente em qualquer
-  // direção, como se você estivesse segurando uma bola nas mãos. O ponto que
-  // você clica fica "grudado" no cursor durante todo o arraste, em vez de
-  // orbitar em torno de um eixo vertical fixo (o que travava ao tentar virar
-  // o objeto de frente/costas segurando um ponto fora do centro, como a mão
-  // de um boneco em pé).
-  // -------------------------------------------------------------------------
-  let meshPivotLocal = null; // centro geométrico do modelo, em espaço local
-  let meshPivotWorld = null; // ponto do mundo onde esse centro deve sempre ficar
-  let trackballDrag = null; // { ndc0: {x,y}, qStart: Quaternion }
-
-  // Projeção clássica de "virtual trackball" (Chen/Mountford/Sellen): mapeia
-  // um ponto 2D normalizado de tela pra um ponto 3D numa esfera/hemisfério
-  // virtual, indo pra uma folha hiperbólica quando o cursor sai do círculo
-  // central, isso evita comportamento estranho perto das bordas.
-  function trackballPoint(x, y) {
-    const d2 = x * x + y * y;
-    const z = d2 <= 0.5 ? Math.sqrt(1 - d2) : 0.5 / Math.sqrt(d2);
-    return new THREE.Vector3(x, y, z).normalize();
-  }
-
-  function updateMeshPivotPosition() {
-    mesh.position.copy(meshPivotWorld).sub(meshPivotLocal.clone().applyQuaternion(mesh.quaternion));
-  }
-
-  function ndcFromEvent(e) {
-    const rect = canvasEl.getBoundingClientRect();
-    return {
-      x: ((e.clientX - rect.left) / rect.width) * 2 - 1,
-      y: -((e.clientY - rect.top) / rect.height) * 2 + 1
-    };
-  }
-
-  canvasEl.addEventListener("pointerdown", (e) => {
-    pointerDownPos = [e.clientX, e.clientY];
-    if (e.button === 0 && mesh) {
-      trackballDrag = { ndc0: ndcFromEvent(e), qStart: mesh.quaternion.clone() };
-      canvasEl.setPointerCapture(e.pointerId);
-    }
-  });
-
-  canvasEl.addEventListener("pointermove", (e) => {
-    if (!trackballDrag || !mesh) return;
-    const ndc1 = ndcFromEvent(e);
-    const p0 = trackballPoint(trackballDrag.ndc0.x, trackballDrag.ndc0.y);
-    const p1 = trackballPoint(ndc1.x, ndc1.y);
-    const axisView = new THREE.Vector3().crossVectors(p0, p1);
-    if (axisView.lengthSq() < 1e-9) return;
-    const angle = Math.acos(THREE.MathUtils.clamp(p0.dot(p1), -1, 1));
-    const axisWorld = axisView.normalize().applyQuaternion(camera.quaternion);
-    const q = new THREE.Quaternion().setFromAxisAngle(axisWorld, angle);
-    mesh.quaternion.copy(q).multiply(trackballDrag.qStart);
-    updateMeshPivotPosition();
-    needsRender = true;
-  });
-
-  canvasEl.addEventListener("pointercancel", () => {
-    trackballDrag = null;
-  });
-
-  canvasEl.addEventListener("pointerup", (e) => {
-    trackballDrag = null;
-    if (!pointerDownPos) return;
-    const dx = e.clientX - pointerDownPos[0];
-    const dy = e.clientY - pointerDownPos[1];
-    pointerDownPos = null;
-    if (Math.hypot(dx, dy) > 5) return; // foi arraste (girar), não clique
-    handleCanvasClick(e);
-  });
+  // Raycaster, trackball (giro do objeto) e detecção de clique vs. arraste
+  // moram em three-viewer-basico.js; o viewer chama handleCanvasClick num
+  // clique de verdade (opção onClique de criarViewerBasico).
 
   function handleCanvasClick(e) {
-    if (!state || !mesh) return;
-    const rect = canvasEl.getBoundingClientRect();
-    pointerNdc.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    pointerNdc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-    raycaster.setFromCamera(pointerNdc, camera);
-    const hits = raycaster.intersectObject(mesh, false);
+    if (!state || !viewer || !viewer.mesh) return;
+    const hits = viewer.intersect(e);
     if (!hits.length) return;
 
     const triIndex = hits[0].faceIndex;
@@ -789,33 +507,11 @@ if (root) {
     const faceNormals = computeFaceNormals(positions, triCount);
     const { adjacency, exportVertices, cornerExportIndex } = ModelParser.buildAdjacencyAndExportIndex(positions, triCount);
 
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute("normal", new THREE.BufferAttribute(expandFaceNormalsToCorners(faceNormals, triCount), 3));
-    geometry.setAttribute("color", new THREE.BufferAttribute(new Float32Array(triCount * 9), 3));
-
-    const material = new THREE.MeshStandardMaterial({
-      vertexColors: true,
-      roughness: 0.65,
-      metalness: 0.05,
-      side: THREE.DoubleSide
-    });
-
-    if (mesh) {
-      scene.remove(mesh);
-      mesh.geometry.dispose();
-      mesh.material.dispose();
-    }
-    mesh = new THREE.Mesh(geometry, material);
-    mesh.quaternion.identity();
-    scene.add(mesh);
-
-    // Pivô do trackball: o centro geométrico do modelo, fixo no mundo. O
-    // objeto sempre gira em torno dele, não importa qual ponto você "agarra".
-    geometry.computeBoundingSphere();
-    meshPivotLocal = geometry.boundingSphere.center.clone();
-    meshPivotWorld = meshPivotLocal.clone();
-    updateMeshPivotPosition();
+    // setMesh descarta a mesh anterior, zera o giro e fixa o pivô do
+    // trackball no centro geométrico do modelo (ver three-viewer-basico.js).
+    const mesh = criarMeshTriangulos(positions, faceNormals, triCount);
+    const geometry = mesh.geometry;
+    viewer.setMesh(mesh);
 
     const baseColors = new Uint8ClampedArray(triCount * 3);
     for (let i = 0; i < triCount; i++) {
@@ -871,13 +567,13 @@ if (root) {
 
     renderPaleta();
     refreshColorBuffer();
-    frameCameraToGeometry();
+    viewer.frameToGeometry();
     // Snapshot do pivô/raio de "Todos" (modelo inteiro), capturado logo após
-    // frameCameraToGeometry (que os calculou a partir da geometria ainda sem
+    // frameToGeometry (que os calculou a partir da geometria ainda sem
     // filtro nenhum aplicado) — usado por atualizarFocoDaChapa pra voltar a
     // esse enquadramento sempre que o usuário volta pra aba "Todos".
-    state.pivotLocalTodos = meshPivotLocal.clone();
-    state.radiusTodos = modelRadius;
+    state.pivotLocalTodos = viewer.getPivotLocal();
+    state.radiusTodos = viewer.getRaio();
     renderAbasChapa();
 
     const grande = triCount >= AVISO_TRIANGULOS_GRANDE;
@@ -957,8 +653,8 @@ if (root) {
         resultado.chapas = detectarChapas(resultado.modelSettingsText, resultado.origins);
         buildState(resultado.triangulos, file.name, resultado);
         painel.hidden = false;
-        resizeRenderer();
-        frameCameraToGeometry();
+        viewer.resize();
+        viewer.frameToGeometry();
       })
       .catch((err) => {
         if (window.console && console.error) console.error("Colorir 3MF:", err);
@@ -1209,7 +905,9 @@ if (root) {
     updateSelectionUI();
   });
 
-  recentralizarBtn.addEventListener("click", () => recentralizarVista());
+  recentralizarBtn.addEventListener("click", () => {
+    if (viewer) viewer.recentralizarVista();
+  });
   avisoGrandeFecharBtn.addEventListener("click", () => { avisoGrandeEl.hidden = true; });
 
   desfazerBtn.addEventListener("click", () => undo());
