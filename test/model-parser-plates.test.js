@@ -131,6 +131,26 @@ test("calcularChapas com plateAssignments simples retorna bbox por chapa", () =>
   // Segunda chapa: apenas item 3
   assert.equal(resultado[1].bbox.minX, 20, "bbox chapa 2 minX = 20");
   assert.equal(resultado[1].bbox.maxX, 30, "bbox chapa 2 maxX = 30");
+
+  // objectIds da chapa (usado pelo Split 3MF pra filtrar exports por chapa)
+  assert.deepEqual(resultado[0].objectIds, ["1", "2"], "chapa 1 traz seus objectIds");
+  assert.deepEqual(resultado[1].objectIds, ["3"], "chapa 2 traz seus objectIds");
+});
+
+test("calcularChapas com manterUnica:true não colapsa 1 chapa válida pra null", () => {
+  const plateAssignments = [["1"], ["99"]]; // 99 não existe nos itens
+  const itens = [
+    { objectId: "1", bbox: { minX: 0, minY: 0, minZ: 0, maxX: 10, maxY: 10, maxZ: 10 } }
+  ];
+
+  const semOpcao = window.Wisky3D.ModelParser.calcularChapas(itens, plateAssignments);
+  assert.equal(semOpcao, null, "sem manterUnica, 1 chapa válida ainda colapsa pra null (comportamento preexistente)");
+
+  const comOpcao = window.Wisky3D.ModelParser.calcularChapas(itens, plateAssignments, { manterUnica: true });
+  assert.ok(Array.isArray(comOpcao), "com manterUnica, resultado é array mesmo com 1 chapa válida");
+  assert.equal(comOpcao.length, 1, "1 chapa válida (a 99 foi descartada por não ter bbox)");
+  assert.equal(comOpcao[0].indice, 1, "chapa válida mantém seu índice original");
+  assert.deepEqual(comOpcao[0].objectIds, ["1"], "objectIds preservado");
 });
 
 test("calcularChapas com apenas 1 chapa retorna null", () => {

@@ -525,9 +525,20 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
 
   // Junta o bbox dos itens (retornados por parse3MFPackage) de acordo com a
   // lista de object_id de cada chapa, gerando um bbox por chapa em vez de um
-  // bbox único pra todo o arquivo.
-  function calcularChapas(itens, plateAssignments) {
+  // bbox único pra todo o arquivo. Cada chapa retornada também traz a lista
+  // de object_id que a compõe (`objectIds`), pra quem precisar filtrar itens
+  // por chapa depois (ex.: Split 3MF), além do bbox mesclado.
+  //
+  // `opcoes.manterUnica` (default false, comportamento pré-existente
+  // preservado): normalmente, se sobrar 1 chapa só com bbox válido depois do
+  // filtro, o resultado inteiro vira `null` (uso histórico: telas que só
+  // mostram cards de chapa quando há mais de uma chapa "de verdade").
+  // Passando `{ manterUnica: true }`, esse colapso é pulado e a chapa única
+  // (ou array vazio, se nenhuma tiver bbox) é retornada normalmente — usado
+  // pelo Split 3MF, que trata "1 unidade só" como caso válido, não erro.
+  function calcularChapas(itens, plateAssignments, opcoes) {
     if (!plateAssignments || !itens) return null;
+    var manterUnica = opcoes && opcoes.manterUnica;
     var chapas = plateAssignments.map(function (ids, indice) {
       var bbox = null;
       itens.forEach(function (item) {
@@ -537,8 +548,9 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
           else if (item.bbox) bbox = mergeBBox(bbox, item.bbox);
         }
       });
-      return { indice: indice + 1, bbox: bbox };
+      return { indice: indice + 1, objectIds: ids, bbox: bbox };
     }).filter(function (chapa) { return chapa.bbox; });
+    if (manterUnica) return chapas;
     return chapas.length > 1 ? chapas : null;
   }
 

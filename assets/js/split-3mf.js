@@ -60,16 +60,17 @@
           : null;
 
         if (plateAssignments) {
-          const unidadesPlates = plateAssignments
-            .map(function (objectIds, indice) {
-              let bbox = null;
-              itens.forEach(function (item) {
-                if (objectIds.indexOf(item.objectId) === -1) return;
-                bbox = bbox ? ModelParser.mergeBBox(bbox, item.bbox) : item.bbox;
-              });
-              return { id: indice, rotulo: "Mesa " + (indice + 1), objectIds: objectIds, bbox: bbox };
-            })
-            .filter(function (unidade) { return unidade.bbox; });
+          // Reaproveita ModelParser.calcularChapas (mesma função usada por
+          // conversor-3mf.js) pra mesclar bbox por chapa a partir dos
+          // objectIds — evita duplicar aqui a lógica de merge que já existe
+          // e é testada em model-parser.js. `manterUnica: true` porque, ao
+          // contrário do uso em conversor-3mf.js, o Split 3MF trata "sobrou
+          // 1 chapa só com bbox válido" como caso normal, não como "não tem
+          // chapa" (ver brief da Task 6).
+          const chapas = ModelParser.calcularChapas(itens, plateAssignments, { manterUnica: true }) || [];
+          const unidadesPlates = chapas.map(function (chapa) {
+            return { id: chapa.indice - 1, rotulo: "Mesa " + chapa.indice, objectIds: chapa.objectIds, bbox: chapa.bbox };
+          });
           return { modo: "plates", unidades: unidadesPlates };
         }
 
