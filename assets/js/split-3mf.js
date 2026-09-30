@@ -82,7 +82,7 @@
     }
 
     // Popula #split3mf-lista com um card por unidade detectada (rótulo +
-    // dimensões). Sem botão de download ainda — isso é a Task 7.
+    // dimensões + botão de download individual).
     function renderListaUnidades(unidades) {
       listaEl.innerHTML = "";
       unidades.forEach(function (unidade) {
@@ -103,7 +103,95 @@
           card.appendChild(dimsEl);
         }
 
+        const baixarBtn = document.createElement("button");
+        baixarBtn.type = "button";
+        baixarBtn.className = "btn btn-secondary split3mf-card-baixar";
+        baixarBtn.textContent = "Baixar";
+        baixarBtn.addEventListener("click", function () {
+          exportarUnidadePreservandoPacote(unidade).then(function (resultado) {
+            ModelParser.baixarBlob(resultado.blob, resultado.nome);
+          });
+        });
+        card.appendChild(baixarBtn);
+
         listaEl.appendChild(card);
+      });
+    }
+
+    // Remove, do <build> de xmlText, todo <item> cujo objectid não esteja em
+    // objectIds (comparação por string — objectid no XML é sempre texto).
+    // <resources>/<object> não são tocados: deixar objects sem item no build
+    // é inofensivo, fatiadores ignoram objects não referenciados por nenhum
+    // item. Mesmo cuidado de injetarCoresNoXml (threemf-writer.js) com a
+    // declaração <?xml ...?>: alguns XMLSerializer não a re-emitem sozinhos.
+    function filtrarBuildParaObjectIds(xmlText, objectIds) {
+      const doc = new DOMParser().parseFromString(xmlText, "application/xml");
+      const modelEl = doc.documentElement;
+      const buildEl = ModelParser.directChild(modelEl, "build");
+      if (!buildEl) return xmlText;
+
+      const idsMantidos = objectIds.map(String);
+      const itemEls = ModelParser.directChildren(buildEl, "item");
+      itemEls.forEach(function (itemEl) {
+        const objectId = itemEl.getAttribute("objectid");
+        if (idsMantidos.indexOf(objectId) === -1) {
+          buildEl.removeChild(itemEl);
+        }
+      });
+
+      const serializado = new XMLSerializer().serializeToString(doc);
+      return /^<\?xml/.test(serializado) ? serializado : '<?xml version="1.0" encoding="UTF-8"?>\n' + serializado;
+    }
+
+    // Reconstrói um pacote 3MF novo contendo só a unidade pedida: copia todo
+    // arquivo do zip original (bytes intactos) exceto o 3dmodel.model (que é
+    // reescrito com só os <item> da unidade) e o model_settings.config (que é
+    // simplesmente omitido — não faz sentido pra um recorte de uma chapa só,
+    // e nenhum fatiador exige esse arquivo pra abrir o pacote).
+    function exportarUnidadePreservandoPacote(unidade) {
+      const zipNovo = new JSZip();
+      const modelXmlFiltrado = filtrarBuildParaObjectIds(state.modelText, unidade.objectIds);
+      const copias = [];
+
+      state.zip.forEach(function (relPath, file) {
+        if (file.dir) return;
+        if (relPath === state.modelPath) return;
+        if (state.modelSettingsPath && relPath === state.modelSettingsPath) return;
+        copias.push(
+          file.async("uint8array").then(function (dados) {
+            zipNovo.file(relPath, dados);
+          })
+        );
+      });
+
+      return Promise.all(copias).then(function () {
+        zipNovo.file(state.modelPath, modelXmlFiltrado);
+        return zipNovo.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } });
+      }).then(function (blob) {
+        const nomeBase = state.file.name.replace(/\.3mf$/i, "");
+        const slug = unidade.rotulo.toLowerCase().replace(/\s+/g, "-");
+        return { nome: nomeBase + "-" + slug + ".3mf", blob: blob };
+      });
+    }
+
+    // Exporta todas as unidades de uma vez, empacotadas num único .zip.
+    // Sequencial (reduce/Promise-chain), mesmo estilo de gerarProjeto em
+    // conversor-3mf.js, pra não disparar N reconstruções de zip em paralelo.
+    function exportarTodasAsUnidades() {
+      if (!state || !state.unidades.length) return;
+      const zipFinal = new JSZip();
+
+      return state.unidades.reduce(function (promessa, unidade) {
+        return promessa.then(function () {
+          return exportarUnidadePreservandoPacote(unidade).then(function (resultado) {
+            zipFinal.file(resultado.nome, resultado.blob);
+          });
+        });
+      }, Promise.resolve()).then(function () {
+        return zipFinal.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } });
+      }).then(function (blob) {
+        const nomeBase = state.file.name.replace(/\.3mf$/i, "");
+        ModelParser.baixarBlob(blob, nomeBase + "-split.zip");
       });
     }
 
@@ -163,6 +251,14 @@
         });
     }
 
+    // Exposto em window.Wisky3D só pra permitir teste unitário de
+    // filtrarBuildParaObjectIds (test/split-3mf-build-filter.test.js) — o
+    // restante do módulo não roda fora de uma página com #split3mf no DOM.
+    window.Wisky3D = window.Wisky3D || {};
+    window.Wisky3D.Split3MF = {
+      filtrarBuildParaObjectIds: filtrarBuildParaObjectIds
+    };
+
     // -------------------------------------------------------------------------
     // Eventos de UI
     // -------------------------------------------------------------------------
@@ -190,7 +286,7 @@
 
     if (baixarTudoBtn) {
       baixarTudoBtn.addEventListener("click", () => {
-        // TODO: geração do zip com todas as unidades (task futura).
+        exportarTodasAsUnidades();
       });
     }
   }
