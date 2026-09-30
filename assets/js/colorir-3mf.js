@@ -202,6 +202,7 @@ if (root) {
 
   function animate() {
     requestAnimationFrame(animate);
+    applyPendingTrackballMove();
     controls.update();
     if (needsRender) {
       renderer.render(scene, camera);
@@ -765,9 +766,26 @@ if (root) {
     }
   });
 
+  // O listener só guarda a posição mais recente; o cálculo de trigonometria/
+  // quaternion (applyPendingTrackballMove) roda no máximo uma vez por frame,
+  // dentro do loop de animate(), em vez de uma vez por evento de pointermove
+  // bruto (o navegador pode disparar vários por frame durante um arraste
+  // rápido, recalcular a rotação em cada um é trabalho redundante que nunca
+  // chega a aparecer na tela).
+  let pendingPointerMoveEvent = null;
+
   canvasEl.addEventListener("pointermove", (e) => {
     if (!trackballDrag || !mesh) return;
-    const ndc1 = ndcFromEvent(e);
+    pendingPointerMoveEvent = e;
+  });
+
+  function applyPendingTrackballMove() {
+    if (!pendingPointerMoveEvent || !trackballDrag || !mesh) {
+      pendingPointerMoveEvent = null;
+      return;
+    }
+    const ndc1 = ndcFromEvent(pendingPointerMoveEvent);
+    pendingPointerMoveEvent = null;
     const p0 = trackballPoint(trackballDrag.ndc0.x, trackballDrag.ndc0.y);
     const p1 = trackballPoint(ndc1.x, ndc1.y);
     const axisView = new THREE.Vector3().crossVectors(p0, p1);
@@ -778,7 +796,7 @@ if (root) {
     mesh.quaternion.copy(q).multiply(trackballDrag.qStart);
     updateMeshPivotPosition();
     needsRender = true;
-  });
+  }
 
   canvasEl.addEventListener("pointercancel", () => {
     trackballDrag = null;
