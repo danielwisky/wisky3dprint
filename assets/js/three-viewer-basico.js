@@ -106,6 +106,63 @@ export function aplicarCoresComDestaque(geometry, triCount, baseColors, destacad
   colorAttr.needsUpdate = true;
 }
 
+// Preview de um plano de corte (Split 3MF, Task 14): um quadrado
+// semi-transparente com borda, criado uma vez só e reaproveitado — cada
+// atualização mexe só na transformação (posição/rotação/escala), sem recriar
+// geometria nem material. Deve ser anexado como filho da mesh exibida
+// (anexarA(viewer.mesh)) pra girar junto com o trackball; como o raycast do
+// viewer não é recursivo, o plano nunca intercepta cliques na malha.
+// atualizar(normal, ponto, tamanho): normal/ponto [x,y,z] no espaço local da
+// mesh (mesmo formato de MeshClip.definirPlanoDeCorte), tamanho = lado do
+// quadrado.
+export function criarPreviewDePlano() {
+  const geometry = new THREE.PlaneGeometry(1, 1);
+  const material = new THREE.MeshBasicMaterial({
+    color: 0x3fa9f5,
+    transparent: true,
+    opacity: 0.3,
+    side: THREE.DoubleSide,
+    depthWrite: false
+  });
+  const plano = new THREE.Mesh(geometry, material);
+  const bordaGeometry = new THREE.EdgesGeometry(geometry);
+  const bordaMaterial = new THREE.LineBasicMaterial({ color: 0x3fa9f5 });
+  plano.add(new THREE.LineSegments(bordaGeometry, bordaMaterial));
+  plano.renderOrder = 1;
+  plano.visible = false;
+
+  const EIXO_Z = new THREE.Vector3(0, 0, 1);
+  const normalTmp = new THREE.Vector3();
+
+  function atualizar(normal, ponto, tamanho) {
+    normalTmp.set(normal[0], normal[1], normal[2]).normalize();
+    plano.quaternion.setFromUnitVectors(EIXO_Z, normalTmp);
+    plano.position.set(ponto[0], ponto[1], ponto[2]);
+    plano.scale.set(tamanho, tamanho, 1);
+    plano.visible = true;
+  }
+
+  function esconder() {
+    plano.visible = false;
+  }
+
+  function anexarA(pai) {
+    if (plano.parent === pai) return;
+    if (plano.parent) plano.parent.remove(plano);
+    if (pai) pai.add(plano);
+  }
+
+  function dispose() {
+    anexarA(null);
+    geometry.dispose();
+    material.dispose();
+    bordaGeometry.dispose();
+    bordaMaterial.dispose();
+  }
+
+  return { objeto: plano, atualizar, esconder, anexarA, dispose };
+}
+
 // Cria o viewer sobre `canvasEl` (cujo parentElement define a largura).
 // opcoes.onClique(evento): chamado num clique "de verdade" (pointerup a até
 // 5px do pointerdown, ou seja, não foi arraste de giro/pan).

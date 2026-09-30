@@ -28,6 +28,48 @@
       </div>
     </div>
 
+    <div class="calc-section split3mf-corte" id="split3mf-corte">
+      <h2 class="calc-section-title">Corte por plano</h2>
+      <p class="calc-field-hint">Escolha a peça (ou clique nela na visualização), ajuste o plano azul e clique em "Cortar". Cada peça resultante pode ser cortada de novo.</p>
+      <div class="calc-fields">
+        <div class="calc-field calc-field-full">
+          <label for="split3mf-corte-alvo">Peça a cortar</label>
+          <select id="split3mf-corte-alvo"></select>
+        </div>
+        <div class="calc-field">
+          <label for="split3mf-corte-eixo">Eixo</label>
+          <select id="split3mf-corte-eixo">
+            <option value="x">X</option>
+            <option value="y">Y</option>
+            <option value="z" selected>Z</option>
+          </select>
+        </div>
+        <div class="calc-field">
+          <label for="split3mf-corte-posicao">Posição: <span id="split3mf-corte-posicao-valor">50%</span></label>
+          <input type="range" id="split3mf-corte-posicao" min="0" max="100" step="0.5" value="50">
+        </div>
+        <div class="calc-field">
+          <label for="split3mf-corte-inclinacao">Inclinação: <span id="split3mf-corte-inclinacao-valor">0°</span></label>
+          <input type="range" id="split3mf-corte-inclinacao" min="-90" max="90" step="1" value="0">
+        </div>
+        <label class="split3mf-corte-afastar">
+          <input type="checkbox" id="split3mf-corte-afastar" checked>
+          Afastar as peças cortadas na visualização
+        </label>
+      </div>
+      <div class="split3mf-corte-acoes">
+        <button type="button" class="btn btn-gradient" id="split3mf-cortar" disabled>Cortar</button>
+        <button type="button" class="btn" id="split3mf-descartar-cortes" hidden>Descartar cortes</button>
+      </div>
+      <p class="calc-field-hint">A tampa da área cortada é uma superfície plana simples — não reproduz suavização avançada de outras ferramentas.</p>
+
+      <div class="split3mf-pecas" id="split3mf-pecas" hidden>
+        <h3 class="calc-section-title">Peças resultantes</h3>
+        <div id="split3mf-pecas-lista"></div>
+        <button type="button" class="btn btn-secondary" id="split3mf-baixar-pecas">Baixar todas as peças (.3mf, objects separados)</button>
+      </div>
+    </div>
+
     <div id="split3mf-lista" class="calc-section"></div>
 
     <div class="calc-result-box">

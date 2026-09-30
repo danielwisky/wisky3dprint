@@ -3737,6 +3737,29 @@ body.img-lightbox-open { overflow: hidden; }
 .split3mf-canvas-wrap {
   margin-bottom: 1.25rem;
 }
+.split3mf-corte {
+  margin-bottom: 1.25rem;
+}
+.split3mf-corte-afastar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-weight: 600;
+  align-self: end;
+}
+.split3mf-corte-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 1rem 0 0.5rem;
+}
+.split3mf-pecas {
+  margin-top: 1.25rem;
+
+  &[hidden] { display: none; }
+}
 .split3mf-card.is-selecionada {
   outline: 2px solid #ffd633;
   outline-offset: 2px;
