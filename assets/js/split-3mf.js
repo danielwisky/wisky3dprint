@@ -1329,6 +1329,9 @@
       cortarBtn.disabled = true;
       cortarBtn.textContent = "Cortando...";
       mostrarErro("");
+      // Enquanto essa peça corta, o conector de um corte anterior (se
+      // ofertado) também fica bloqueado — ver renderConector/I1.
+      renderConector();
 
       // Um respiro antes do trabalho síncrono pesado (clipMalha), pra o
       // "Cortando..." chegar a ser pintado.
@@ -1366,7 +1369,10 @@
       }).then(function () {
         estado.cortando = false;
         cortarBtn.textContent = "Cortar";
-        if (state === estado) cortarBtn.disabled = !estado.alvoCorte;
+        if (state === estado) {
+          cortarBtn.disabled = !estado.alvoCorte;
+          renderConector();
+        }
       });
     }
 
@@ -1489,7 +1495,7 @@
         conectorPecaEl.appendChild(opcao);
       });
       conectorPecaEl.value = selecionada === String(pecaPos.id) ? selecionada : String(pecaNeg.id);
-      adicionarConectorBtn.disabled = !!state.adicionandoConector;
+      adicionarConectorBtn.disabled = !!state.adicionandoConector || !!state.cortando;
     }
 
     // Texto pro usuário a partir de { ok:false, motivo } de
@@ -1512,7 +1518,7 @@
     function adicionarConectorAtual() {
       const estado = state;
       const corte = estado && estado.ultimoCorte;
-      if (!corte || estado.adicionandoConector) return;
+      if (!corte || estado.adicionandoConector || estado.cortando) return;
       const pinoId = Number(conectorPecaEl.value);
       const furoId = pinoId === corte.pecaNegativaId ? corte.pecaPositivaId : corte.pecaNegativaId;
       const diametro = Number(conectorDiametroEl.value);
@@ -1640,6 +1646,10 @@
                 state.cards = renderListaUnidades(state.unidades);
                 renderOpcoesDeAlvo();
                 renderListaPecas();
+                // Um arquivo novo sempre começa sem conector em andamento:
+                // evita ficar travado em disabled=true se o arquivo anterior
+                // foi trocado no meio de um cálculo de conector (ver I1).
+                descartarCortesBtn.disabled = false;
                 renderConector();
                 definirAlvoCorte(null);
                 painel.hidden = false;
