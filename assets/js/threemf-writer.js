@@ -102,6 +102,19 @@ window.Wisky3D = window.Wisky3D || {};
   // valor 3 é o escape "índice >= 3", e o índice final é 3 + soma de todos os
   // nibbles seguintes (cada um valendo até 15, exatamente o inverso do
   // "resto -= 15" da codificação).
+  //
+  // Limitação conhecida: isso decodifica exatamente a codificação própria
+  // de filamentIndexParaPaintColor (round-trip fechado desta ferramenta).
+  // No formato real do TriangleSelector do Bambu Studio/OrcaSlicer, um
+  // triângulo pintado com pincel na fronteira entre cores pode ficar
+  // subdividido, e são os 2 bits BAIXOS do 1º nibble (não os altos) que
+  // sinalizam subdivisão, seguidos pelos filhos na árvore. Este decoder não
+  // percorre essa árvore: um paint_color subdividido de um arquivo externo
+  // é lido como um índice de filamento plausível, mas errado (cor de
+  // preview/exportação imprecisa nessa fronteira, não corrupção de dados).
+  // Corrigir direito exige um arquivo real com pincelamento do Bambu/Orca
+  // pra validar contra — não disponível neste ambiente; ver ledger da SDD
+  // (achado I2 da revisão final do branch).
   function paintColorParaFilamentIndex(hex) {
     var nibbles = hex
       .split("")

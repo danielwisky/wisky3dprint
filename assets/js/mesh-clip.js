@@ -186,10 +186,9 @@ window.Wisky3D = window.Wisky3D || {};
       return { ladoPositivo: ladoPositivo, ladoNegativo: ladoNegativo, arestasDeCorte: arestasDeCorte };
     }
 
-    // Caso 2 de um lado + 1 do outro (nenhum vértice exatamente no plano,
-    // pois esse caso já foi tratado acima como "todos do mesmo lado").
-    // Identifica o vértice isolado (minoria): aquele cujo sinal difere dos
-    // outros dois.
+    // Caso 2 de um lado + 1 do outro. Identifica o vértice isolado
+    // (minoria): aquele cujo sinal difere dos outros dois. Um dos três pode
+    // estar exatamente sobre o plano (sinal 0) — ver caso especial abaixo.
     // Caso especial: um vértice exatamente sobre o plano (sinal 0) e os
     // outros dois em lados opostos (os 3 sinais diferentes entre si). O
     // isolado precisa ser um vértice FORA do plano (escolhe o positivo): um

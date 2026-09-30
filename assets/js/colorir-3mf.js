@@ -546,10 +546,10 @@ if (root) {
     };
 
     // Chapas (plates) detectadas num 3MF multi-plate (ver detectarChapas em
-    // processarArquivo): guardado no estado pra uso futuro (seletor de chapa
-    // na UI, ainda não implementado), null quando o arquivo não tem esse
-    // metadado (STL, 3MF single-plate). triangulosPorChapa é derivado uma
-    // única vez aqui, não recalculado a cada clique.
+    // processarArquivo): guardado no estado pro seletor de chapa na UI
+    // (abas), null quando o arquivo não tem esse metadado (STL, 3MF
+    // single-plate). triangulosPorChapa é derivado uma única vez aqui, não
+    // recalculado a cada clique.
     state.chapas = (origem && origem.chapas) || null;
     state.chapaAtivaIndice = null; // null = "Todos"
     // mapearTriangulosParaChapas devolve arrays (ordem de varredura); aqui

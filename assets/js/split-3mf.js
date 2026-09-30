@@ -444,7 +444,7 @@
         });
 
         const triCount = triangulos.length;
-        if (!triCount) return [];
+        if (!triCount) return { grupos: [], triangulos: [], corPorTriangulo: new Uint8ClampedArray(0) };
 
         const modelDoc = new DOMParser().parseFromString(state.modelText, "application/xml");
 
