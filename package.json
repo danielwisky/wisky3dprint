@@ -25,5 +25,8 @@
   "devDependencies": {
     "@xmldom/xmldom": "^0.9.6",
     "playwright": "^1.63.0"
+  },
+  "dependencies": {
+    "earcut": "^3.2.4"
   }
 }
