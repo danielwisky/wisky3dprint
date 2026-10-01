@@ -1,5 +1,14 @@
 window.Wisky3D = window.Wisky3D || {};
 
+// Suporte a Node.js: carrega DOMParser do @xmldom se disponível (testes)
+if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
+  try {
+    window.DOMParser = require("@xmldom/xmldom").DOMParser;
+  } catch (e) {
+    // Ignorar se @xmldom não estiver instalado
+  }
+}
+
 (function () {
 // ---------------------------------------------------------------------------
 // BLOCO: Parsing de modelos 3D (STL/3MF): volume, bounding box e densidade
@@ -177,6 +186,22 @@ window.Wisky3D = window.Wisky3D || {};
     return out;
   }
 
+  // Carrega (com cache por path) o XML de um arquivo externo do pacote 3MF
+  // referenciado por um atributo p:path (de <component> ou, no root model, do
+  // próprio <item> de <build> — usado por fatiadores como Bambu Studio/Orca
+  // quando cada object/chapa vive no seu próprio arquivo sob 3D/Objects/).
+  function carregarDocExterno(zip, docCache, path) {
+    var normalizedPath = path.replace(/^\//, "");
+    var docPromise = docCache[normalizedPath];
+    if (!docPromise) {
+      var zipEntry = zip.file(normalizedPath);
+      if (!zipEntry) return null;
+      docPromise = zipEntry.async("text").then(parseXmlDoc);
+      docCache[normalizedPath] = docPromise;
+    }
+    return { normalizedPath: normalizedPath, docPromise: docPromise };
+  }
+
   function findObjectElement(doc, objectId) {
     var objects = doc.getElementsByTagName("object");
     for (var i = 0; i < objects.length; i++) {
@@ -212,15 +237,23 @@ window.Wisky3D = window.Wisky3D || {};
   // multi-peça), compartilhada entre resolveObjectGeometry (só agrega
   // volume/área/bbox) e resolveObjectTriangles (retém os triângulos de
   // verdade, pra ferramenta de colorir). Pra cada mesh-folha encontrada,
-  // chama `onMesh(leafTriangles, localIndices, meshBbox, path, objectId)` com
-  // os triângulos já com transform acumulado aplicado; quem chamou decide o
-  // que fazer com eles (somar agregados ou empilhar num array de saída).
-  // `path` é o arquivo (dentro do zip) de onde o object desse nível veio,
-  // repassado como está pra components locais e trocado pelo p:path
-  // resolvido pra components externos.
-  function resolveObjectRecursivo(zip, docCache, doc, objectId, accumTransform, path, onMesh) {
+  // chama `onMesh(leafTriangles, localIndices, meshBbox, path, objectId,
+  // rootObjectId)` com os triângulos já com transform acumulado aplicado;
+  // quem chamou decide o que fazer com eles (somar agregados ou empilhar num
+  // array de saída). `path` é o arquivo (dentro do zip) de onde o object
+  // desse nível veio, repassado como está pra components locais e trocado
+  // pelo p:path resolvido pra components externos. `rootObjectId` é o
+  // objectid do build item de nível topo (o que aparece em <build><item>),
+  // constante ao longo de toda a recursão por <components> — diferente de
+  // `objectId`, que muda a cada nível e no leaf é o do object que de fato
+  // contém a <mesh>. Precisamos dos dois porque model_settings.config
+  // (chapas) referencia o build item de topo, enquanto a exportação
+  // (ThreeMFWriter) precisa do objectId do object-folha pra achar o
+  // <triangle> exato a recolorir.
+  function resolveObjectRecursivo(zip, docCache, doc, objectId, accumTransform, path, onMesh, rootObjectId) {
     var objectEl = findObjectElement(doc, objectId);
     if (!objectEl) return Promise.resolve();
+    if (rootObjectId === undefined) rootObjectId = objectId;
 
     var meshEl = directChild(objectEl, "mesh");
     if (meshEl) {
@@ -249,7 +282,7 @@ window.Wisky3D = window.Wisky3D || {};
           localIndices.push(localIndex);
         }
       });
-      if (vertexEls.length) onMesh(leafTriangles, localIndices, meshBbox, path, objectId);
+      if (vertexEls.length) onMesh(leafTriangles, localIndices, meshBbox, path, objectId, rootObjectId);
     }
 
     var componentsEl = directChild(objectEl, "components");
@@ -262,19 +295,13 @@ window.Wisky3D = window.Wisky3D || {};
       var compPath = comp.getAttribute("p:path");
 
       if (compPath) {
-        var normalizedPath = compPath.replace(/^\//, "");
-        var docPromise = docCache[normalizedPath];
-        if (!docPromise) {
-          var zipEntry = zip.file(normalizedPath);
-          if (!zipEntry) return Promise.resolve();
-          docPromise = zipEntry.async("text").then(parseXmlDoc);
-          docCache[normalizedPath] = docPromise;
-        }
-        return docPromise.then(function (extDoc) {
-          return resolveObjectRecursivo(zip, docCache, extDoc, childObjectId, combined, normalizedPath, onMesh);
+        var externo = carregarDocExterno(zip, docCache, compPath);
+        if (!externo) return Promise.resolve();
+        return externo.docPromise.then(function (extDoc) {
+          return resolveObjectRecursivo(zip, docCache, extDoc, childObjectId, combined, externo.normalizedPath, onMesh, rootObjectId);
         });
       }
-      return resolveObjectRecursivo(zip, docCache, doc, childObjectId, combined, path, onMesh);
+      return resolveObjectRecursivo(zip, docCache, doc, childObjectId, combined, path, onMesh, rootObjectId);
     });
 
     return Promise.all(promises);
@@ -327,7 +354,22 @@ window.Wisky3D = window.Wisky3D || {};
     var objectIds = items.map(function (item) { return item.getAttribute("objectid"); });
     var promises = items.map(function (item) {
       var transform = parseTransformAttr(item.getAttribute("transform"));
-      return resolveObjectGeometry(zip, docCache, doc, item.getAttribute("objectid"), transform);
+      var objectId = item.getAttribute("objectid");
+      // 3MF Production Extension: <item> também pode apontar pra um arquivo
+      // externo via p:path (padrão do Bambu Studio/Orca pra separar cada
+      // object/chapa em 3D/Objects/*.model), não só <component> (ver
+      // resolveObjectRecursivo). Sem isso, o objectId do item era buscado só
+      // no doc raiz e, se coincidisse por acaso com outro object definido
+      // ali, a geometria errada (de outra chapa) era resolvida.
+      var itemPath = item.getAttribute("p:path");
+      if (itemPath) {
+        var externo = carregarDocExterno(zip, docCache, itemPath);
+        if (!externo) return Promise.resolve({ triangleCount: 0, volumeMm3: 0, areaMm2: 0, bbox: bboxVazio() });
+        return externo.docPromise.then(function (extDoc) {
+          return resolveObjectGeometry(zip, docCache, extDoc, objectId, transform);
+        });
+      }
+      return resolveObjectGeometry(zip, docCache, doc, objectId, transform);
     });
 
     return Promise.all(promises).then(function (results) {
@@ -368,15 +410,18 @@ window.Wisky3D = window.Wisky3D || {};
   // aplicado) em vez de só agregados. Usado pela ferramenta de colorir, que
   // precisa da malha de verdade pra pintar, não só volume/bbox.
   // `outOrigins` acompanha `outTriangulos` índice a índice com {path,
-  // objectId, localIndex}. localIndex é a posição do triângulo dentro do
-  // <triangles> original daquele object/arquivo. Isso permite, na exportação,
-  // reabrir o pacote 3MF original e escrever a cor de volta nos <triangle>
-  // exatos de onde vieram, em vez de reconstruir o pacote do zero.
+  // objectId, rootObjectId, localIndex}. localIndex é a posição do triângulo
+  // dentro do <triangles> original daquele object/arquivo; `objectId` é o
+  // object-folha (usado na exportação pra reabrir o pacote 3MF original e
+  // escrever a cor de volta no <triangle> exato de onde veio); `rootObjectId`
+  // é o objectid do build item de nível topo (usado pra casar o triângulo com
+  // a chapa/plate a que pertence, ver mapearTriangulosParaChapas) — os dois
+  // divergem quando o object de topo é montado via <components> aninhados.
   function resolveObjectTriangles(zip, docCache, doc, objectId, accumTransform, outTriangulos, path, outOrigins) {
-    function onMesh(leafTriangles, localIndices, meshBbox, meshPath, meshObjectId) {
+    function onMesh(leafTriangles, localIndices, meshBbox, meshPath, meshObjectId, rootObjectId) {
       leafTriangles.forEach(function (tri, i) {
         outTriangulos.push(tri);
-        outOrigins.push({ path: meshPath, objectId: meshObjectId, localIndex: localIndices[i] });
+        outOrigins.push({ path: meshPath, objectId: meshObjectId, rootObjectId: rootObjectId, localIndex: localIndices[i] });
       });
     }
 
@@ -408,7 +453,22 @@ window.Wisky3D = window.Wisky3D || {};
     var origins = [];
     var promises = items.map(function (item) {
       var transform = parseTransformAttr(item.getAttribute("transform"));
-      return resolveObjectTriangles(zip, docCache, doc, item.getAttribute("objectid"), transform, triangulos, rootPath, origins);
+      var objectId = item.getAttribute("objectid");
+      // Mesmo caso de parse3MFPackage: <item> do build raiz também pode
+      // apontar pra um arquivo externo via p:path (objeto/chapa que vive em
+      // 3D/Objects/*.model em vez de dentro do 3dmodel.model raiz). Sem
+      // tratar isso aqui, os triângulos (e o `path` guardado em origins, que
+      // a exportação usa pra reabrir e repintar o arquivo certo) vinham do
+      // doc/arquivo errado.
+      var itemPath = item.getAttribute("p:path");
+      if (itemPath) {
+        var externo = carregarDocExterno(zip, docCache, itemPath);
+        if (!externo) return Promise.resolve();
+        return externo.docPromise.then(function (extDoc) {
+          return resolveObjectTriangles(zip, docCache, extDoc, objectId, transform, triangulos, externo.normalizedPath, origins);
+        });
+      }
+      return resolveObjectTriangles(zip, docCache, doc, objectId, transform, triangulos, rootPath, origins);
     });
 
     return Promise.all(promises).then(function () {
@@ -471,6 +531,105 @@ window.Wisky3D = window.Wisky3D || {};
     };
   }
 
+  // Um 3MF pode conter várias chapas independentes (plates), cada uma com seu
+  // próprio arranjo de peças. Sem isso, o bbox combinado de todas as chapas
+  // dava um "tamanho" maior que qualquer mesa real e gerava avisos de encaixe
+  // falsos. Lê Metadata/model_settings.config e devolve, por chapa, a lista de
+  // object_id das peças que pertencem a ela (ou null se o arquivo não tem
+  // metadados de chapa, caso de projetos com uma chapa só).
+  function parsePlateAssignments(modelSettingsText) {
+    if (!modelSettingsText || typeof DOMParser === "undefined") return null;
+    try {
+      var doc = new DOMParser().parseFromString(modelSettingsText, "application/xml");
+      if (doc.getElementsByTagName("parsererror").length) return null;
+      var plateEls = doc.getElementsByTagName("plate");
+      if (!plateEls.length) return null;
+
+      var chapas = [];
+      for (var i = 0; i < plateEls.length; i++) {
+        var instancias = plateEls[i].getElementsByTagName("model_instance");
+        var ids = [];
+        for (var j = 0; j < instancias.length; j++) {
+          var metas = instancias[j].getElementsByTagName("metadata");
+          for (var k = 0; k < metas.length; k++) {
+            if (metas[k].getAttribute("key") === "object_id") {
+              ids.push(metas[k].getAttribute("value"));
+            }
+          }
+        }
+        if (ids.length) chapas.push(ids);
+      }
+      return chapas.length > 1 ? chapas : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Junta o bbox dos itens (retornados por parse3MFPackage) de acordo com a
+  // lista de object_id de cada chapa, gerando um bbox por chapa em vez de um
+  // bbox único pra todo o arquivo.
+  function calcularChapas(itens, plateAssignments) {
+    if (!plateAssignments || !itens) return null;
+    var chapas = plateAssignments.map(function (ids, indice) {
+      var bbox = null;
+      itens.forEach(function (item) {
+        if (ids.indexOf(item.objectId) !== -1) {
+          // Mescla o bbox do item com o bbox acumulado da chapa
+          if (!bbox) bbox = item.bbox;
+          else if (item.bbox) bbox = mergeBBox(bbox, item.bbox);
+        }
+      });
+      return { indice: indice + 1, bbox: bbox };
+    }).filter(function (chapa) { return chapa.bbox; });
+    return chapas.length > 1 ? chapas : null;
+  }
+
+  // Agrupa índices de triângulo por chapa, numa única varredura de
+  // `triangleOrigins` (formato `{path, objectId, rootObjectId, localIndex}`
+  // por triângulo, ver resolveObjectTriangles/extractTriangles3MF). Pra cada
+  // triângulo, compara o `rootObjectId` da origem (o objectid do build item
+  // de nível topo, não o do object-folha que contém a mesh) contra o
+  // `objectIds` (Set) de cada chapa em `chapas` (formato `{indice,
+  // objectIds}`, ver detectarChapas em colorir-3mf.js) e empilha o índice do
+  // triângulo na chapa correspondente. Usar rootObjectId em vez de objectId é
+  // necessário porque model_settings.config referencia o build item de topo,
+  // enquanto peças montadas via <components> aninhados têm um objectId de
+  // leaf-mesh diferente. Um triângulo cujo rootObjectId não bate com nenhuma
+  // chapa simplesmente não entra em nenhum grupo (não deveria acontecer na
+  // prática, já que todo build item pertence a alguma chapa, mas não lança
+  // erro se acontecer).
+  //
+  // Um mesmo rootObjectId aparecendo em mais de uma chapa é ambíguo (não dá
+  // pra saber qual delas é a dona de verdade do triângulo): em vez de atribuir
+  // ao primeiro match como antes (podia silenciosamente "roubar" triângulos de
+  // outra chapa), esses ids ambíguos ficam de fora de toda chapa, igual ao
+  // caso de rootObjectId sem match nenhum.
+  function mapearTriangulosParaChapas(triangleOrigins, chapas) {
+    var porChapa = new Map();
+    chapas.forEach(function (chapa) { porChapa.set(chapa.indice, []); });
+
+    var contagemPorId = new Map();
+    chapas.forEach(function (chapa) {
+      chapa.objectIds.forEach(function (id) {
+        contagemPorId.set(id, (contagemPorId.get(id) || 0) + 1);
+      });
+    });
+
+    for (var t = 0; t < triangleOrigins.length; t++) {
+      var origin = triangleOrigins[t];
+      if (!origin) continue;
+      if (contagemPorId.get(origin.rootObjectId) !== 1) continue;
+      for (var i = 0; i < chapas.length; i++) {
+        if (chapas[i].objectIds.has(origin.rootObjectId)) {
+          porChapa.get(chapas[i].indice).push(t);
+          break;
+        }
+      }
+    }
+
+    return porChapa;
+  }
+
   window.Wisky3D.ModelParser = {
     parseSTL: parseSTL,
     computeBoundingBox: computeBoundingBox,
@@ -486,6 +645,9 @@ window.Wisky3D = window.Wisky3D || {};
     baixarBlob: baixarBlob,
     parse3MFPackage: parse3MFPackage,
     extractTriangles3MF: extractTriangles3MF,
-    parse3MFPerfil: parse3MFPerfil
+    parse3MFPerfil: parse3MFPerfil,
+    parsePlateAssignments: parsePlateAssignments,
+    calcularChapas: calcularChapas,
+    mapearTriangulosParaChapas: mapearTriangulosParaChapas
   };
 })();
