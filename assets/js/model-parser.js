@@ -598,13 +598,27 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // chapa simplesmente não entra em nenhum grupo (não deveria acontecer na
   // prática, já que todo build item pertence a alguma chapa, mas não lança
   // erro se acontecer).
+  //
+  // Um mesmo rootObjectId aparecendo em mais de uma chapa é ambíguo (não dá
+  // pra saber qual delas é a dona de verdade do triângulo): em vez de atribuir
+  // ao primeiro match como antes (podia silenciosamente "roubar" triângulos de
+  // outra chapa), esses ids ambíguos ficam de fora de toda chapa, igual ao
+  // caso de rootObjectId sem match nenhum.
   function mapearTriangulosParaChapas(triangleOrigins, chapas) {
     var porChapa = new Map();
     chapas.forEach(function (chapa) { porChapa.set(chapa.indice, []); });
 
+    var contagemPorId = new Map();
+    chapas.forEach(function (chapa) {
+      chapa.objectIds.forEach(function (id) {
+        contagemPorId.set(id, (contagemPorId.get(id) || 0) + 1);
+      });
+    });
+
     for (var t = 0; t < triangleOrigins.length; t++) {
       var origin = triangleOrigins[t];
       if (!origin) continue;
+      if (contagemPorId.get(origin.rootObjectId) !== 1) continue;
       for (var i = 0; i < chapas.length; i++) {
         if (chapas[i].objectIds.has(origin.rootObjectId)) {
           porChapa.get(chapas[i].indice).push(t);
