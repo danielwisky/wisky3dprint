@@ -186,6 +186,22 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     return out;
   }
 
+  // Carrega (com cache por path) o XML de um arquivo externo do pacote 3MF
+  // referenciado por um atributo p:path (de <component> ou, no root model, do
+  // próprio <item> de <build> — usado por fatiadores como Bambu Studio/Orca
+  // quando cada object/chapa vive no seu próprio arquivo sob 3D/Objects/).
+  function carregarDocExterno(zip, docCache, path) {
+    var normalizedPath = path.replace(/^\//, "");
+    var docPromise = docCache[normalizedPath];
+    if (!docPromise) {
+      var zipEntry = zip.file(normalizedPath);
+      if (!zipEntry) return null;
+      docPromise = zipEntry.async("text").then(parseXmlDoc);
+      docCache[normalizedPath] = docPromise;
+    }
+    return { normalizedPath: normalizedPath, docPromise: docPromise };
+  }
+
   function findObjectElement(doc, objectId) {
     var objects = doc.getElementsByTagName("object");
     for (var i = 0; i < objects.length; i++) {
@@ -279,16 +295,10 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
       var compPath = comp.getAttribute("p:path");
 
       if (compPath) {
-        var normalizedPath = compPath.replace(/^\//, "");
-        var docPromise = docCache[normalizedPath];
-        if (!docPromise) {
-          var zipEntry = zip.file(normalizedPath);
-          if (!zipEntry) return Promise.resolve();
-          docPromise = zipEntry.async("text").then(parseXmlDoc);
-          docCache[normalizedPath] = docPromise;
-        }
-        return docPromise.then(function (extDoc) {
-          return resolveObjectRecursivo(zip, docCache, extDoc, childObjectId, combined, normalizedPath, onMesh, rootObjectId);
+        var externo = carregarDocExterno(zip, docCache, compPath);
+        if (!externo) return Promise.resolve();
+        return externo.docPromise.then(function (extDoc) {
+          return resolveObjectRecursivo(zip, docCache, extDoc, childObjectId, combined, externo.normalizedPath, onMesh, rootObjectId);
         });
       }
       return resolveObjectRecursivo(zip, docCache, doc, childObjectId, combined, path, onMesh, rootObjectId);
@@ -344,7 +354,22 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     var objectIds = items.map(function (item) { return item.getAttribute("objectid"); });
     var promises = items.map(function (item) {
       var transform = parseTransformAttr(item.getAttribute("transform"));
-      return resolveObjectGeometry(zip, docCache, doc, item.getAttribute("objectid"), transform);
+      var objectId = item.getAttribute("objectid");
+      // 3MF Production Extension: <item> também pode apontar pra um arquivo
+      // externo via p:path (padrão do Bambu Studio/Orca pra separar cada
+      // object/chapa em 3D/Objects/*.model), não só <component> (ver
+      // resolveObjectRecursivo). Sem isso, o objectId do item era buscado só
+      // no doc raiz e, se coincidisse por acaso com outro object definido
+      // ali, a geometria errada (de outra chapa) era resolvida.
+      var itemPath = item.getAttribute("p:path");
+      if (itemPath) {
+        var externo = carregarDocExterno(zip, docCache, itemPath);
+        if (!externo) return Promise.resolve({ triangleCount: 0, volumeMm3: 0, areaMm2: 0, bbox: bboxVazio() });
+        return externo.docPromise.then(function (extDoc) {
+          return resolveObjectGeometry(zip, docCache, extDoc, objectId, transform);
+        });
+      }
+      return resolveObjectGeometry(zip, docCache, doc, objectId, transform);
     });
 
     return Promise.all(promises).then(function (results) {
@@ -428,7 +453,22 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     var origins = [];
     var promises = items.map(function (item) {
       var transform = parseTransformAttr(item.getAttribute("transform"));
-      return resolveObjectTriangles(zip, docCache, doc, item.getAttribute("objectid"), transform, triangulos, rootPath, origins);
+      var objectId = item.getAttribute("objectid");
+      // Mesmo caso de parse3MFPackage: <item> do build raiz também pode
+      // apontar pra um arquivo externo via p:path (objeto/chapa que vive em
+      // 3D/Objects/*.model em vez de dentro do 3dmodel.model raiz). Sem
+      // tratar isso aqui, os triângulos (e o `path` guardado em origins, que
+      // a exportação usa pra reabrir e repintar o arquivo certo) vinham do
+      // doc/arquivo errado.
+      var itemPath = item.getAttribute("p:path");
+      if (itemPath) {
+        var externo = carregarDocExterno(zip, docCache, itemPath);
+        if (!externo) return Promise.resolve();
+        return externo.docPromise.then(function (extDoc) {
+          return resolveObjectTriangles(zip, docCache, extDoc, objectId, transform, triangulos, externo.normalizedPath, origins);
+        });
+      }
+      return resolveObjectTriangles(zip, docCache, doc, objectId, transform, triangulos, rootPath, origins);
     });
 
     return Promise.all(promises).then(function () {
