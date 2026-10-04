@@ -260,13 +260,29 @@ pecas:
     descricao: "Relógio de mesa em formato de cubo, com painéis em tons de espaço estrelado e ponteiros dourados. Peça decorativa pronta para presentear."
 
   - nome: "Motor V-Twin Motorizado"
-    categorias: ["Decoração"]
+    categorias: ["Mecânicos"]
     pronta_entrega: true
     imagens:
       - "/assets/img/estoque/motor-v-twin-1.webp"
       - "/assets/img/estoque/motor-v-twin-2.webp"
     preco: 280
     descricao: "Réplica de motor V-Twin com engrenagens, pistões e velas em vermelho e azul. Motorizado: liga na tomada e as peças se movimentam de verdade. Vem com base de apoio."
+
+  - nome: "Turbilhão Furioso TT"
+    categorias: ["Mecânicos"]
+    pronta_entrega: false
+    imagem: "/assets/img/estoque/turbilhao-furioso-tt-1.webp"
+    preco: 500
+    descricao: "Esfera cinética com engrenagens coloridas em movimento, inspirada no mecanismo de um turbilhão de relógio. Motorizada: liga via USB e as engrenagens giram de verdade."
+
+  - nome: "Caixa de Música Gramofone"
+    categorias: ["Decoração"]
+    pronta_entrega: true
+    imagens:
+      - "/assets/img/estoque/caixa-musica-gramofone-1.webp"
+      - "/assets/img/estoque/caixa-musica-gramofone-2.webp"
+    preco: 70
+    descricao: "Caixinha de música em formato de gramofone antigo, com manivela funcional e trompa dourada detalhada. Peça decorativa de mesa."
 
   - nome: "Kid Goku"
     categorias: ["Personagens", "Dragon Ball"]
