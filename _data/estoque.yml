@@ -270,7 +270,7 @@ pecas:
 
   - nome: "Turbilhão Furioso TT"
     categorias: ["Mecânicos"]
-    pronta_entrega: false
+    pronta_entrega: true
     imagem: "/assets/img/estoque/turbilhao-furioso-tt-1.webp"
     preco: 500
     descricao: "Esfera cinética com engrenagens coloridas em movimento, inspirada no mecanismo de um turbilhão de relógio. Motorizada: liga via USB e as engrenagens giram de verdade."
