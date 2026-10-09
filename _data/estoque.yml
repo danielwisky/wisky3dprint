@@ -284,6 +284,16 @@ pecas:
     preco: 70
     descricao: "Caixinha de música em formato de gramofone antigo, com manivela funcional e trompa dourada detalhada. Peça decorativa de mesa."
 
+  - nome: "Até Virar! A Arca de Noé"
+    categorias: ["Jogos"]
+    pronta_entrega: false
+    imagens:
+      - "/assets/img/estoque/arca-de-noe-1.webp"
+      - "/assets/img/estoque/arca-de-noe-2.webp"
+      - "/assets/img/estoque/arca-de-noe-3.webp"
+    preco: 200
+    descricao: "Jogo de tabuleiro com a arca de Noé impressa em 3D e peões de animais coloridos, acompanha baralho de cartas. Sob encomenda."
+
   - nome: "Kid Goku"
     categorias: ["Personagens", "Dragon Ball"]
     pronta_entrega: true
