@@ -17,7 +17,7 @@ Ruby 3.3+ (ver `.ruby-version`).
 
 ```bash
 ./scripts/update-gallery.sh
-git add assets/img/gallery/ assets/img/og-image.jpg _data/instagram_posts.yml \
+git add assets/img/gallery/ _data/instagram_posts.yml \
   && git commit -m "Atualiza galeria" && git push
 ```
 
@@ -30,8 +30,19 @@ que:
 - regrava `_data/instagram_posts.yml`
 - remove imagens órfãs (posts que saíram do feed), com trava de segurança que
   evita apagar em massa se a API falhar
-- gera `assets/img/og-image.jpg` (1200×630) com grid 3×2 das primeiras fotos
-  e título do site sobreposto, usada como preview ao compartilhar o link
+
+### Capa do site (og-image)
+
+A imagem usada como preview ao compartilhar o link (`assets/img/og-image.jpg`)
+é gerada separadamente, a partir das 6 fotos mais recentes já baixadas pela
+galeria:
+
+```bash
+./scripts/generate-og-image.sh
+git add assets/img/og-image.jpg && git commit -m "Atualiza capa do site" && git push
+```
+
+Rode `update-gallery.sh` antes, caso queira a capa com as fotos mais atuais.
 
 ### Exibição
 
