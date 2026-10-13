@@ -11,7 +11,6 @@ permalink: /sw-orcamento.js
 // no "activate" descarta a versão anterior — sem isso, entradas com
 // ?v=hash antigo ficariam acumuladas pra sempre no mesmo cache.
 var CACHE_NAME = "orcamento-app-{{ '/assets/js/orcamento.js' | asset_hash }}-{{ '/assets/js/conversor-3mf.js' | asset_hash }}-{{ '/assets/js/pwa.js' | asset_hash }}-{{ '/assets/css/style.scss' | asset_hash }}";
-var PAGINA_OFFLINE = "{{ '/orcamento/' | relative_url }}";
 var TIMEOUT_REDE_MS = 3000;
 var URLS_TO_CACHE = [
   "{{ '/orcamento/' | relative_url }}",
@@ -82,11 +81,9 @@ self.addEventListener("fetch", function (event) {
     event.respondWith(
       caches.open(CACHE_NAME).then(function (cache) {
         // ignoreSearch: links como /orcamento/?acesso-vip têm que achar a
-        // /orcamento/ precacheada. Sem cópia da página, cai no Orçamento.
+        // /orcamento/ precacheada.
         function doCache() {
-          return cache.match(event.request, { ignoreSearch: true }).then(function (cached) {
-            return cached || cache.match(PAGINA_OFFLINE);
-          });
+          return cache.match(event.request, { ignoreSearch: true });
         }
 
         var timeout = new Promise(function (resolve) {
