@@ -11,6 +11,8 @@ permalink: /sw-orcamento.js
 // no "activate" descarta a versão anterior — sem isso, entradas com
 // ?v=hash antigo ficariam acumuladas pra sempre no mesmo cache.
 var CACHE_NAME = "orcamento-app-{{ '/assets/js/orcamento.js' | asset_hash }}-{{ '/assets/js/conversor-3mf.js' | asset_hash }}-{{ '/assets/js/pwa.js' | asset_hash }}-{{ '/assets/css/style.scss' | asset_hash }}";
+var PAGINA_OFFLINE = "{{ '/orcamento/' | relative_url }}";
+var TIMEOUT_REDE_MS = 3000;
 var URLS_TO_CACHE = [
   "{{ '/orcamento/' | relative_url }}",
   "{{ '/conversor-3mf/' | relative_url }}",
@@ -60,18 +62,42 @@ self.addEventListener("fetch", function (event) {
 
   // Páginas (HTML) vão na rede primeiro: o escopo cobre o site inteiro e o
   // HTML não tem ?v=hash, então servir do cache primeiro mostraria a versão
-  // anterior ao deploy até o próximo reload. Cache só como fallback offline.
+  // anterior ao deploy até o próximo reload. Cache só como fallback offline
+  // ou quando a rede demora demais (conexão fraca que pendura em vez de falhar).
   if (event.request.mode === "navigate") {
+    var copia = null;
+    var rede = fetch(event.request).then(function (response) {
+      if (response && response.ok) copia = response.clone();
+      return response;
+    });
+
+    // Termina de gravar no cache mesmo se o timeout já respondeu com a cópia.
+    event.waitUntil(rede.then(function () {
+      if (!copia) return;
+      return caches.open(CACHE_NAME).then(function (cache) {
+        return cache.put(event.request, copia);
+      });
+    }).catch(function () {}));
+
     event.respondWith(
       caches.open(CACHE_NAME).then(function (cache) {
-        return fetch(event.request).then(function (response) {
-          if (response && response.ok) {
-            cache.put(event.request, response.clone());
-          }
-          return response;
-        }).catch(function () {
-          return cache.match(event.request);
+        // ignoreSearch: links como /orcamento/?acesso-vip têm que achar a
+        // /orcamento/ precacheada. Sem cópia da página, cai no Orçamento.
+        function doCache() {
+          return cache.match(event.request, { ignoreSearch: true }).then(function (cached) {
+            return cached || cache.match(PAGINA_OFFLINE);
+          });
+        }
+
+        var timeout = new Promise(function (resolve) {
+          setTimeout(function () {
+            doCache().then(function (cached) {
+              if (cached) resolve(cached);
+            });
+          }, TIMEOUT_REDE_MS);
         });
+
+        return Promise.race([rede.catch(doCache), timeout]);
       })
     );
     return;
