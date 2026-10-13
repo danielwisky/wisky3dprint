@@ -64,6 +64,11 @@ self.addEventListener("fetch", function (event) {
   // anterior ao deploy até o próximo reload. Cache só como fallback offline
   // ou quando a rede demora demais (conexão fraca que pendura em vez de falhar).
   if (event.request.mode === "navigate") {
+    // Chave sem query string: uma entrada por página (links com ?utm_*,
+    // ?fbclid etc. não acumulam cópias) e /orcamento/?acesso-vip acha a
+    // /orcamento/ precacheada.
+    var url = new URL(event.request.url);
+    var chave = url.origin + url.pathname;
     var copia = null;
     var rede = fetch(event.request).then(function (response) {
       if (response && response.ok) copia = response.clone();
@@ -74,16 +79,14 @@ self.addEventListener("fetch", function (event) {
     event.waitUntil(rede.then(function () {
       if (!copia) return;
       return caches.open(CACHE_NAME).then(function (cache) {
-        return cache.put(event.request, copia);
+        return cache.put(chave, copia);
       });
     }).catch(function () {}));
 
     event.respondWith(
       caches.open(CACHE_NAME).then(function (cache) {
-        // ignoreSearch: links como /orcamento/?acesso-vip têm que achar a
-        // /orcamento/ precacheada.
         function doCache() {
-          return cache.match(event.request, { ignoreSearch: true });
+          return cache.match(chave);
         }
 
         var timeout = new Promise(function (resolve) {
