@@ -57,6 +57,26 @@ self.addEventListener("activate", function (event) {
 
 self.addEventListener("fetch", function (event) {
   if (event.request.method !== "GET") return;
+
+  // Páginas (HTML) vão na rede primeiro: o escopo cobre o site inteiro e o
+  // HTML não tem ?v=hash, então servir do cache primeiro mostraria a versão
+  // anterior ao deploy até o próximo reload. Cache só como fallback offline.
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      caches.open(CACHE_NAME).then(function (cache) {
+        return fetch(event.request).then(function (response) {
+          if (response && response.ok) {
+            cache.put(event.request, response.clone());
+          }
+          return response;
+        }).catch(function () {
+          return cache.match(event.request);
+        });
+      })
+    );
+    return;
+  }
+
   event.respondWith(
     caches.open(CACHE_NAME).then(function (cache) {
       // Busca só no cache DESTA versão (CACHE_NAME) — caches.match() global
