@@ -3537,6 +3537,9 @@ body.img-lightbox-open { overflow: hidden; }
 .site-nav-menu .site-nav-dropdown {
   position: relative;
 }
+html:not([data-ferramentas]) #nav-ferramentas {
+  display: none;
+}
 .nav-link-dropdown {
   display: flex;
   align-items: center;
