@@ -6,6 +6,9 @@
     var nav = document.getElementById("site-nav");
     var toggle = document.querySelector(".site-nav-toggle");
     var menu = document.getElementById("site-nav-menu");
+    // No app instalado, o CSS esconde o menu do site e mostra o das
+    // ferramentas; o hambúrguer abre os dois e só o visível aparece.
+    var menus = [menu, document.getElementById("site-nav-standalone")].filter(Boolean);
 
     function onScroll() {
       nav.classList.toggle("is-scrolled", window.scrollY > 24);
@@ -14,13 +17,16 @@
     if (toggle && menu) {
       toggle.addEventListener("click", function () {
         var open = menu.classList.toggle("is-open");
+        menus.forEach(function (m) { m.classList.toggle("is-open", open); });
         toggle.setAttribute("aria-expanded", open ? "true" : "false");
       });
 
-      menu.querySelectorAll("a").forEach(function (link) {
-        link.addEventListener("click", function () {
-          menu.classList.remove("is-open");
-          toggle.setAttribute("aria-expanded", "false");
+      menus.forEach(function (m) {
+        m.querySelectorAll("a").forEach(function (link) {
+          link.addEventListener("click", function () {
+            menus.forEach(function (x) { x.classList.remove("is-open"); });
+            toggle.setAttribute("aria-expanded", "false");
+          });
         });
       });
     }
