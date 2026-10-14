@@ -31,6 +31,12 @@
       });
     }
 
+    // No app instalado, o logo das ferramentas volta pro Orçamento em vez
+    // da home, que é o site e não faz parte do app.
+    var logo = nav.querySelector(".site-logo[data-app-href]");
+    var standalone = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true;
+    if (logo && standalone) logo.setAttribute("href", logo.getAttribute("data-app-href"));
+
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
   })();
@@ -106,15 +112,18 @@
 // ---------------------------------------------------------------------------
 
   (function () {
-    var btn = document.querySelector(".theme-toggle");
-    if (!btn) return;
+    // Um botão no menu do site e outro no das ferramentas (app instalado).
+    var btns = document.querySelectorAll(".theme-toggle");
+    if (!btns.length) return;
 
     var themeMeta = document.querySelector('meta[name="theme-color"]');
     var THEME_COLOR = { light: "#faf6f1", dark: "#070b12" };
 
     function sync(theme) {
       document.documentElement.setAttribute("data-theme", theme);
-      btn.setAttribute("aria-label", theme === "light" ? "Mudar para tema escuro" : "Mudar para tema claro");
+      btns.forEach(function (btn) {
+        btn.setAttribute("aria-label", theme === "light" ? "Mudar para tema escuro" : "Mudar para tema claro");
+      });
       if (themeMeta) themeMeta.setAttribute("content", THEME_COLOR[theme] || THEME_COLOR.dark);
     }
 
@@ -131,11 +140,13 @@
       }, 400);
     }
 
-    btn.addEventListener("click", function () {
-      var current = document.documentElement.getAttribute("data-theme");
-      var next = current === "light" ? "dark" : "light";
-      try { localStorage.setItem("theme", next); } catch (e) {}
-      withTransition(function () { sync(next); });
+    btns.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var current = document.documentElement.getAttribute("data-theme");
+        var next = current === "light" ? "dark" : "light";
+        try { localStorage.setItem("theme", next); } catch (e) {}
+        withTransition(function () { sync(next); });
+      });
     });
 
     var media = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)");
