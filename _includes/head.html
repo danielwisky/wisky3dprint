@@ -15,10 +15,13 @@
     })();
 
     (function () {
-      var ativo = false;
+      // O app instalado no iPhone não compartilha o localStorage do Safari,
+      // então o ?acesso-vip usado no navegador não vale lá; quem instalou já
+      // usa as ferramentas.
+      var ativo = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
       try {
         if (new URLSearchParams(location.search).has('acesso-vip')) localStorage.setItem('ferramentas', '1');
-        ativo = localStorage.getItem('ferramentas') === '1';
+        ativo = ativo || localStorage.getItem('ferramentas') === '1';
       } catch (e) {}
       if (ativo) document.documentElement.setAttribute('data-ferramentas', '');
     })();

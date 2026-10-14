@@ -2,9 +2,18 @@
   Âncoras fluidas na home (#secao → scroll suave); absolutas (/#secao) em outras páginas.
 {%- endcomment -%}
 {%- if page.url == "/" -%}{%- assign anchor_base = "" -%}{%- else -%}{%- assign anchor_base = "/" | relative_url -%}{%- endif -%}
+{%- capture theme_icons -%}
+<svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <circle cx="12" cy="12" r="4"/>
+  <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+</svg>
+<svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+</svg>
+{%- endcapture -%}
 <nav class="site-nav" id="site-nav" aria-label="Principal">
   <div class="site-nav-inner">
-    <a class="site-logo" href="{{ '/' | relative_url }}">
+    <a class="site-logo" href="{{ '/' | relative_url }}"{% if page.pwa %} data-app-href="{{ '/orcamento/' | relative_url }}"{% endif %}>
       <img class="site-logo-mark" src="{{ '/assets/img/logo-icon.png' | relative_url }}?v={{ '/assets/img/logo-icon.png' | asset_hash }}" alt="" width="36" height="36">
       <span class="site-logo-text">{{ site.title }}</span>
     </a>
@@ -15,6 +24,9 @@
       <a href="{{ '/orcamento/' | relative_url }}"{% if page.url == '/orcamento/' %} class="is-active"{% endif %}>Orçamento</a>
       <a href="{{ '/conversor-3mf/' | relative_url }}"{% if page.url == '/conversor-3mf/' %} class="is-active"{% endif %}>Conversor 3MF</a>
       <a href="{{ '/colorir-3mf/' | relative_url }}"{% if page.url == '/colorir-3mf/' %} class="is-active"{% endif %}>Colorir 3MF</a>
+      <button class="theme-toggle" type="button" aria-label="Alternar tema">
+        {{ theme_icons }}
+      </button>
     </div>
     <ul class="site-nav-menu" id="site-nav-menu">
       <li><a href="{{ anchor_base }}#como-funciona">Como funciona</a></li>
@@ -37,13 +49,7 @@
       </li>
       <li>
         <button class="theme-toggle" type="button" aria-label="Alternar tema">
-          <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="4"/>
-            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
-          </svg>
-          <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-          </svg>
+          {{ theme_icons }}
         </button>
       </li>
       <li>
