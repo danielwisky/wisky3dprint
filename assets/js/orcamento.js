@@ -541,6 +541,11 @@
     try { localStorage.removeItem(key); } catch (e) {}
   }
 
+  // Campos opcionais: 0 no _config.yml significa "deixar em branco".
+  function positivoOuNada(valor) {
+    return Number(valor) > 0 ? valor : null;
+  }
+
   // Valores que tendem a se repetir de peça pra peça (tarifa de energia,
   // valor da hora etc.) ficam salvos e pré-preenchidos na próxima visita,
   // em vez de sempre voltar ao padrão do _config.yml.
@@ -552,8 +557,8 @@
     { input: margemInput, key: "orcamentoCalc:margem", fallback: d.margemPct },
     { input: perdaInput, key: "orcamentoCalc:perda", fallback: d.perdaPct },
     { input: desgasteInput, key: "orcamentoCalc:desgaste", fallback: d.desgaste },
-    { input: valorMaquinaInput, key: "orcamentoCalc:valorMaquina" },
-    { input: vidaUtilInput, key: "orcamentoCalc:vidaUtil" },
+    { input: valorMaquinaInput, key: "orcamentoCalc:valorMaquina", fallback: positivoOuNada(d.valorMaquina) },
+    { input: vidaUtilInput, key: "orcamentoCalc:vidaUtil", fallback: positivoOuNada(d.vidaUtilH) },
     { input: embalagemInput, key: "orcamentoCalc:embalagem" },
     { input: freteInput, key: "orcamentoCalc:frete" }
   ];

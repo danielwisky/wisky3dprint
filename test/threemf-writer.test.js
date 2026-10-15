@@ -144,3 +144,46 @@ test("montarModeloDoZero: 2 objects geram 2 <object>, 2 <item> e colorgroup úni
   assert.equal(triangleEls[1].getAttribute("p1"), "1");
   assert.equal(triangleEls[2].getAttribute("p1"), "0");
 });
+
+test("reconstruirProjectSettings: 1 filamento -> 3 cores redimensiona só campos de filamento", () => {
+  const cfg = {
+    filament_colour: ["#FFFFFFFF"],
+    filament_type: ["PLA"],
+    nozzle_temperature: ["220"],
+    hot_plate_temp: ["55"],
+    nozzle_diameter: ["0.4"],
+    extruder_offset: ["0x0"],
+    default_acceleration: ["10000"],
+    filament_dev_ams_drying_temperature: ["55", "55", "55", "55"],
+    layer_height: "0.2"
+  };
+  const paleta = [[128, 128, 128], [255, 0, 0], [0, 0, 255]];
+  const novo = ThreeMFWriter.reconstruirProjectSettings(cfg, paleta);
+
+  assert.deepEqual(novo.filament_type, ["PLA", "PLA", "PLA"]);
+  assert.deepEqual(novo.nozzle_temperature, ["220", "220", "220"]);
+  assert.deepEqual(novo.hot_plate_temp, ["55", "55", "55"]);
+  assert.deepEqual(novo.nozzle_diameter, ["0.4"]);
+  assert.deepEqual(novo.extruder_offset, ["0x0"]);
+  assert.deepEqual(novo.default_acceleration, ["10000"]);
+  assert.deepEqual(novo.filament_dev_ams_drying_temperature, ["55", "55", "55", "55"]);
+  assert.equal(novo.layer_height, "0.2");
+  assert.equal(novo.filament_colour.length, 3);
+});
+
+test("reconstruirProjectSettings: 4 filamentos (AMS) não mexe em printable_area", () => {
+  const area = ["0x0", "256x0", "256x256", "0x256"];
+  const cfg = {
+    filament_colour: ["#FF0000FF", "#00FF00FF", "#0000FFFF", "#FFFFFFFF"],
+    filament_type: ["PLA", "PETG", "PLA", "PLA"],
+    printable_area: area.slice()
+  };
+  const novo = ThreeMFWriter.reconstruirProjectSettings(cfg, [[128, 128, 128], [255, 0, 0]]);
+
+  assert.deepEqual(novo.printable_area, area);
+  assert.deepEqual(novo.filament_type, ["PLA", "PLA"]);
+});
+
+test("reconstruirProjectSettings: sem filament_colour retorna null", () => {
+  assert.equal(ThreeMFWriter.reconstruirProjectSettings({}, [[0, 0, 0]]), null);
+});
