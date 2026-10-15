@@ -1,0 +1,74 @@
+// ---------------------------------------------------------------------------
+// BLOCO: Dropdown "Ferramentas" (navbar)
+// ---------------------------------------------------------------------------
+.site-nav-menu .site-nav-dropdown {
+  position: relative;
+}
+html:not([data-ferramentas]) #nav-ferramentas {
+  display: none;
+}
+.nav-link-dropdown {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--text);
+  background: none;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 0.5rem 0.85rem;
+  cursor: pointer;
+
+  svg {
+    width: 0.85rem;
+    height: 0.85rem;
+    transition: transform 0.15s ease;
+  }
+
+  &:hover {
+    color: var(--cyan);
+    border-color: color-mix(in srgb, var(--cyan) 45%, transparent);
+    background: var(--surface);
+  }
+}
+.site-nav-dropdown.is-open .nav-link-dropdown svg {
+  transform: rotate(180deg);
+}
+.nav-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+  min-width: 190px;
+  padding: 0.4rem;
+  background: var(--surface-elev-strong);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 12px 32px var(--shadow-strong);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+  z-index: 20;
+
+  a {
+    padding: 0.55rem 0.7rem;
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 0.88rem;
+
+    &:hover {
+      background: var(--surface-hover);
+      color: var(--cyan);
+    }
+  }
+}
+.site-nav-dropdown.is-open .nav-dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}

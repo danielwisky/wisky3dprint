@@ -1,0 +1,99 @@
+@use "tokens" as *;
+@use "mixins" as *;
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  // Desloca o alvo das âncoras pra baixo da navbar fixa (senão o título fica oculto).
+  scroll-padding-top: calc(#{$nav-h} + 1.5rem);
+}
+
+body {
+  margin: 0;
+  font-family: $font-body;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  z-index: 1000;
+  padding: 0.7rem 1.2rem;
+  background: var(--surface, #0c121c);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: $radius-sm;
+  text-decoration: none;
+
+  &:focus-visible {
+    top: 1rem;
+    outline: 2px solid var(--cyan);
+    outline-offset: 2px;
+  }
+}
+
+// Smooth theme transition: applied briefly on toggle via JS, then removed
+@media (prefers-reduced-motion: no-preference) {
+  .theme-transitioning,
+  .theme-transitioning *,
+  .theme-transitioning *::before,
+  .theme-transitioning *::after {
+    transition:
+      background-color 0.3s ease,
+      color 0.3s ease,
+      border-color 0.3s ease,
+      fill 0.3s ease,
+      stroke 0.3s ease,
+      box-shadow 0.3s ease !important;
+  }
+}
+
+img, svg {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: var(--cyan);
+  text-decoration: none;
+  transition: color 0.2s ease, opacity 0.2s ease;
+
+  &:hover {
+    color: color-mix(in srgb, var(--cyan) 88%, white);
+  }
+}
+
+h1, h2, h3 {
+  font-family: $font-display;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+p {
+  margin: 0;
+}
+
+code {
+  font-size: 0.85em;
+  padding: 0.15em 0.45em;
+  border-radius: 6px;
+  background: var(--surface-hover);
+  color: var(--cyan);
+}
+
+.container {
+  @include container;
+}

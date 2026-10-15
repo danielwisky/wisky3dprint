@@ -9,7 +9,14 @@ module Jekyll
       file_path = File.join(Dir.pwd, path.to_s.sub(%r{\A/}, ""))
       return "0" unless File.exist?(file_path)
 
-      Digest::MD5.file(file_path).hexdigest[0, 8]
+      # Um .scss é só a lista de @use dos partials em _sass/: o hash precisa
+      # incluir os partials, senão editar um deles não muda o ?v=.
+      arquivos = [file_path]
+      arquivos += Dir.glob(File.join(Dir.pwd, "_sass", "**", "*.scss")).sort if file_path.end_with?(".scss")
+
+      digest = Digest::MD5.new
+      arquivos.each { |arquivo| digest.update(File.binread(arquivo)) }
+      digest.hexdigest[0, 8]
     end
   end
 end
