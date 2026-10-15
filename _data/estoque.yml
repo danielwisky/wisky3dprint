@@ -161,6 +161,14 @@ pecas:
     tamanho_cm: 28
     descricao: "Réplica do icônico sabre vermelho do Lorde Sith. Cerca de 28 cm."
 
+  - nome: "Sabre de Luz do Luke Skywalker"
+    categorias: ["Star Wars", "Sabres de Luz"]
+    pronta_entrega: false
+    imagem: "/assets/img/estoque/sabre-luke.webp"
+    preco: 100
+    tamanho_cm: 28
+    descricao: "Réplica decorativa do sabre do jovem Jedi. Cerca de 28 cm."
+
   - nome: "Earthworm Jim"
     categoria: "Personagens"
     pronta_entrega: false
@@ -170,14 +178,6 @@ pecas:
     preco: 110
     tamanho_cm: 19
     descricao: "O minhocão super-herói pronto pra atirar com sua arma de fogo. Cerca de 19 cm."
-
-  - nome: "Sabre de Luz do Luke Skywalker"
-    categorias: ["Star Wars", "Sabres de Luz"]
-    pronta_entrega: false
-    imagem: "/assets/img/estoque/sabre-luke.webp"
-    preco: 100
-    tamanho_cm: 28
-    descricao: "Réplica decorativa do sabre do jovem Jedi. Cerca de 28 cm."
 
   - nome: "Hulk"
     categorias: ["Personagens", "Marvel"]
