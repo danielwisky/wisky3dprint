@@ -358,8 +358,6 @@ window.Wisky3D = window.Wisky3D || {};
   window.Wisky3D.ThreeMFWriter = {
     DEFAULT_COLOR: DEFAULT_COLOR,
     toHexByte: toHexByte,
-    rgbToHex3mf: rgbToHex3mf,
-    rgbParaHexBambu: rgbParaHexBambu,
     filamentIndexParaPaintColor: filamentIndexParaPaintColor,
     criarIndexadorDeCores: criarIndexadorDeCores,
     injetarCoresNoXml: injetarCoresNoXml,

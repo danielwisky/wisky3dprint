@@ -12,6 +12,7 @@
   if (!root) return;
 
   var ModelParser = window.Wisky3D && window.Wisky3D.ModelParser;
+  var ToolUtils = window.Wisky3D && window.Wisky3D.ToolUtils;
 
   var dropzone = document.getElementById("conv3mf-dropzone");
   var upload = document.getElementById("conv3mf-upload");
@@ -29,6 +30,14 @@
   var selecionadoEl = document.getElementById("conv3mf-selecionado");
   var gerarBtn = document.getElementById("conv3mf-gerar");
   var outEl = document.getElementById("conv3mf-out");
+
+  if (!ModelParser || !ToolUtils) {
+    erroEl.textContent = "Não foi possível carregar o conversor. Recarregue a página e tente novamente.";
+    erroEl.hidden = false;
+    return;
+  }
+
+  var cargas = ToolUtils.criarSequenciador();
 
   // Guarda os dados do último arquivo processado pra poder re-renderizar o
   // grid de destinos quando o usuário digita na busca, sem reler o 3MF.
@@ -394,53 +403,35 @@
       mostrarErro("Formato não suportado. Envie um arquivo .3mf.");
       return;
     }
-    if (typeof JSZip === "undefined") {
-      mostrarErro("Não foi possível carregar o leitor de 3MF. Verifique sua conexão e tente novamente.");
-      return;
-    }
 
+    var id = cargas.proximo();
     mostrarErro("");
     mostrarCarregando(true);
     painel.hidden = true;
     estado = null;
 
-    var zipRef = null;
-    Promise.all([JSZip.loadAsync(file), carregarPerfis()])
+    var pacote = null;
+    Promise.all([ToolUtils.lerPacote3MF(file), carregarPerfis()])
       .then(function (resultados) {
-        var zip = resultados[0];
+        pacote = resultados[0];
         var perfis = resultados[1];
-        zipRef = zip;
+        if (!pacote.configText) throw new Error("project_settings.config não encontrado");
 
-        var configFile = ModelParser.localizarArquivoUnico(zip, "project_settings.config");
-        if (!configFile) throw new Error("project_settings.config não encontrado");
-
-        var modelFile = ModelParser.localizarModeloRaiz(zip);
-        var modelSettingsFile = ModelParser.localizarArquivoUnico(zip, "model_settings.config");
-
-        return Promise.all([
-          configFile.async("text"),
-          configFile.name,
-          modelFile ? modelFile.async("text") : Promise.resolve(null),
-          modelSettingsFile ? modelSettingsFile.async("text") : Promise.resolve(null)
-        ]).then(function (r) {
-          return { perfis: perfis, configText: r[0], configPath: r[1], modelText: r[2], modelSettingsText: r[3] };
-        });
-      })
-      .then(function (r) {
-        var config = JSON.parse(r.configText);
-        var geometriaPromise = (r.modelText && ModelParser)
-          ? ModelParser.parse3MFPackage(zipRef, r.modelText)
+        var config = JSON.parse(pacote.configText);
+        var geometriaPromise = pacote.modelText
+          ? ModelParser.parse3MFPackage(pacote.zip, pacote.modelText)
           : Promise.resolve(null);
 
         return geometriaPromise.then(function (res) {
+          if (!cargas.ehAtual(id)) return;
           var bbox = res ? res.bbox : null;
-          var chapas = res ? ModelParser.calcularChapas(res.itens, ModelParser.parsePlateAssignments(r.modelSettingsText)) : null;
+          var chapas = res ? ModelParser.calcularChapas(res.itens, ModelParser.parsePlateAssignments(pacote.modelSettingsText)) : null;
 
-          estado = { file: file, zip: zipRef, projectConfig: config, projectConfigPath: r.configPath, destinoKeys: [] };
-          var chaveDetectada = renderOrigem(config, r.perfis, bbox, chapas);
-          destinosData = { perfis: r.perfis, chaveDetectada: chaveDetectada, bbox: bbox, chapas: chapas };
+          estado = { file: file, zip: pacote.zip, projectConfig: config, projectConfigPath: pacote.configPath, destinoKeys: [] };
+          var chaveDetectada = renderOrigem(config, perfis, bbox, chapas);
+          destinosData = { perfis: perfis, chaveDetectada: chaveDetectada, bbox: bbox, chapas: chapas };
           buscaEl.value = "";
-          renderDestinos(r.perfis, chaveDetectada, bbox, chapas, "");
+          renderDestinos(perfis, chaveDetectada, bbox, chapas, "");
           gerarBtn.disabled = true;
           gerarBtn.textContent = "Gerar projeto convertido";
           outEl.textContent = "";
@@ -450,36 +441,18 @@
         });
       })
       .catch(function (err) {
+        if (!cargas.ehAtual(id)) return;
         // eslint-disable-next-line no-console
         if (window.console && console.error) console.error("Conversor 3MF:", err);
         var detalhe = err && err.message ? " (" + err.message + ")" : "";
         mostrarErro("Não foi possível ler esse arquivo 3MF. Confirme que é um projeto exportado do Bambu Studio ou Orca Slicer." + detalhe);
       })
       .then(function () {
-        mostrarCarregando(false);
+        if (cargas.ehAtual(id)) mostrarCarregando(false);
       });
   }
 
-  upload.addEventListener("change", function () {
-    processarArquivo(upload.files && upload.files[0]);
-  });
-
-  ["dragenter", "dragover"].forEach(function (evt) {
-    dropzone.addEventListener(evt, function (e) {
-      e.preventDefault();
-      dropzone.classList.add("is-dragover");
-    });
-  });
-  ["dragleave", "dragend", "drop"].forEach(function (evt) {
-    dropzone.addEventListener(evt, function () {
-      dropzone.classList.remove("is-dragover");
-    });
-  });
-  dropzone.addEventListener("drop", function (e) {
-    e.preventDefault();
-    var file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-    processarArquivo(file);
-  });
+  ToolUtils.ligarDropzone(dropzone, upload, processarArquivo);
 
   gerarBtn.addEventListener("click", gerarProjeto);
 
