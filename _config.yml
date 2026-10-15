@@ -78,5 +78,7 @@ exclude:
   - Gemfile
   - Gemfile.lock
   - README.md
+  - package.json
+  - package-lock.json
   - scripts
   - test

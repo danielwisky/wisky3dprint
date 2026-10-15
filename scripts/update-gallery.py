@@ -7,7 +7,9 @@ Cada foto é salva como 2 WebP: {code}.webp (full, usado no lightbox) e
 Usa a Instagram Graph API oficial (API setup with Instagram login). Precisa
 de um access token válido salvo em scripts/.ig_token (um token por linha,
 sem quebra de linha extra; arquivo fora do git via .gitignore). Gere/renove
-o token pelo App do Meta for Developers (produto Instagram).
+o token pelo App do Meta for Developers (produto Instagram). A cada execução o
+token é renovado (mais 60 dias) e regravado no arquivo, então ele só expira se
+o script ficar mais de ~60 dias sem rodar.
 
 Para atualizar a capa/preview do site (og-image.jpg) depois de rodar este
 script, use ./scripts/generate-og-image.sh.
@@ -61,6 +63,28 @@ def _load_token():
     return token
 
 
+def _refresh_token(token):
+    """Troca o token por um novo de 60 dias e regrava TOKEN_FILE.
+
+    Falha não é fatal: o IG só renova tokens com mais de 24h, e um token já
+    expirado vai dar erro claro na chamada seguinte."""
+    url = f"{GRAPH_API_BASE}/refresh_access_token?grant_type=ig_refresh_token&access_token={token}"
+    try:
+        data = _get_json(url)
+    except (InstagramUnavailable, urllib.error.URLError) as exc:
+        print(f"Não deu pra renovar o token (seguindo com o atual): {exc}")
+        return token
+
+    new_token = data.get("access_token")
+    if not new_token:
+        return token
+    with open(TOKEN_FILE, "w", encoding="utf-8") as token_file:
+        token_file.write(new_token)
+    days = int(data.get("expires_in", 0)) // 86400
+    print(f"Token renovado (expira em ~{days} dias).")
+    return new_token
+
+
 def _get_json(url):
     last_error = None
     for wait in [0] + RETRY_WAITS_SECONDS:
@@ -111,7 +135,7 @@ def collect_posts():
 
     Retorna uma lista normalizada de dicts {code, type, image_url, caption}. Se a
     paginação falhar no meio, retorna o que já foi coletado (sem quebrar)."""
-    token = _load_token()
+    token = _refresh_token(_load_token())
     url = f"{GRAPH_API_BASE}/me/media?fields={MEDIA_FIELDS}&limit={PAGE_SIZE}&access_token={token}"
     posts = []
 
@@ -119,6 +143,8 @@ def collect_posts():
         try:
             data = _get_json(url)
         except Exception as exc:
+            if not posts:
+                raise
             print(f"Paginação interrompida (mantendo {len(posts)} posts): {exc}")
             break
 
@@ -200,7 +226,7 @@ def main():
 
     try:
         posts = collect_posts()
-    except InstagramUnavailable as exc:
+    except (InstagramUnavailable, urllib.error.URLError) as exc:
         raise SystemExit(
             f"Não deu pra falar com o Instagram agora ({exc}). "
             "A galeria atual foi mantida sem alterações — tente rodar de novo mais tarde."
@@ -239,6 +265,12 @@ def main():
         if alt:
             lines.append(f'    caption: "{alt}"')
         image_paths.append(image_path)
+
+    if not image_paths:
+        raise SystemExit(
+            "Nenhum post foi baixado. A galeria atual foi mantida sem alterações."
+            + ("\n" + "\n".join(warnings) if warnings else "")
+        )
 
     with open(DATA_FILE, "w", encoding="utf-8") as data_file:
         data_file.write("\n".join(lines) + "\n")
