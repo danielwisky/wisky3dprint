@@ -1,0 +1,87 @@
+// Design tokens (non-color, build-time)
+$radius-sm: 12px;
+$radius-md: 20px;
+$radius-lg: 28px;
+$font-display: "Plus Jakarta Sans", system-ui, sans-serif;
+$font-body: "Manrope", system-ui, sans-serif;
+$container: 1120px;
+$nav-h: 72px;
+
+// Color tokens: dark theme is the default and applies when [data-theme] is missing or "dark"
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #070b12;
+  --bg-soft: #0c121c;
+  --text: #eef2f8;
+  --muted: #8d98ab;
+  // Opacidade em 0.85 (não 0.7) pra manter contraste ≥ 4.5:1 (WCAG AA) sobre --bg.
+  --muted-soft: rgba(141, 152, 171, 0.85);
+
+  --cyan: #00e5cc;
+  --coral: #ff6b4a;
+  --violet: #8b7cf6;
+
+  --surface: rgba(255, 255, 255, 0.035);
+  --surface-soft: rgba(255, 255, 255, 0.02);
+  --surface-hover: rgba(255, 255, 255, 0.06);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.12);
+
+  --on-accent: #041018;
+
+  --grid-line: rgba(255, 255, 255, 0.03);
+  --section-tint: rgba(255, 255, 255, 0.015);
+  --section-tint-violet: rgba(139, 124, 246, 0.04);
+
+  --shadow-strong: rgba(0, 0, 0, 0.55);
+  --shadow-soft: rgba(0, 0, 0, 0.35);
+
+  --surface-elev: rgba(7, 11, 18, 0.82);
+  --surface-elev-strong: rgba(7, 11, 18, 0.95);
+  --surface-overlay-image: rgba(7, 11, 18, 0.45);
+  --modal-backdrop: rgba(4, 8, 14, 0.88);
+  --modal-figure-bg: #000;
+
+  --gradient: linear-gradient(135deg, var(--cyan) 0%, var(--violet) 50%, var(--coral) 100%);
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+
+  --bg: #faf6f1;
+  --bg-soft: #f1ebe2;
+  --text: #1a1f2b;
+  --muted: #5c6477;
+  // Opacidade mais alta que no tema escuro porque o fundo claro exige mais
+  // contraste pra manter ≥ 4.5:1 (WCAG AA) com essa mesma cor de base.
+  --muted-soft: rgba(92, 100, 119, 0.92);
+
+  --cyan: #009b8a;
+  --coral: #e0492b;
+  --violet: #6a4bd6;
+
+  --surface: rgba(20, 20, 30, 0.04);
+  --surface-soft: rgba(20, 20, 30, 0.025);
+  --surface-hover: rgba(20, 20, 30, 0.07);
+  --border: rgba(20, 20, 30, 0.09);
+  --border-strong: rgba(20, 20, 30, 0.14);
+
+  --on-accent: #ffffff;
+
+  --grid-line: rgba(20, 20, 40, 0.05);
+  --section-tint: rgba(20, 20, 40, 0.02);
+  --section-tint-violet: rgba(106, 75, 214, 0.06);
+
+  --shadow-strong: rgba(20, 20, 40, 0.18);
+  --shadow-soft: rgba(20, 20, 40, 0.1);
+
+  --surface-elev: rgba(250, 246, 241, 0.82);
+  --surface-elev-strong: rgba(250, 246, 241, 0.96);
+  --surface-overlay-image: rgba(20, 20, 40, 0.32);
+  --modal-backdrop: rgba(20, 20, 40, 0.55);
+  --modal-figure-bg: #ede4d6;
+
+  --gradient: linear-gradient(135deg, var(--cyan) 0%, var(--violet) 50%, var(--coral) 100%);
+}

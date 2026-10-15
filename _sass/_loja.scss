@@ -1,0 +1,647 @@
+@use "tokens" as *;
+
+// Loja (estoque)
+.section-estoque {
+  padding-top: calc(#{$nav-h} + 4rem);
+}
+
+// Barra de filtro: busca + ordenação em cima, chips e filtros ativos embaixo.
+.estoque-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+// Linha de cima: campo de busca (cresce) + seletor de ordenação.
+.estoque-controls-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+// Campo de busca por nome, com ícone de lupa embutido.
+.estoque-search {
+  position: relative;
+  flex: 1 1 260px;
+  min-width: 220px;
+}
+
+.estoque-search-icon {
+  position: absolute;
+  left: 0.9rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.05rem;
+  height: 1.05rem;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.estoque-search-input {
+  width: 100%;
+  padding: 0.55rem 1rem 0.55rem 2.5rem;
+  font-family: $font-body;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  transition: border-color 0.2s ease;
+
+  &::placeholder {
+    color: var(--muted);
+  }
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--cyan) 45%, transparent);
+  }
+
+  &:focus-visible {
+    border-color: color-mix(in srgb, var(--cyan) 45%, transparent);
+    outline: 2px solid var(--cyan);
+    outline-offset: 2px;
+  }
+}
+
+// Ordenação + botão "Filtros" agrupados à direita da linha de cima.
+.estoque-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+// Botão que recolhe/expande a fileira de chips.
+.estoque-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.9rem;
+  font-family: $font-body;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+
+  svg:first-of-type {
+    width: 1.05rem;
+    height: 1.05rem;
+  }
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--cyan) 45%, transparent);
+  }
+}
+
+// Seta que gira quando o painel está recolhido.
+.estoque-toggle-chevron {
+  width: 0.95rem;
+  height: 0.95rem;
+  transition: transform 0.2s ease;
+}
+
+.estoque-toggle[aria-expanded="false"] .estoque-toggle-chevron {
+  transform: rotate(-90deg);
+}
+
+// Recolhido: esconde busca, chips e filtros ativos (fica só o botão + ordenar).
+// Três classes (0,3,0) para vencer a regra .estoque-active[hidden] (0,2,0).
+.estoque-controls.is-collapsed .estoque-search,
+.estoque-controls.is-collapsed .estoque-filters,
+.estoque-controls.is-collapsed .estoque-active {
+  display: none;
+}
+
+// Contagem de resultados (também é a região aria-live para leitores de tela).
+.estoque-count {
+  margin: 0 0 1.75rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.estoque-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+
+  // O atributo hidden (display:none do navegador) perde pra este display:flex;
+  // esta regra mais específica garante que "recolher" realmente esconda.
+  &[hidden] {
+    display: none;
+  }
+}
+
+.estoque-chip {
+  padding: 0.45rem 1rem;
+  font-family: $font-body;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--cyan) 45%, transparent);
+    transform: translateY(-1px);
+  }
+
+  &.is-active {
+    color: #fff;
+    background: var(--gradient);
+    border-color: transparent;
+  }
+
+  // Chip que, somado à seleção, não sobraria nenhuma peça: apagado e travado.
+  &.is-disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  &.is-disabled:hover {
+    border-color: var(--border);
+    transform: none;
+  }
+}
+
+// "Pronta entrega" e "Oferta": chips fixos, com contorno para se destacar das categorias.
+.estoque-chip--special {
+  border-color: color-mix(in srgb, var(--coral) 40%, var(--border));
+
+  &.is-active {
+    background: var(--coral);
+  }
+}
+
+// Número entre parênteses com a contagem contextual de peças no chip.
+// Os parênteses só aparecem quando o JS preencheu o número (:not(:empty)),
+// evitando um "()" solto antes do script rodar ou com JS desativado.
+.estoque-chip-count {
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+
+  &:not(:empty)::before { content: "("; }
+  &:not(:empty)::after { content: ")"; }
+}
+
+// Linha "Filtros: (…×) (…×)  Limpar", visível só quando há categoria marcada.
+.estoque-active {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+
+  &[hidden] {
+    display: none;
+  }
+}
+
+.estoque-active-label {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.estoque-active-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.estoque-active-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.7rem;
+  font-family: $font-body;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  background: color-mix(in srgb, var(--cyan) 12%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--cyan) 35%, var(--border));
+  border-radius: 999px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+
+  &:hover {
+    border-color: var(--cyan);
+    background: color-mix(in srgb, var(--cyan) 20%, var(--surface));
+  }
+}
+
+.estoque-active-x {
+  font-size: 1.05rem;
+  line-height: 1;
+  color: var(--muted);
+}
+
+.estoque-clear {
+  padding: 0.2rem 0.3rem;
+  font-family: $font-body;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: var(--cyan);
+  }
+}
+
+.estoque-sort-select {
+  padding: 0.5rem 2.2rem 0.5rem 0.9rem;
+  font-family: $font-body;
+  font-size: 0.9rem;
+  color: var(--text);
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+  appearance: none;
+  // Seta customizada (chevron) via SVG inline, herda cor do texto.
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem;
+  transition: border-color 0.2s ease;
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--cyan) 45%, transparent);
+  }
+
+  &:focus-visible {
+    border-color: color-mix(in srgb, var(--cyan) 45%, transparent);
+    outline: 2px solid var(--cyan);
+    outline-offset: 2px;
+  }
+}
+
+.estoque-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+// Escondido pelo filtro de categoria (JS). Seletor combinado para ganhar da
+// regra .estoque-card { display: flex } independentemente da ordem no arquivo.
+.estoque-card.estoque-card--hidden {
+  display: none;
+}
+
+// Fade-in suave dos cards ao trocar de filtro (só opacidade, para não brigar
+// com o transform do hover). Aplicado via JS apenas em interações do usuário.
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes estoqueFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .estoque-card--in {
+    animation: estoqueFadeIn 0.3s ease;
+  }
+}
+
+.estoque-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: $radius-md;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    border-color: color-mix(in srgb, var(--cyan) 35%, transparent);
+    box-shadow: 0 16px 40px var(--shadow-strong);
+  }
+}
+
+.estoque-card-media {
+  position: relative;
+  width: 100%;
+  // Proporção 3:4 via padding (robusto em todo navegador, inclusive Safari iOS,
+  // que tem bugs com aspect-ratio em itens de flex/grid).
+  padding-bottom: 133.333%;
+  overflow: hidden;
+  background: var(--bg-soft);
+  isolation: isolate;
+}
+
+// Cada foto do carrossel (também é o gatilho de zoom).
+.estoque-slide {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+  touch-action: manipulation;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.4s ease;
+
+  &.is-active {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+.estoque-card-image {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  transition: transform 0.4s ease;
+}
+
+// Selos ("Pronta entrega", tamanho) sobre a foto do card.
+.estoque-badges {
+  position: absolute;
+  top: 0.6rem;
+  left: 0.6rem;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  pointer-events: none;
+}
+
+.estoque-badge {
+  padding: 0.3rem 0.65rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--on-accent);
+  background: var(--gradient);
+  border-radius: 999px;
+}
+
+.estoque-badge--tamanho {
+  color: #1a1f2b;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.estoque-badge--oferta {
+  color: #fff;
+  background: var(--coral);
+}
+
+.estoque-card:hover .estoque-slide.is-active .estoque-card-image {
+  transform: scale(1.03);
+}
+
+// Setas do carrossel
+.estoque-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+  width: 2.2rem;
+  height: 2.2rem;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  cursor: pointer;
+  touch-action: manipulation;
+  opacity: 0;
+  transition: opacity 0.2s ease, background 0.2s ease;
+
+  svg {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  &:hover {
+    background: var(--bg);
+  }
+}
+
+.estoque-nav-prev {
+  left: 0.5rem;
+}
+
+.estoque-nav-next {
+  right: 0.5rem;
+}
+
+.estoque-card-media:hover .estoque-nav {
+  opacity: 1;
+}
+
+// Em telas de toque (sem hover), as setas ficam sempre visíveis.
+@media (hover: none) {
+  .estoque-nav {
+    opacity: 0.9;
+  }
+}
+
+// Bolinhas indicadoras
+.estoque-dots {
+  position: absolute;
+  bottom: 0.6rem;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  display: flex;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.estoque-dot {
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  touch-action: manipulation;
+  background: color-mix(in srgb, var(--text) 35%, transparent);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+  transition: background 0.2s ease, transform 0.2s ease;
+
+  &.is-active {
+    background: var(--text);
+    transform: scale(1.15);
+  }
+}
+
+.estoque-empty-inner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: var(--muted-soft);
+
+  svg {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  span {
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+}
+
+.estoque-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1.25rem;
+  flex: 1;
+}
+
+// Selos discretos de categoria acima do título (uma peça pode ter vários).
+.estoque-card-cats {
+  align-self: flex-start;
+  margin-bottom: -0.3rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.estoque-card-cat {
+  font-family: $font-body;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--cyan) 70%, var(--muted));
+}
+
+// Ponto separador entre selos vizinhos.
+.estoque-card-cat:not(:last-child)::after {
+  content: "·";
+  margin-left: 0.5rem;
+  color: var(--muted);
+}
+
+.estoque-card-title {
+  font-size: 1.15rem;
+  margin: 0;
+}
+
+.estoque-card-desc {
+  color: var(--muted);
+  font-size: 0.92rem;
+  margin: 0;
+}
+
+.estoque-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: auto;
+  padding-top: 0.5rem;
+}
+
+.estoque-card-price {
+  font-family: $font-display;
+  font-weight: 700;
+  font-size: 1.35rem;
+  color: var(--text);
+}
+
+.estoque-card-price--oferta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.estoque-card-price-old {
+  font-family: $font-body;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.estoque-card-price-new {
+  color: var(--coral);
+}
+
+.estoque-card-btn {
+  padding: 0.6rem 1.1rem;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.estoque-empty {
+  text-align: center;
+  padding: 3.5rem 1.5rem;
+  border-radius: $radius-lg;
+  border: 1px dashed var(--border-strong);
+  background: var(--surface);
+}
+
+.estoque-empty-icon {
+  width: 3rem;
+  height: 3rem;
+  margin: 0 auto 1rem;
+  color: var(--violet);
+
+  svg {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.estoque-empty p {
+  color: var(--muted);
+  margin-bottom: 1.25rem;
+}
+
+// Teaser da home
+.estoque-teaser {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: 2rem 2.25rem;
+  border-radius: $radius-lg;
+  border: 1px solid var(--border);
+  background: var(--surface);
+
+  h2 {
+    font-size: clamp(1.4rem, 3vw, 1.9rem);
+    margin: 0.35rem 0 0.5rem;
+  }
+
+  p {
+    color: var(--muted);
+    margin: 0;
+    max-width: 46ch;
+  }
+
+  .btn {
+    white-space: nowrap;
+  }
+}

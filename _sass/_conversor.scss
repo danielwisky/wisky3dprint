@@ -1,0 +1,203 @@
+// ---------------------------------------------------------------------------
+// BLOCO: Conversor 3MF
+// ---------------------------------------------------------------------------
+.conv3mf-privacidade {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.9rem;
+  padding: 0.4rem 0.9rem;
+  background: color-mix(in srgb, var(--cyan) 10%, var(--surface-soft));
+  border: 1px solid color-mix(in srgb, var(--cyan) 30%, transparent);
+  border-radius: 999px;
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 600;
+
+  svg {
+    flex-shrink: 0;
+    width: 1rem;
+    height: 1rem;
+    color: var(--cyan);
+  }
+}
+#conv3mf-painel {
+  margin-top: 1.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  &[hidden] { display: none; }
+}
+.conv3mf-de-nome {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.conv3mf-de-sub {
+  margin-top: 0.2rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.conv3mf-paleta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+
+  &:empty { display: none; }
+}
+.conv3mf-swatch {
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+}
+.conv3mf-destinos-topo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+
+  .calc-section-title { margin-bottom: 0; }
+}
+.conv3mf-destinos-contagem {
+  font-size: 0.78rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.conv3mf-busca {
+  display: block;
+  width: 100%;
+  padding: 0.6rem 0.85rem;
+  margin-bottom: 0.8rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+
+  &:focus-visible {
+    outline: 2px solid var(--cyan);
+    outline-offset: 1px;
+  }
+}
+.conv3mf-sem-resultado {
+  padding: 0.8rem;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.88rem;
+
+  &[hidden] { display: none; }
+}
+.conv3mf-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.6rem;
+}
+.conv3mf-grupo {
+  grid-column: 1 / -1;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding-top: 0.4rem;
+  border-top: 1px solid var(--border);
+
+  &:first-child {
+    padding-top: 0;
+    border-top: none;
+  }
+}
+.conv3mf-destino {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.6rem 0.8rem;
+  text-align: left;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+
+  &:hover {
+    border-color: var(--border-strong);
+  }
+
+  &.is-atual {
+    opacity: 0.5;
+  }
+
+  &.is-selecionado {
+    border-color: var(--cyan);
+    background: color-mix(in srgb, var(--cyan) 10%, var(--surface));
+  }
+
+  &.is-atual.is-selecionado {
+    opacity: 1;
+  }
+}
+.conv3mf-destino-nome {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.conv3mf-destino-marca {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.conv3mf-aviso {
+  margin-top: 1.5rem;
+  padding: 0.7rem 0.9rem;
+  background: color-mix(in srgb, var(--coral) 12%, var(--surface-soft));
+  border: 1px solid color-mix(in srgb, var(--coral) 35%, transparent);
+  border-radius: 12px;
+  font-size: 0.85rem;
+  color: var(--text);
+  text-align: left;
+
+  &[hidden] { display: none; }
+}
+.conv3mf-resultado {
+  text-align: left;
+}
+.conv3mf-selecionado {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.9rem;
+  margin-bottom: 1rem;
+  background: color-mix(in srgb, var(--cyan) 8%, var(--surface-soft));
+  border: 1px solid color-mix(in srgb, var(--cyan) 30%, transparent);
+  border-radius: 12px;
+  font-size: 0.88rem;
+  color: var(--text);
+
+  &::before {
+    content: "✓";
+    color: var(--cyan);
+    font-weight: 700;
+  }
+
+  &[hidden] { display: none; }
+}
+.conv3mf-out {
+  margin-top: 0.9rem;
+  padding: 0.6rem 0.9rem;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-align: center;
+
+  &:empty {
+    display: none;
+    margin: 0;
+    padding: 0;
+    border: none;
+  }
+}
