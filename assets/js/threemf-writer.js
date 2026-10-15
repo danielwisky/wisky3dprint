@@ -210,6 +210,42 @@ window.Wisky3D = window.Wisky3D || {};
   // Assim os novos slots herdam o mesmo preset/perfil de impressora do
   // projeto, sem a ferramenta precisar adivinhar qual variante do PLA Basic
   // usar.
+  //
+  // Só campos do preset de filamento são redimensionados: arrays de
+  // extrusor/bico/mesa/processo também podem ter o mesmo tamanho que o número
+  // de filamentos (ex.: 1 filamento e 1 extrusor, ou printable_area com 4
+  // pontos num projeto com 4 filamentos) e não podem ser tocados.
+  var PREFIXO_CAMPO_FILAMENTO = "filament_";
+  var CAMPOS_FILAMENTO_EXCLUIDOS_PREFIXOS = ["filament_dev_"];
+  var CAMPOS_FILAMENTO_EXCLUIDOS = ["filament_nozzle_map", "filament_volume_map"];
+  var CAMPOS_FILAMENTO_AVULSOS = [
+    "nozzle_temperature", "nozzle_temperature_initial_layer",
+    "nozzle_temperature_range_low", "nozzle_temperature_range_high",
+    "cool_plate_temp", "cool_plate_temp_initial_layer",
+    "eng_plate_temp", "eng_plate_temp_initial_layer",
+    "hot_plate_temp", "hot_plate_temp_initial_layer",
+    "textured_plate_temp", "textured_plate_temp_initial_layer",
+    "supertack_plate_temp", "supertack_plate_temp_initial_layer",
+    "chamber_temperatures", "temperature_vitrification",
+    "fan_max_speed", "fan_min_speed", "fan_cooling_layer_time",
+    "close_fan_the_first_x_layers", "full_fan_speed_layer",
+    "overhang_fan_speed", "overhang_fan_threshold", "enable_overhang_bridge_fan",
+    "reduce_fan_stop_start_freq", "additional_cooling_fan_speed",
+    "slow_down_for_layer_cooling", "slow_down_layer_time", "slow_down_min_speed",
+    "activate_air_filtration", "during_print_exhaust_fan_speed",
+    "complete_print_exhaust_fan_speed",
+    "pressure_advance", "enable_pressure_advance", "default_filament_colour"
+  ];
+
+  function ehCampoFilamento(chave) {
+    if (CAMPOS_FILAMENTO_AVULSOS.indexOf(chave) !== -1) return true;
+    if (chave.indexOf(PREFIXO_CAMPO_FILAMENTO) !== 0) return false;
+    if (CAMPOS_FILAMENTO_EXCLUIDOS.indexOf(chave) !== -1) return false;
+    return !CAMPOS_FILAMENTO_EXCLUIDOS_PREFIXOS.some(function (prefixo) {
+      return chave.indexOf(prefixo) === 0;
+    });
+  }
+
   function reconstruirProjectSettings(cfgOriginal, paleta) {
     var nAntigo = Array.isArray(cfgOriginal.filament_colour) ? cfgOriginal.filament_colour.length : 0;
     if (!nAntigo) return null;
@@ -219,7 +255,7 @@ window.Wisky3D = window.Wisky3D || {};
 
     Object.keys(cfg).forEach(function (chave) {
       var valor = cfg[chave];
-      if (Array.isArray(valor) && valor.length === nAntigo) {
+      if (Array.isArray(valor) && valor.length === nAntigo && ehCampoFilamento(chave)) {
         cfg[chave] = new Array(n).fill(valor[0]);
       }
     });

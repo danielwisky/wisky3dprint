@@ -65,6 +65,10 @@
 
   var perfisPromise = null;
   var estado = null; // { file, zip, projectConfig, projectConfigPath, destinoKeys }
+  // Cada geração regrava project_settings.config no mesmo zip compartilhado;
+  // duas gerações simultâneas misturariam a config de uma impressora no
+  // arquivo da outra.
+  var gerando = false;
   var DIACRITICOS_REGEX = /[̀-ͯ]/g;
 
   function carregarPerfis() {
@@ -195,7 +199,7 @@
   function atualizarSelecaoUI() {
     var chaves = estado.destinoKeys;
     var n = chaves.length;
-    gerarBtn.disabled = n === 0;
+    gerarBtn.disabled = gerando || n === 0;
     gerarBtn.textContent = n > 1 ? "Gerar " + n + " projetos convertidos (.zip)" : "Gerar projeto convertido";
 
     if (n === 0) {
@@ -329,27 +333,30 @@
     return nomeOriginal.replace(/\.3mf$/i, "") + "-convertidos.zip";
   }
 
-  function gerarProjetoUnico(perfilDestino, nivelCompressao) {
-    var novoConfig = montarNovoConfig(estado.projectConfig, perfilDestino);
-    estado.zip.file(estado.projectConfigPath, JSON.stringify(novoConfig, null, 4));
+  function gerarProjetoUnico(projeto, perfilDestino, nivelCompressao) {
+    var novoConfig = montarNovoConfig(projeto.projectConfig, perfilDestino);
+    projeto.zip.file(projeto.projectConfigPath, JSON.stringify(novoConfig, null, 4));
     // Sem compression:"DEFLATE" o JSZip descompacta o conteúdo original e
     // regrava sem compactar, inflando um 3MF de dezenas de MB pra centenas.
     // O nível é reduzido quando há vários destinos: a malha (que não muda
     // entre eles) seria recompactada do zero a cada um, e nível baixo é
     // bem mais rápido com perda pequena de compactação.
-    return estado.zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: nivelCompressao } });
+    return projeto.zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: nivelCompressao } });
   }
 
   function gerarProjeto() {
-    if (!estado || !estado.destinoKeys.length) return;
-    var chaves = estado.destinoKeys.slice();
+    if (gerando || !estado || !estado.destinoKeys.length) return;
+    var projeto = estado;
+    var chaves = projeto.destinoKeys.slice();
+    gerando = true;
+    gerarBtn.disabled = true;
 
     carregarPerfis().then(function (perfis) {
       if (chaves.length === 1) {
         var perfilDestino = perfis[chaves[0]];
         outEl.textContent = "Gerando arquivo...";
-        return gerarProjetoUnico(perfilDestino, 6).then(function (blob) {
-          baixarBlob(blob, nomeArquivoDestino(estado.file.name, perfilDestino));
+        return gerarProjetoUnico(projeto, perfilDestino, 6).then(function (blob) {
+          baixarBlob(blob, nomeArquivoDestino(projeto.file.name, perfilDestino));
           outEl.textContent = "Projeto convertido para " + nomeBaseImpressora(perfilDestino.nome) + " baixado.";
         });
       }
@@ -362,19 +369,22 @@
         return promessa.then(function () {
           var perfil = perfis[chave];
           outEl.textContent = "Gerando projeto " + (indice + 1) + " de " + chaves.length + " (" + nomeBaseImpressora(perfil.nome) + ")...";
-          return gerarProjetoUnico(perfil, 1).then(function (blob) {
-            zipFinal.file(nomeArquivoDestino(estado.file.name, perfil), blob);
+          return gerarProjetoUnico(projeto, perfil, 1).then(function (blob) {
+            zipFinal.file(nomeArquivoDestino(projeto.file.name, perfil), blob);
           });
         });
       }, Promise.resolve()).then(function () {
         outEl.textContent = "Compactando " + chaves.length + " projetos em um .zip...";
         return zipFinal.generateAsync({ type: "blob" });
       }).then(function (blob) {
-        baixarBlob(blob, nomeArquivoZip(estado.file.name));
+        baixarBlob(blob, nomeArquivoZip(projeto.file.name));
         outEl.textContent = chaves.length + " projetos convertidos baixados em um .zip.";
       });
     }).catch(function () {
       outEl.textContent = "Não foi possível gerar o(s) projeto(s) convertido(s).";
+    }).then(function () {
+      gerando = false;
+      if (estado === projeto) gerarBtn.disabled = projeto.destinoKeys.length === 0;
     });
   }
 
