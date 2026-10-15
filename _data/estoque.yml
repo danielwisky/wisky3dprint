@@ -309,8 +309,8 @@ pecas:
     categorias: ["Mecânicos"]
     pronta_entrega: true
     imagens:
-      - "/assets/img/estoque/motor-a-jato-1.webp"
       - "/assets/img/estoque/motor-a-jato-2.webp"
+      - "/assets/img/estoque/motor-a-jato-1.webp"
       - "/assets/img/estoque/motor-a-jato-3.webp"
     preco: 460
     descricao: "Réplica em corte de um motor turbofan, mostrando fan, compressor, câmara de combustão e turbina em azul e branco. Vem com base de apoio."
