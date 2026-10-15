@@ -23,10 +23,13 @@ git add assets/img/gallery/ _data/instagram_posts.yml \
 
 O wrapper cria um virtualenv local em `.venv/` na primeira execução, instala
 [Pillow](https://pillow.readthedocs.io/) e roda `scripts/update-gallery.py`,
-que:
+que precisa de um access token válido em `scripts/.ig_token` (fora do git).
+Cada execução renova o token por mais 60 dias e regrava o arquivo; se ele
+expirar (script parado por mais de ~60 dias), gere outro no app do Meta for
+Developers (produto Instagram) e salve nesse arquivo. O script:
 
-- baixa as fotos mais recentes (até 24) do feed do Instagram para
-  `assets/img/gallery/`, paginando o feed por `max_id` (endpoint `feed/user`)
+- baixa as fotos mais recentes (até 24) via Instagram Graph API para
+  `assets/img/gallery/` (full + `-thumb`, em WebP)
 - regrava `_data/instagram_posts.yml`
 - remove imagens órfãs (posts que saíram do feed), com trava de segurança que
   evita apagar em massa se a API falhar
@@ -59,8 +62,19 @@ gallery:
   batch: 12       # quantos cada clique revela
 ```
 
-> O endpoint do Instagram é não-oficial e pode mudar; se a paginação falhar, o
-> script mantém o que conseguiu (~primeira página) sem quebrar.
+> Se a API falhar logo de cara (ex.: token expirado), nada é alterado. Se falhar
+> no meio da paginação, o script mantém o que já conseguiu coletar.
+
+## Testes e diagnóstico
+
+```bash
+npm ci
+npm test                                  # testes JS (node:test), também rodam na CI
+npm run console-check -- <url> [url...]   # erros de console/rede via Playwright (HEADED=1 abre o Chrome)
+```
+
+`scripts/extract-printer-profiles.py` regenera `assets/data/printer-profiles.json`
+(perfis de impressora do Conversor 3MF); veja o docstring do script.
 
 ## Loja
 

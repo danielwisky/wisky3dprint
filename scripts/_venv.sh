@@ -10,7 +10,6 @@ if [ ! -x "${VENV_DIR}/bin/python" ]; then
   echo "Criando virtualenv em ${VENV_DIR}..."
   python3 -m venv "${VENV_DIR}"
   "${VENV_DIR}/bin/pip" install --quiet "${PIP_INDEX_ARGS[@]}" --upgrade pip
-  "${VENV_DIR}/bin/pip" install --quiet "${PIP_INDEX_ARGS[@]}" Pillow
 fi
 
 if ! "${VENV_DIR}/bin/python" -c "import PIL" 2>/dev/null; then
