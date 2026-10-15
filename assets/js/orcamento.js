@@ -3,7 +3,8 @@
 // BLOCO: Calculadora de orçamento: itens, custos, upload de modelo, PDF/CSV
 // ---------------------------------------------------------------------------
 
-  var ModelParser = window.Wisky3D.ModelParser;
+  var ModelParser = window.Wisky3D && window.Wisky3D.ModelParser;
+  var ToolUtils = window.Wisky3D && window.Wisky3D.ToolUtils;
 
   var form = document.getElementById("orcamento-calc");
   if (!form) return;
@@ -395,6 +396,8 @@
     minutosManuaisInput.value = "";
     hardwareInput.value = "";
     modeloUpload.value = "";
+    if (cargasModelo) cargasModelo.proximo();
+    mostrarCarregandoModelo(false);
     modeloPreview.hidden = true;
     modeloErro.hidden = true;
     modeloBadge.hidden = true;
@@ -697,6 +700,7 @@
   var MODELO_MAX_BYTES = 60 * 1024 * 1024;
   var MODELO_MAX_TRIANGULOS = 6000000;
   var lastMeshStats = null;
+  var cargasModelo = ToolUtils ? ToolUtils.criarSequenciador() : null;
   var perfilDoArquivo = null;
 
   function densidadeAtual() {
@@ -888,6 +892,8 @@
 
   modeloRemoverBtn.addEventListener("click", function () {
     modeloUpload.value = "";
+    if (cargasModelo) cargasModelo.proximo();
+    mostrarCarregandoModelo(false);
     lastMeshStats = null;
     perfilDoArquivo = null;
     modeloPreview.hidden = true;
@@ -920,99 +926,63 @@
     modeloPreview.hidden = true;
     limparErroModelo();
 
+    if (!ModelParser || !cargasModelo) {
+      mostrarErroModelo("Não foi possível carregar o leitor de modelos 3D. Recarregue a página e tente novamente.");
+      return;
+    }
     if (file.size > MODELO_MAX_BYTES) {
       mostrarErroModelo("Arquivo muito grande (máx. 60MB).");
-      modeloUpload.value = "";
       return;
     }
 
     var ext = (file.name.split(".").pop() || "").toLowerCase();
-
-    if (ext === "stl") {
-      mostrarCarregandoModelo(true);
-      var reader = new FileReader();
-      reader.onload = function () {
-        try {
-          var triangulos = ModelParser.parseSTL(reader.result);
-          var stats = triangulos.length
-            ? {
-              triangleCount: triangulos.length,
-              bbox: ModelParser.computeBoundingBox(triangulos),
-              volumeMm3: ModelParser.computeMeshVolumeMm3(triangulos),
-              areaMm2: ModelParser.computeMeshAreaMm2(triangulos)
-            }
-            : { triangleCount: 0, bbox: ModelParser.bboxVazio(), volumeMm3: 0, areaMm2: 0 };
-          processarStats(stats, file.name, null);
-        } catch (e) {
-          mostrarErroModelo("Não foi possível ler esse arquivo STL.");
-        } finally {
-          mostrarCarregandoModelo(false);
-        }
-      };
-      reader.onerror = function () {
-        mostrarErroModelo("Falha ao ler o arquivo.");
-        mostrarCarregandoModelo(false);
-      };
-      reader.readAsArrayBuffer(file);
-    } else if (ext === "3mf") {
-      if (typeof JSZip === "undefined") {
-        mostrarErroModelo("Não foi possível carregar o leitor de 3MF. Verifique sua conexão e tente novamente.");
-        return;
-      }
-      mostrarCarregandoModelo(true);
-      var zipRef = null;
-      JSZip.loadAsync(file)
-        .then(function (zip) {
-          zipRef = zip;
-          var modelFile = ModelParser.localizarModeloRaiz(zip);
-          if (!modelFile) throw new Error("modelo não encontrado no 3MF");
-          var configFile = ModelParser.localizarArquivoUnico(zip, "project_settings.config");
-          return Promise.all([
-            modelFile.async("text"),
-            configFile ? configFile.async("text") : Promise.resolve(null)
-          ]);
-        })
-        .then(function (resultados) {
-          var xmlText = resultados[0];
-          var configText = resultados[1];
-          var perfilArquivo = configText ? ModelParser.parse3MFPerfil(configText) : null;
-          return ModelParser.parse3MFPackage(zipRef, xmlText).then(function (resultado) {
-            processarStats(resultado, file.name, perfilArquivo);
-          });
-        })
-        .catch(function () {
-          mostrarErroModelo("Não foi possível ler esse arquivo 3MF.");
-        })
-        .then(function () {
-          mostrarCarregandoModelo(false);
-        });
-    } else {
+    if (ext !== "stl" && ext !== "3mf") {
       mostrarErroModelo("Formato não suportado. Envie um arquivo .stl ou .3mf.");
-      modeloUpload.value = "";
+      return;
     }
+
+    var id = cargasModelo.proximo();
+    mostrarCarregandoModelo(true);
+
+    var leitura = ext === "stl" ? lerStatsSTL(file) : lerStats3MF(file);
+    leitura
+      .then(function (r) {
+        if (cargasModelo.ehAtual(id)) processarStats(r.stats, file.name, r.perfil);
+      })
+      .catch(function () {
+        if (cargasModelo.ehAtual(id)) mostrarErroModelo("Não foi possível ler esse arquivo " + ext.toUpperCase() + ".");
+      })
+      .then(function () {
+        if (cargasModelo.ehAtual(id)) mostrarCarregandoModelo(false);
+      });
   }
 
-  modeloUpload.addEventListener("change", function () {
-    var file = modeloUpload.files && modeloUpload.files[0];
-    processarArquivoModelo(file);
-  });
+  function lerStatsSTL(file) {
+    return file.arrayBuffer().then(function (buffer) {
+      var triangulos = ModelParser.parseSTL(buffer);
+      var stats = triangulos.length
+        ? {
+          triangleCount: triangulos.length,
+          bbox: ModelParser.computeBoundingBox(triangulos),
+          volumeMm3: ModelParser.computeMeshVolumeMm3(triangulos),
+          areaMm2: ModelParser.computeMeshAreaMm2(triangulos)
+        }
+        : { triangleCount: 0, bbox: ModelParser.bboxVazio(), volumeMm3: 0, areaMm2: 0 };
+      return { stats: stats, perfil: null };
+    });
+  }
 
-  ["dragenter", "dragover"].forEach(function (evt) {
-    modeloDropzone.addEventListener(evt, function (e) {
-      e.preventDefault();
-      modeloDropzone.classList.add("is-dragover");
+  function lerStats3MF(file) {
+    return ToolUtils.lerPacote3MF(file).then(function (pacote) {
+      if (!pacote.modelText) throw new Error("modelo não encontrado no 3MF");
+      var perfil = pacote.configText ? ModelParser.parse3MFPerfil(pacote.configText) : null;
+      return ModelParser.parse3MFPackage(pacote.zip, pacote.modelText).then(function (stats) {
+        return { stats: stats, perfil: perfil };
+      });
     });
-  });
-  ["dragleave", "dragend", "drop"].forEach(function (evt) {
-    modeloDropzone.addEventListener(evt, function () {
-      modeloDropzone.classList.remove("is-dragover");
-    });
-  });
-  modeloDropzone.addEventListener("drop", function (e) {
-    e.preventDefault();
-    var file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-    processarArquivoModelo(file);
-  });
+  }
+
+  if (ToolUtils) ToolUtils.ligarDropzone(modeloDropzone, modeloUpload, processarArquivoModelo);
 
   materialSelect.addEventListener("change", function () {
     densidadeWrap.hidden = materialSelect.value !== "outro";

@@ -2,40 +2,75 @@
 layout: null
 permalink: /sw-orcamento.js
 ---
-// Service worker das ferramentas do site (Orçamento e Conversor 3MF) —
-// cache só do essencial pra abrir offline depois de instalado. Escopo
-// cobrindo o site inteiro (ver registro em pwa.js).
+// Service worker das ferramentas do site (Orçamento, Conversor 3MF e
+// Colorir 3MF) — cache só do essencial pra abrir offline depois de
+// instalado. Escopo cobrindo o site inteiro (ver registro em pwa.js).
 //
 // O nome do cache incorpora os asset_hash do JS/CSS: assim, sempre que
 // esses arquivos mudarem de conteúdo, o cache muda de nome e a limpeza
 // no "activate" descarta a versão anterior — sem isso, entradas com
 // ?v=hash antigo ficariam acumuladas pra sempre no mesmo cache.
-var CACHE_NAME = "orcamento-app-{{ '/assets/js/orcamento.js' | asset_hash }}-{{ '/assets/js/conversor-3mf.js' | asset_hash }}-{{ '/assets/js/pwa.js' | asset_hash }}-{{ '/assets/css/style.scss' | asset_hash }}";
+{%- assign scripts = "price-formula,model-parser,tool-utils,threemf-writer,orcamento,conversor-3mf,colorir-3mf,pwa" | split: "," %}
+var CACHE_NAME = "orcamento-app{% for s in scripts %}-{{ '/assets/js/' | append: s | append: '.js' | asset_hash }}{% endfor %}-{{ '/assets/css/style.scss' | asset_hash }}";
 var TIMEOUT_REDE_MS = 3000;
 var URLS_TO_CACHE = [
   "{{ '/orcamento/' | relative_url }}",
   "{{ '/conversor-3mf/' | relative_url }}",
+  "{{ '/colorir-3mf/' | relative_url }}",
   "{{ '/assets/css/style.css' | relative_url }}?v={{ '/assets/css/style.scss' | asset_hash }}",
-  "{{ '/assets/js/price-formula.js' | relative_url }}?v={{ '/assets/js/price-formula.js' | asset_hash }}",
-  "{{ '/assets/js/model-parser.js' | relative_url }}?v={{ '/assets/js/model-parser.js' | asset_hash }}",
-  "{{ '/assets/js/orcamento.js' | relative_url }}?v={{ '/assets/js/orcamento.js' | asset_hash }}",
-  "{{ '/assets/js/conversor-3mf.js' | relative_url }}?v={{ '/assets/js/conversor-3mf.js' | asset_hash }}",
-  "{{ '/assets/js/pwa.js' | relative_url }}?v={{ '/assets/js/pwa.js' | asset_hash }}",
+{%- for s in scripts %}
+  {%- assign js = '/assets/js/' | append: s | append: '.js' %}
+  "{{ js | relative_url }}?v={{ js | asset_hash }}",
+{%- endfor %}
   "{{ '/assets/data/printer-profiles.json' | relative_url }}",
+  "{{ '/manifest-orcamento.webmanifest' | relative_url }}",
   "{{ '/assets/img/icon-orcamento-192.png' | relative_url }}",
   "{{ '/assets/img/icon-orcamento-512.png' | relative_url }}"
 ];
 
+// Bibliotecas de CDN usadas pelas ferramentas (mesmas URLs das páginas).
+// Ficam fora do addAll principal: se o CDN falhar na instalação, o resto
+// do app continua instalável e elas entram no cache no primeiro uso.
+var CDN_URLS = [
+  "https://cdn.jsdelivr.net/npm/jszip@3.10.2/dist/jszip.min.js",
+  "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+  "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/controls/OrbitControls.js"
+];
+
+// Só o que está no precache, JS/CSS/dados do site e as libs de CDN entram no cache em tempo de
+// execução. Fotos (galeria, loja) e scripts de terceiros (Analytics) não
+// são necessários offline e encheriam o cache sem limite.
+var PREFIXOS_CACHEAVEIS = [
+  self.location.origin + "{{ '/assets/js/' | relative_url }}",
+  self.location.origin + "{{ '/assets/css/' | relative_url }}",
+  self.location.origin + "{{ '/assets/data/' | relative_url }}"
+];
+
+var URLS_PRECACHE_SEM_QUERY = URLS_TO_CACHE.map(function (url) {
+  return self.location.origin + url.split("?")[0];
+});
+
+function ehCacheavel(url) {
+  if (CDN_URLS.indexOf(url) !== -1 || URLS_PRECACHE_SEM_QUERY.indexOf(url) !== -1) return true;
+  return PREFIXOS_CACHEAVEIS.some(function (prefixo) {
+    return url.indexOf(prefixo) === 0;
+  });
+}
+
 self.addEventListener("install", function (event) {
   event.waitUntil(
     caches.open(CACHE_NAME).then(function (cache) {
-      return cache.addAll(URLS_TO_CACHE);
+      return cache.addAll(URLS_TO_CACHE).then(function () {
+        return Promise.all(CDN_URLS.map(function (url) {
+          return cache.add(url).catch(function () {});
+        }));
+      });
     })
   );
 });
 
 // Fica em espera (sem ativar) até a página pedir explicitamente — é o que
-// dispara o aviso de "nova versão disponível" em orcamento.js. Sem isso
+// dispara o aviso de "nova versão disponível" em pwa.js. Sem isso
 // (com skipWaiting automático no install), a troca de versão seria
 // silenciosa e o usuário não saberia que atualizou.
 self.addEventListener("message", function (event) {
@@ -102,6 +137,8 @@ self.addEventListener("fetch", function (event) {
     );
     return;
   }
+
+  if (!ehCacheavel(event.request.url.split("?")[0])) return;
 
   event.respondWith(
     caches.open(CACHE_NAME).then(function (cache) {

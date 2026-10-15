@@ -7,10 +7,14 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 const root = document.getElementById("cor3mf");
+const modulos = window.Wisky3D || {};
 
-if (root) {
-  const ModelParser = window.Wisky3D && window.Wisky3D.ModelParser;
-  const ThreeMFWriter = window.Wisky3D && window.Wisky3D.ThreeMFWriter;
+if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils)) {
+  const erroEl = document.getElementById("cor3mf-erro");
+  erroEl.textContent = "Não foi possível carregar a ferramenta. Recarregue a página e tente novamente.";
+  erroEl.hidden = false;
+} else if (root) {
+  const { ModelParser, ThreeMFWriter, ToolUtils } = modulos;
 
   const dropzone = document.getElementById("cor3mf-dropzone");
   const upload = document.getElementById("cor3mf-upload");
@@ -54,6 +58,7 @@ if (root) {
   // faces realmente distintas (uma quina reta muda a normal bem mais que
   // isso).
   const BALDE_TOLERANCIA_DEG = 8;
+  const cargas = ToolUtils.criarSequenciador();
 
   let currentTool = "balde";
   let renderer = null;
@@ -967,26 +972,14 @@ if (root) {
       return file.arrayBuffer().then((buffer) => ({ triangulos: ModelParser.parseSTL(buffer), origins: null, zip: null }));
     }
 
-    if (typeof JSZip === "undefined") {
-      return Promise.reject(new Error("não foi possível carregar o leitor de 3MF"));
-    }
-
-    return JSZip.loadAsync(file).then((zip) => {
-      const modelFile = ModelParser.localizarModeloRaiz(zip);
-      if (!modelFile) throw new Error("3dmodel.model não encontrado no pacote 3MF");
-      const rootPath = modelFile.name;
-      const modelSettingsEntry = ModelParser.localizarArquivoUnico(zip, "model_settings.config");
-      const modelSettingsPromise = modelSettingsEntry ? modelSettingsEntry.async("text") : Promise.resolve(null);
-      return modelFile.async("text").then((modelText) =>
-        Promise.all([ModelParser.extractTriangles3MF(zip, modelText, rootPath), modelSettingsPromise]).then(
-          ([resultado, modelSettingsText]) => ({
-            triangulos: resultado.triangulos,
-            origins: resultado.origins,
-            zip,
-            modelSettingsText
-          })
-        )
-      );
+    return ToolUtils.lerPacote3MF(file).then((pacote) => {
+      if (!pacote.modelText) throw new Error("3dmodel.model não encontrado no pacote 3MF");
+      return ModelParser.extractTriangles3MF(pacote.zip, pacote.modelText, pacote.modelPath).then((resultado) => ({
+        triangulos: resultado.triangulos,
+        origins: resultado.origins,
+        zip: pacote.zip,
+        modelSettingsText: pacote.modelSettingsText
+      }));
     });
   }
 
@@ -1011,17 +1004,15 @@ if (root) {
       mostrarErro("Formato não suportado. Envie um arquivo .stl ou .3mf.");
       return;
     }
-    if (!ModelParser) {
-      mostrarErro("Não foi possível carregar o leitor de modelos 3D.");
-      return;
-    }
 
+    const id = cargas.proximo();
     mostrarErro("");
     mostrarCarregando(true);
     painel.hidden = true;
 
     extrairTriangulosDoArquivo(file)
       .then((resultado) => {
+        if (!cargas.ehAtual(id)) return;
         if (!resultado.triangulos.length) throw new Error("nenhuma geometria encontrada no arquivo");
         resultado.chapas = detectarChapas(resultado.modelSettingsText);
         buildState(resultado.triangulos, file.name, resultado);
@@ -1030,12 +1021,13 @@ if (root) {
         frameCameraToGeometry();
       })
       .catch((err) => {
+        if (!cargas.ehAtual(id)) return;
         if (window.console && console.error) console.error("Colorir 3MF:", err);
         const detalhe = err && err.message ? " (" + err.message + ")" : "";
         mostrarErro("Não foi possível ler esse arquivo. Confirme que é um .stl ou .3mf válido." + detalhe);
       })
       .then(() => {
-        mostrarCarregando(false);
+        if (cargas.ehAtual(id)) mostrarCarregando(false);
       });
   }
 
@@ -1219,26 +1211,7 @@ if (root) {
   // Eventos de UI
   // -------------------------------------------------------------------------
 
-  upload.addEventListener("change", () => {
-    processarArquivo(upload.files && upload.files[0]);
-  });
-
-  ["dragenter", "dragover"].forEach((evt) => {
-    dropzone.addEventListener(evt, (e) => {
-      e.preventDefault();
-      dropzone.classList.add("is-dragover");
-    });
-  });
-  ["dragleave", "dragend", "drop"].forEach((evt) => {
-    dropzone.addEventListener(evt, () => {
-      dropzone.classList.remove("is-dragover");
-    });
-  });
-  dropzone.addEventListener("drop", (e) => {
-    e.preventDefault();
-    const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-    processarArquivo(file);
-  });
+  ToolUtils.ligarDropzone(dropzone, upload, processarArquivo);
 
   toolBaldeBtn.addEventListener("click", () => setTool("balde"));
   toolMagicaBtn.addEventListener("click", () => setTool("magica"));

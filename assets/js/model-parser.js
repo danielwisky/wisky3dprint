@@ -636,7 +636,6 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     computeMeshVolumeMm3: computeMeshVolumeMm3,
     computeMeshAreaMm2: computeMeshAreaMm2,
     bboxVazio: bboxVazio,
-    mergeBBox: mergeBBox,
     directChild: directChild,
     directChildren: directChildren,
     findObjectElement: findObjectElement,
