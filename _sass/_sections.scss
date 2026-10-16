@@ -64,7 +64,7 @@
     left: calc(50% + 2rem);
     width: calc(100% - 4rem);
     height: 2px;
-    background: linear-gradient(90deg, var(--cyan), var(--violet));
+    background: linear-gradient(90deg, var(--cyan), var(--coral));
     opacity: 0.35;
     pointer-events: none;
   }
@@ -143,5 +143,5 @@
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--violet);
+  color: var(--coral);
 }
