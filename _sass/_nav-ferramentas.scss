@@ -60,6 +60,7 @@ html:not([data-ferramentas]) #nav-ferramentas {
     border-radius: 8px;
     color: var(--text);
     font-size: 0.88rem;
+    white-space: nowrap;
 
     &:hover {
       background: var(--surface-hover);
