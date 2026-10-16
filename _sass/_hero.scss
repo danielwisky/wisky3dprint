@@ -44,7 +44,12 @@
   height: 420px;
   top: -80px;
   right: -60px;
-  background: var(--violet);
+  background: var(--coral);
+}
+
+// O coral pesa mais que o ciano do brilho oposto; mais transparente equilibra.
+.hero-glow.hero-glow-a {
+  opacity: 0.28;
 }
 
 .hero-glow-b {
@@ -119,10 +124,7 @@
 
   em {
     font-style: normal;
-    background: var(--gradient);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    color: var(--cyan);
   }
 }
 

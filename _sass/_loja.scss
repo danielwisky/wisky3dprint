@@ -155,8 +155,8 @@
   }
 
   &.is-active {
-    color: #fff;
-    background: var(--gradient);
+    color: var(--bg);
+    background: var(--text);
     border-color: transparent;
   }
 
@@ -177,6 +177,7 @@
   border-color: color-mix(in srgb, var(--coral) 40%, var(--border));
 
   &.is-active {
+    color: #fff;
     background: var(--coral);
   }
 }
@@ -390,7 +391,7 @@
   text-transform: uppercase;
   letter-spacing: 0.02em;
   color: var(--on-accent);
-  background: var(--gradient);
+  background: var(--cyan);
   border-radius: 999px;
 }
 
@@ -605,7 +606,7 @@
   width: 3rem;
   height: 3rem;
   margin: 0 auto 1rem;
-  color: var(--violet);
+  color: var(--cyan);
 
   svg {
     width: 100%;

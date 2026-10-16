@@ -2,7 +2,7 @@
 
 // Gallery — grid 4×2 uniforme
 .section-gallery {
-  background: linear-gradient(180deg, transparent, var(--section-tint-violet) 50%, transparent);
+  background: linear-gradient(180deg, transparent, var(--section-tint) 50%, transparent);
 }
 
 .gallery-grid {
@@ -134,7 +134,7 @@
   width: 3rem;
   height: 3rem;
   margin: 0 auto 1rem;
-  color: var(--violet);
+  color: var(--cyan);
 
   svg {
     width: 100%;
