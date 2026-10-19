@@ -62,8 +62,24 @@
     "curr_bed_type", "default_bed_type", "best_object_pos",
     "head_wrap_detect_zone", "wrapping_exclude_area", "wrapping_detection_gcode",
     "before_layer_change_gcode", "layer_change_gcode", "change_filament_gcode",
-    "time_lapse_gcode"
+    "time_lapse_gcode", "version"
   ];
+
+  // Cada fatiador lê a versão do projeto em <metadata name="Application">
+  // no 3dmodel.model e avisa que o software está desatualizado quando ela é
+  // maior que a dele. Gravamos o mesmo valor que o fatiador da marca de
+  // destino grava ao exportar ({v} = campo "version" do perfil). O Flash
+  // Studio compara com a versão do OrcaSlicer em que se baseia (2.3.0), não
+  // com a dos perfis.
+  var APLICACAO_POR_MARCA = {
+    "Bambu Lab": "BambuStudio-{v}",
+    "Flashforge": "BambuStudio-2.3.0",
+    "WonderMaker": "OrcaSlicer-{v}",
+    "Anycubic": "BambuStudio-{v}",
+    "Creality": "Creality_Print V{v}",
+    "Elegoo": "ElegooSlicer-{v}",
+    "Snapmaker": "Snapmaker_Orca-{v}"
+  };
 
   function ehCampoDestino(campo) {
     if (CAMPOS_DESTINO.indexOf(campo) !== -1) return true;
@@ -73,7 +89,7 @@
   }
 
   var perfisPromise = null;
-  var estado = null; // { file, zip, projectConfig, projectConfigPath, destinoKeys }
+  var estado = null; // { file, zip, projectConfig, projectConfigPath, modelText, modelPath, destinoKeys }
   // Cada geração regrava project_settings.config no mesmo zip compartilhado;
   // duas gerações simultâneas misturariam a config de uma impressora no
   // arquivo da outra.
@@ -326,6 +342,19 @@
     return novo;
   }
 
+  function montarNovoModelo(modelText, perfilDestino) {
+    var formato = APLICACAO_POR_MARCA[perfilDestino.marca];
+    if (!formato || !perfilDestino.base.version) return modelText;
+    var aplicacao = formato.replace("{v}", perfilDestino.base.version);
+    // OrcaSlicer e Elegoo Slicer priorizam a versão de <metadata
+    // name="OrcaSlicer"> sobre a de Application; a do projeto original
+    // dispararia o mesmo aviso.
+    var novo = modelText.replace(/\s*<metadata\s+name="OrcaSlicer"\s*>[^<]*<\/metadata>/g, "");
+    var tag = /(<metadata\s+name="Application"\s*>)[^<]*(<\/metadata>)/;
+    if (tag.test(novo)) return novo.replace(tag, "$1" + aplicacao + "$2");
+    return novo.replace(/(<model\b[^>]*>)/, '$1\n <metadata name="Application">' + aplicacao + "</metadata>");
+  }
+
   function nomeArquivoDestino(nomeOriginal, perfilDestino) {
     var base = nomeOriginal.replace(/\.3mf$/i, "");
     var slug = nomeBaseImpressora(perfilDestino.nome)
@@ -345,6 +374,7 @@
   function gerarProjetoUnico(projeto, perfilDestino, nivelCompressao) {
     var novoConfig = montarNovoConfig(projeto.projectConfig, perfilDestino);
     projeto.zip.file(projeto.projectConfigPath, JSON.stringify(novoConfig, null, 4));
+    if (projeto.modelText) projeto.zip.file(projeto.modelPath, montarNovoModelo(projeto.modelText, perfilDestino));
     // Sem compression:"DEFLATE" o JSZip descompacta o conteúdo original e
     // regrava sem compactar, inflando um 3MF de dezenas de MB pra centenas.
     // O nível é reduzido quando há vários destinos: a malha (que não muda
@@ -427,7 +457,7 @@
           var bbox = res ? res.bbox : null;
           var chapas = res ? ModelParser.calcularChapas(res.itens, ModelParser.parsePlateAssignments(pacote.modelSettingsText)) : null;
 
-          estado = { file: file, zip: pacote.zip, projectConfig: config, projectConfigPath: pacote.configPath, destinoKeys: [] };
+          estado = { file: file, zip: pacote.zip, projectConfig: config, projectConfigPath: pacote.configPath, modelText: pacote.modelText, modelPath: pacote.modelPath, destinoKeys: [] };
           var chaveDetectada = renderOrigem(config, perfis, bbox, chapas);
           destinosData = { perfis: perfis, chaveDetectada: chaveDetectada, bbox: bbox, chapas: chapas };
           buscaEl.value = "";
