@@ -473,8 +473,14 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
 
     return Promise.all(promises).then(function () {
       if (escala !== 1) {
+        // Triângulos vizinhos compartilham o mesmo array de vértice: sem
+        // marcar os já escalados, cada vértice seria multiplicado uma vez
+        // por triângulo que o usa.
+        var escalados = new Set();
         triangulos.forEach(function (tri) {
           tri.forEach(function (p) {
+            if (escalados.has(p)) return;
+            escalados.add(p);
             p[0] *= escala; p[1] *= escala; p[2] *= escala;
           });
         });

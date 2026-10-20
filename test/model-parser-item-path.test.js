@@ -101,3 +101,35 @@ test("parse3MFPackage resolve <item p:path> pro arquivo externo ao agregar bbox/
     assert.ok(resultado.itens[1].bbox.minX >= 50, "bbox do 2º item deve vir do arquivo externo");
   });
 });
+
+test("extractTriangles3MF converte unidade escalando cada vértice uma vez só, mesmo compartilhado entre triângulos", () => {
+  // Tetraedro em centímetros: cada vértice aparece em 3 triângulos.
+  const rootModel = `<?xml version="1.0" encoding="UTF-8"?>
+<model unit="centimeter" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">
+  <resources>
+    <object id="1" type="model">
+      <mesh>
+        <vertices>
+          <vertex x="0" y="0" z="0"/>
+          <vertex x="1" y="0" z="0"/>
+          <vertex x="0" y="1" z="0"/>
+          <vertex x="0" y="0" z="1"/>
+        </vertices>
+        <triangles>
+          <triangle v1="0" v2="2" v3="1"/>
+          <triangle v1="0" v2="1" v3="3"/>
+          <triangle v1="0" v2="3" v3="2"/>
+          <triangle v1="1" v2="2" v3="3"/>
+        </triangles>
+      </mesh>
+    </object>
+  </resources>
+  <build><item objectid="1"/></build>
+</model>`;
+
+  return ModelParser.extractTriangles3MF(fakeZip({}), rootModel, "3D/3dmodel.model").then((resultado) => {
+    const coordenadas = resultado.triangulos.flat().flat();
+    assert.equal(Math.max(...coordenadas), 10, "1 cm vira 10 mm");
+    assert.deepEqual(resultado.triangulos[3], [[10, 0, 0], [0, 10, 0], [0, 0, 10]]);
+  });
+});
