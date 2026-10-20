@@ -468,6 +468,7 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils)
       btn.style.background = cor.hex;
       btn.textContent = String(i + 1);
       btn.setAttribute("aria-label", "Usar cor " + (i + 1));
+      btn.setAttribute("aria-pressed", i === state.paletaAtivaIndex ? "true" : "false");
       btn.addEventListener("click", () => {
         state.paletaAtivaIndex = i;
         renderPaleta();

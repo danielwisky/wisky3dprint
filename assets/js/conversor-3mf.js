@@ -329,7 +329,7 @@
     var selecionado = estado.destinoKeys.indexOf(chave) !== -1;
     if (btn) {
       btn.classList.toggle("is-selecionado", selecionado);
-      btn.setAttribute("aria-selected", selecionado ? "true" : "false");
+      btn.setAttribute("aria-pressed", selecionado ? "true" : "false");
     }
     atualizarSelecaoUI();
   }
@@ -405,7 +405,6 @@
         marcaAtual = perfil.marca;
         var grupo = document.createElement("div");
         grupo.className = "conv3mf-grupo";
-        grupo.setAttribute("role", "presentation");
         grupo.textContent = marcaAtual;
         destinosEl.appendChild(grupo);
       }
@@ -414,8 +413,7 @@
       var btn = document.createElement("button");
       btn.type = "button";
       btn.className = "conv3mf-destino";
-      btn.setAttribute("role", "option");
-      btn.setAttribute("aria-selected", jaSelecionado ? "true" : "false");
+      btn.setAttribute("aria-pressed", jaSelecionado ? "true" : "false");
       btn.dataset.key = chave;
       if (chave === chaveDetectada) btn.classList.add("is-atual");
       if (jaSelecionado) btn.classList.add("is-selecionado");

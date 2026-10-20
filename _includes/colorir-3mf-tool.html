@@ -7,7 +7,7 @@
     </label>
     <input type="file" id="cor3mf-upload" accept=".stl,.3mf" aria-labelledby="cor3mf-upload-label">
   </div>
-  <p class="calc-modelo-erro" id="cor3mf-erro" hidden></p>
+  <p class="calc-modelo-erro" id="cor3mf-erro" role="alert" hidden></p>
 
   <div id="cor3mf-painel" hidden>
     <p class="cor3mf-hint">Arraste com o botão esquerdo para girar o modelo. Clique numa superfície para pintar com a ferramenta ativa.</p>
@@ -47,7 +47,7 @@
             <button type="button" class="cor3mf-paleta-add" id="cor3mf-paleta-add" title="Adicionar cor" aria-label="Adicionar cor">+</button>
             <input type="color" id="cor3mf-paleta-nova-cor" class="cor3mf-paleta-nova-cor-oculto" tabindex="-1" aria-hidden="true">
           </div>
-          <div class="cor3mf-paleta-lista" id="cor3mf-paleta-lista" role="listbox" aria-labelledby="cor3mf-paleta-label"></div>
+          <div class="cor3mf-paleta-lista" id="cor3mf-paleta-lista" role="group" aria-labelledby="cor3mf-paleta-label"></div>
         </div>
 
         <div class="calc-field" id="cor3mf-tolerancia-campo" hidden>
