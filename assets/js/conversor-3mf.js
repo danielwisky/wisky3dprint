@@ -93,19 +93,26 @@
     return VERSAO_FATIADOR_POR_MARCA[perfil.marca] || perfil.base.version;
   }
 
-  // Mesma opção com nome diferente em cada família de fatiador: Bambu Studio
-  // e QIDI Studio gravam o primeiro, os derivados do OrcaSlicer o segundo.
-  // O valor do perfil de destino diz qual família ele usa; sem a tradução o
-  // fatiador de destino avisa que substituiu o valor ao abrir o projeto.
-  var VALORES_EQUIVALENTES = {
-    ensure_vertical_shell_thickness: [["enabled", "ensure_all"]]
+  // Mesma opção com valores diferentes em cada família de fatiador. Cada
+  // mapa leva um valor de qualquer família ao equivalente na família dele; o
+  // valor do perfil de destino diz qual família ele usa. Sem a tradução o
+  // fatiador de destino troca o valor desconhecido pelo padrão dele, que pode
+  // ser o oposto do escolhido (Bambu "disabled" virava "ensure_all" no Orca).
+  var VALORES_POR_FAMILIA = {
+    ensure_vertical_shell_thickness: [
+      // Bambu Studio, QIDI Studio
+      { none: "disabled", ensure_critical_only: "partial", ensure_moderate: "partial", ensure_all: "enabled" },
+      // derivados do OrcaSlicer
+      { disabled: "none", partial: "ensure_moderate", enabled: "ensure_all" }
+    ]
   };
 
-  function traduzirValoresEquivalentes(config, perfilDestino) {
-    Object.keys(VALORES_EQUIVALENTES).forEach(function (campo) {
-      VALORES_EQUIVALENTES[campo].forEach(function (par) {
-        var i = par.indexOf(config[campo]);
-        if (i !== -1 && perfilDestino.base[campo] === par[1 - i]) config[campo] = par[1 - i];
+  function traduzirValoresPorFamilia(config, perfilDestino) {
+    Object.keys(VALORES_POR_FAMILIA).forEach(function (campo) {
+      VALORES_POR_FAMILIA[campo].forEach(function (mapa) {
+        var valoresDaFamilia = Object.keys(mapa).map(function (k) { return mapa[k]; });
+        if (valoresDaFamilia.indexOf(perfilDestino.base[campo]) === -1) return;
+        if (Object.prototype.hasOwnProperty.call(mapa, config[campo])) config[campo] = mapa[config[campo]];
       });
     });
   }
@@ -369,7 +376,7 @@
       if (ehCampoDestino(k)) novo[k] = perfilDestino.base[k];
     });
     if (versaoFatiador(perfilDestino)) novo.version = versaoFatiador(perfilDestino);
-    traduzirValoresEquivalentes(novo, perfilDestino);
+    traduzirValoresPorFamilia(novo, perfilDestino);
     var torres = ModelParser.reposicionarTorres(configOriginal, configOriginal.printable_area, perfilDestino.base.printable_area);
     if (torres) {
       novo.wipe_tower_x = torres.wipe_tower_x;
