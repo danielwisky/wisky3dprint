@@ -178,3 +178,22 @@ test("calcularChapas com itens null retorna null", () => {
 
   assert.equal(resultado, null, "itens null retorna null");
 });
+
+test("parsePlateAssignments com manterVazias mantém mesas sem peças para o índice ser o da mesa", () => {
+  const xmlText = `<?xml version="1.0"?>
+<config>
+  <plate><model_instance><metadata key="object_id" value="1"/></model_instance></plate>
+  <plate></plate>
+  <plate><model_instance><metadata key="object_id" value="3"/></model_instance></plate>
+</config>`;
+
+  assert.deepEqual(window.Wisky3D.ModelParser.parsePlateAssignments(xmlText), [["1"], ["3"]]);
+  assert.deepEqual(window.Wisky3D.ModelParser.parsePlateAssignments(xmlText, true), [["1"], [], ["3"]]);
+});
+
+test("parsePlateAssignments com manterVazias devolve também uma mesa só", () => {
+  const xmlText = `<?xml version="1.0"?><config><plate><model_instance><metadata key="object_id" value="1"/></model_instance></plate></config>`;
+
+  assert.equal(window.Wisky3D.ModelParser.parsePlateAssignments(xmlText), null);
+  assert.deepEqual(window.Wisky3D.ModelParser.parsePlateAssignments(xmlText, true), [["1"]]);
+});

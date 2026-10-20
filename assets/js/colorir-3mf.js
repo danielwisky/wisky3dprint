@@ -977,14 +977,37 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils)
     outEl.textContent = "";
   }
 
+  // Erro de modelo grande demais: a mensagem vai inteira para o usuário (ver
+  // processarArquivo), em vez do "não foi possível ler esse arquivo".
+  function erroDeLimite(qtd) {
+    const erro = new Error("Modelo muito complexo para pintar no navegador (" + qtd.toLocaleString("pt-BR") + " triângulos, máx. " + (ToolUtils.MAX_TRIANGULOS / 1e6).toLocaleString("pt-BR") + " milhões). Tente simplificar a malha.");
+    erro.limite = true;
+    return erro;
+  }
+
+  // Conta os triângulos antes de montar a malha: estourar o limite depois de
+  // alocar milhões de arrays já poderia travar a aba.
   function extrairTriangulosDoArquivo(file) {
     if (/\.stl$/i.test(file.name)) {
-      return file.arrayBuffer().then((buffer) => ({ triangulos: ModelParser.parseSTL(buffer), origins: null, zip: null }));
+      return file.arrayBuffer().then((buffer) => {
+        const qtd = ModelParser.contarTriangulosSTL(buffer);
+        if (qtd > ToolUtils.MAX_TRIANGULOS) throw erroDeLimite(qtd);
+        return { triangulos: ModelParser.parseSTL(buffer), origins: null, zip: null };
+      });
     }
 
     return ToolUtils.lerPacote3MF(file).then((pacote) => {
       if (!pacote.modelText) throw new Error("3dmodel.model não encontrado no pacote 3MF");
-      return ModelParser.extractTriangles3MF(pacote.zip, pacote.modelText, pacote.modelPath).then((resultado) => ({
+      // Com modificadores ou bloqueadores de suporte, a contagem prévia (que
+      // inclui as partes que a extração deixa de fora) poderia recusar um
+      // modelo que cabe: fica só a checagem depois da extração.
+      if (ModelParser.temPartesNaoSolidas(pacote.modelSettingsText)) return pacote;
+      return ModelParser.contarTriangulos3MF(pacote.zip, pacote.modelText, pacote.modelPath).then((qtd) => {
+        if (qtd > ToolUtils.MAX_TRIANGULOS) throw erroDeLimite(qtd);
+        return pacote;
+      });
+    }).then((pacote) => {
+      return ModelParser.extractTriangles3MF(pacote.zip, pacote.modelText, pacote.modelPath, pacote.modelSettingsText).then((resultado) => ({
         triangulos: resultado.triangulos,
         origins: resultado.origins,
         zip: pacote.zip,
@@ -1024,10 +1047,8 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils)
       .then((resultado) => {
         if (!cargas.ehAtual(id)) return;
         if (!resultado.triangulos.length) throw new Error("nenhuma geometria encontrada no arquivo");
-        if (resultado.triangulos.length > ToolUtils.MAX_TRIANGULOS) {
-          mostrarErro("Modelo muito complexo para pintar no navegador (" + resultado.triangulos.length.toLocaleString("pt-BR") + " triângulos, máx. " + (ToolUtils.MAX_TRIANGULOS / 1e6).toLocaleString("pt-BR") + " milhões). Tente simplificar a malha.");
-          return;
-        }
+        // A contagem prévia não multiplica objetos usados por dois <item>.
+        if (resultado.triangulos.length > ToolUtils.MAX_TRIANGULOS) throw erroDeLimite(resultado.triangulos.length);
         resultado.chapas = detectarChapas(resultado.modelSettingsText);
         buildState(resultado.triangulos, file.name, resultado);
         painel.hidden = false;
@@ -1036,6 +1057,10 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils)
       })
       .catch((err) => {
         if (!cargas.ehAtual(id)) return;
+        if (err && err.limite) {
+          mostrarErro(err.message);
+          return;
+        }
         if (window.console && console.error) console.error("Colorir 3MF:", err);
         const detalhe = err && err.message ? " (" + err.message + ")" : "";
         mostrarErro("Não foi possível ler esse arquivo. Confirme que é um .stl ou .3mf válido." + detalhe);

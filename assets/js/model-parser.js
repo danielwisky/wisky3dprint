@@ -113,6 +113,52 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     return parseAsciiSTL(new TextDecoder("utf-8").decode(buffer));
   }
 
+  function contarOcorrencias(texto, trecho) {
+    var n = 0;
+    for (var i = texto.indexOf(trecho); i !== -1; i = texto.indexOf(trecho, i + trecho.length)) n++;
+    return n;
+  }
+
+  // Quantos triângulos o STL tem, sem montar a malha: no binário vem no
+  // cabeçalho; no ASCII, um por "endfacet".
+  function contarTriangulosSTL(buffer) {
+    if (detectBinarySTL(buffer)) return new DataView(buffer).getUint32(80, true);
+    // Direto nos bytes: decodificar para texto aqui e de novo no parseSTL
+    // dobraria a memória de um STL ASCII grande.
+    var bytes = new Uint8Array(buffer);
+    var alvo = [101, 110, 100, 102, 97, 99, 101, 116]; // "endfacet"
+    var n = 0;
+    for (var i = 0; i + alvo.length <= bytes.length; i++) {
+      if (bytes[i] !== 101) continue;
+      var k = 1;
+      while (k < alvo.length && bytes[i + k] === alvo[k]) k++;
+      if (k === alvo.length) { n++; i += alvo.length - 1; }
+    }
+    return n;
+  }
+
+  // Quantos <triangle> há nos .model do pacote, sem interpretar o XML nem
+  // montar a malha, para recusar modelos grandes demais antes de alocar
+  // milhões de arrays. É uma estimativa: um objeto usado por dois <item>
+  // conta uma vez só. Lê um arquivo por vez para não manter todos os textos
+  // em memória ao mesmo tempo. `rootXmlText`/`rootPath` (opcionais): o
+  // 3dmodel.model raiz já lido, contado sem descompactar de novo.
+  function contarTriangulos3MF(zip, rootXmlText, rootPath) {
+    function contar(texto) {
+      return contarOcorrencias(texto, "<triangle ") + contarOcorrencias(texto, "<triangle/");
+    }
+    var arquivos = zip.file(/\.model$/i).filter(function (arquivo) {
+      return rootXmlText == null || arquivo.name !== rootPath;
+    });
+    return arquivos.reduce(function (promessa, arquivo) {
+      return promessa.then(function (total) {
+        return arquivo.async("text").then(function (texto) {
+          return total + contar(texto);
+        });
+      });
+    }, Promise.resolve(rootXmlText == null ? 0 : contar(rootXmlText)));
+  }
+
   var TRANSFORM_IDENTIDADE = { M: [[1, 0, 0], [0, 1, 0], [0, 0, 1]], t: [0, 0, 0] };
 
   // Fator pra converter a unidade declarada no <model unit="..."> pra mm.
@@ -392,6 +438,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     );
 
     var objectIds = items.map(function (item) { return item.getAttribute("objectid"); });
+    var translacoes = items.map(function (item) { return parseTransformAttr(item.getAttribute("transform")).t; });
     var promises = items.map(function (item) {
       var transform = parseTransformAttr(item.getAttribute("transform"));
       var objectId = item.getAttribute("objectid");
@@ -441,8 +488,10 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
         // Usado pra separar por chapa/plate em arquivos multi-plate (ver
         // conversor-3mf.js), já que o bbox combinado acima soma objetos que
         // na real impressora nunca ficam juntos na mesma mesa.
+        // `posicao` é a translação do item: a mesma que reposicionarPorMesa
+        // usa para achar a célula da grade.
         itens: results.map(function (r, i) {
-          return { objectId: objectIds[i], bbox: escalarBBox(r.bbox) };
+          return { objectId: objectIds[i], bbox: escalarBBox(r.bbox), posicao: [translacoes[i][0] * escala, translacoes[i][1] * escala] };
         })
       };
     });
@@ -460,7 +509,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // é o objectid do build item de nível topo (usado pra casar o triângulo com
   // a chapa/plate a que pertence, ver mapearTriangulosParaChapas) — os dois
   // divergem quando o object de topo é montado via <components> aninhados.
-  function resolveObjectTriangles(zip, docCache, doc, objectId, accumTransform, outTriangulos, path, outOrigins) {
+  function resolveObjectTriangles(zip, docCache, doc, objectId, accumTransform, outTriangulos, path, outOrigins, componentesIgnorados) {
     function onMesh(leafTriangles, localIndices, meshBbox, meshPath, meshObjectId, rootObjectId) {
       leafTriangles.forEach(function (tri, i) {
         outTriangulos.push(tri);
@@ -468,7 +517,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
       });
     }
 
-    return resolveObjectRecursivo(zip, docCache, doc, objectId, accumTransform, path, onMesh);
+    return resolveObjectRecursivo(zip, docCache, doc, objectId, accumTransform, path, onMesh, undefined, componentesIgnorados);
   }
 
   // Extrai a malha de um pacote 3MF já aberto (JSZip) como array de
@@ -478,8 +527,12 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // 3dmodel.model dentro do zip, usado como origem de quem não vem de
   // component externo. Retorna também `origins` (ver resolveObjectTriangles),
   // usado na exportação pra editar o pacote original em vez de recriá-lo.
-  function extractTriangles3MF(zip, rootXmlText, rootPath) {
+  // Com `modelSettingsText`, modificadores e bloqueadores de suporte ficam de
+  // fora: não são impressos, então não há o que pintar (ver
+  // parsePartesNaoSolidas).
+  function extractTriangles3MF(zip, rootXmlText, rootPath, modelSettingsText) {
     var doc = parseXmlDoc(rootXmlText);
+    var partesNaoSolidas = parsePartesNaoSolidas(modelSettingsText);
     var unidadeAttr = doc.documentElement.getAttribute("unit");
     var escala = UNIDADE_PARA_MM[unidadeAttr] || 1;
     var docCache = {};
@@ -511,7 +564,8 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
           return resolveObjectTriangles(zip, docCache, extDoc, objectId, transform, triangulos, externo.normalizedPath, origins);
         });
       }
-      return resolveObjectTriangles(zip, docCache, doc, objectId, transform, triangulos, rootPath, origins);
+      var ignorados = partesNaoSolidas ? partesNaoSolidas.get(objectId) : undefined;
+      return resolveObjectTriangles(zip, docCache, doc, objectId, transform, triangulos, rootPath, origins, ignorados);
     });
 
     return Promise.all(promises).then(function () {
@@ -585,8 +639,10 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // dava um "tamanho" maior que qualquer mesa real e gerava avisos de encaixe
   // falsos. Lê Metadata/model_settings.config e devolve, por chapa, a lista de
   // object_id das peças que pertencem a ela (ou null se o arquivo não tem
-  // metadados de chapa, caso de projetos com uma chapa só).
-  function parsePlateAssignments(modelSettingsText) {
+  // metadados de chapa, caso de projetos com uma chapa só). Com
+  // `manterVazias`, mesas sem peças continuam na lista (vazias), para o
+  // índice ser o da mesa, e uma mesa só também volta.
+  function parsePlateAssignments(modelSettingsText, manterVazias) {
     if (!modelSettingsText || typeof DOMParser === "undefined") return null;
     try {
       var doc = new DOMParser().parseFromString(modelSettingsText, "application/xml");
@@ -606,8 +662,9 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
             }
           }
         }
-        if (ids.length) chapas.push(ids);
+        if (ids.length || manterVazias) chapas.push(ids);
       }
+      if (manterVazias) return chapas.length ? chapas : null;
       return chapas.length > 1 ? chapas : null;
     } catch (e) {
       return null;
@@ -633,13 +690,13 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     return chapas.length > 1 ? chapas : null;
   }
 
-  // Centro e passo da grade de mesas a partir do printable_area do perfil
-  // (lista de "XxY", ex.: ["0x0","256x0","256x256","0x256"]).
-  function gradeDaMesa(printableArea) {
-    if (!Array.isArray(printableArea)) return null;
+  // Retângulo {x0, x1, y0, y1} que contém os pontos de uma lista de "XxY"
+  // (cada item pode ter vários pontos separados por vírgula, como no
+  // extruder_printable_area). null sem nenhum ponto válido.
+  function limitesDePontos(pontos) {
     var xs = [];
     var ys = [];
-    printableArea.forEach(function (trecho) {
+    [].concat(pontos || []).forEach(function (trecho) {
       String(trecho).split(",").forEach(function (par) {
         var xy = par.split("x").map(Number);
         if (xy.length === 2 && !isNaN(xy[0]) && !isNaN(xy[1])) {
@@ -649,13 +706,36 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
       });
     });
     if (!xs.length) return null;
-    var x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs);
-    var y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys);
-    if (!(x1 > x0 && y1 > y0)) return null;
     return {
-      x0: x0, x1: x1, y0: y0, y1: y1,
-      cx: (x0 + x1) / 2, cy: (y0 + y1) / 2,
-      passoX: 1.2 * (x1 - x0), passoY: 1.2 * (y1 - y0)
+      x0: Math.min.apply(null, xs), x1: Math.max.apply(null, xs),
+      y0: Math.min.apply(null, ys), y1: Math.max.apply(null, ys)
+    };
+  }
+
+  // Centro e passo da grade de mesas a partir do printable_area do perfil
+  // (lista de "XxY", ex.: ["0x0","256x0","256x256","0x256"]).
+  function gradeDaMesa(printableArea) {
+    if (!Array.isArray(printableArea)) return null;
+    var m = limitesDePontos(printableArea);
+    if (!m || !(m.x1 > m.x0 && m.y1 > m.y0)) return null;
+    return {
+      x0: m.x0, x1: m.x1, y0: m.y0, y1: m.y1,
+      cx: (m.x0 + m.x1) / 2, cy: (m.y0 + m.y1) / 2,
+      passoX: 1.2 * (m.x1 - m.x0), passoY: 1.2 * (m.y1 - m.y0)
+    };
+  }
+
+  // Célula (coluna, linha) da grade da origem em que está o ponto (x, y) e o
+  // deslocamento [dx, dy] que o leva para a mesma célula no destino,
+  // mantendo o afastamento do centro da mesa (ver reposicionarPorMesa).
+  function celulaNoDestino(x, y, a, b) {
+    var coluna = Math.round((x - a.cx) / a.passoX);
+    var linha = Math.round((y - a.cy) / a.passoY);
+    return {
+      coluna: coluna,
+      linha: linha,
+      dx: b.cx - a.cx + coluna * (b.passoX - a.passoX),
+      dy: b.cy - a.cy + linha * (b.passoY - a.passoY)
     };
   }
 
@@ -677,12 +757,183 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
       var x = Number(partes[9]);
       var y = Number(partes[10]);
       if (partes.length !== 12 || isNaN(x) || isNaN(y)) return inteiro;
-      var coluna = Math.round((x - a.cx) / a.passoX);
-      var linha = Math.round((y - a.cy) / a.passoY);
-      partes[9] = String(+(b.cx + coluna * b.passoX + (x - a.cx - coluna * a.passoX)).toFixed(6));
-      partes[10] = String(+(b.cy + linha * b.passoY + (y - a.cy - linha * a.passoY)).toFixed(6));
+      var celula = celulaNoDestino(x, y, a, b);
+      partes[9] = String(+(x + celula.dx).toFixed(6));
+      partes[10] = String(+(y + celula.dy).toFixed(6));
       return inicio + partes.join(" ") + fim;
     });
+  }
+
+  // Pegada [x0, y0, x1, y1] de cada item no destino, em coordenadas da mesa
+  // dele, agrupada por mesa. `itens` são os de parse3MFPackage (bbox global e
+  // posição na origem), `mesas` a lista de object_id por mesa de
+  // parsePlateAssignments com manterVazias (null: tudo na mesa 1). A pegada
+  // anda o mesmo que reposicionarPorMesa anda o item, e perde a célula da
+  // grade do destino.
+  function pegadasPorMesa(itens, mesas, printableAreaOrigem, printableAreaDestino, qtdMesas) {
+    var a = gradeDaMesa(printableAreaOrigem);
+    var b = gradeDaMesa(printableAreaDestino);
+    var porMesa = [];
+    for (var i = 0; i < qtdMesas; i++) porMesa.push([]);
+    if (!a || !b) return porMesa;
+    (itens || []).forEach(function (item) {
+      var c = item.bbox;
+      if (!c || !(c.maxX >= c.minX)) return;
+      var indice = 0;
+      if (mesas) {
+        indice = -1;
+        for (var k = 0; k < mesas.length; k++) {
+          if (mesas[k].indexOf(item.objectId) !== -1) { indice = k; break; }
+        }
+      }
+      if (indice < 0 || indice >= qtdMesas) return;
+      var p = item.posicao || [(c.minX + c.maxX) / 2, (c.minY + c.maxY) / 2];
+      var celula = celulaNoDestino(p[0], p[1], a, b);
+      var dx = celula.dx - celula.coluna * b.passoX;
+      var dy = celula.dy - celula.linha * b.passoY;
+      porMesa[indice].push([c.minX + dx, c.minY + dy, c.maxX + dx, c.maxY + dy]);
+    });
+    return porMesa;
+  }
+
+  // Torre de purga (wipe_tower_x/y, uma por mesa, em coordenadas da mesa).
+  // Nem a posição em que o autor deixou a torre nem a de fábrica do destino
+  // servem sempre: conferido no CLI dos fatiadores, a de fábrica cai fora da
+  // mesa ou na faixa que só um bico alcança (H2D, P1S) e a do autor encosta
+  // nas peças. Em cada mesa a torre vai para o primeiro lugar livre entre a
+  // do autor (com o deslocamento das peças) e a de fábrica, ou, se nenhuma
+  // servir, para o ponto livre mais perto da do autor. Livre = dentro da mesa
+  // com margem, fora das áreas proibidas do perfil (bed_exclude_area,
+  // wrapping_exclude_area) e da faixa que só um bico alcança
+  // (extruder_printable_area), e longe das peças. A torre ocupa até 40 mm de
+  // profundidade e a largura configurada, girada pelo
+  // wipe_tower_rotation_angle (medido no G-code dos fatiadores).
+  var TORRE = { lado: 40, margem: 6, folga: 6, passo: 5 };
+
+  function primeiroNumero(valor) {
+    return parseFloat([].concat(valor == null ? [] : valor)[0]);
+  }
+
+  function regiaoDaTorre(config) {
+    var m = limitesDePontos(config.printable_area);
+    if (!m) return null;
+    [].concat(config.extruder_printable_area || []).forEach(function (area) {
+      var e = limitesDePontos(area);
+      if (e) m = { x0: Math.max(m.x0, e.x0), x1: Math.min(m.x1, e.x1), y0: Math.max(m.y0, e.y0), y1: Math.min(m.y1, e.y1) };
+    });
+    if (!(m.x1 > m.x0 && m.y1 > m.y0)) return null;
+    // A lista pode trazer vários retângulos emendados num contorno só, de 4
+    // em 4 pontos, com trechos de largura zero entre eles (Qidi X-Max 4: 4
+    // cantos; Anycubic Kobra 3: 4 bordas). Retângulo com metade da mesa ou
+    // mais é o contorno, não uma área proibida.
+    var proibidas = [];
+    var areaMesa = (m.x1 - m.x0) * (m.y1 - m.y0);
+    ["bed_exclude_area", "wrapping_exclude_area"].forEach(function (campo) {
+      var pontos = [];
+      [].concat(config[campo] || []).forEach(function (trecho) {
+        pontos = pontos.concat(String(trecho).split(","));
+      });
+      for (var i = 0; i + 4 <= pontos.length; i += 4) {
+        var e = limitesDePontos(pontos.slice(i, i + 4));
+        if (e && e.x1 > e.x0 && e.y1 > e.y0 && (e.x1 - e.x0) * (e.y1 - e.y0) < areaMesa / 2) proibidas.push([e.x0, e.y0, e.x1, e.y1]);
+      }
+    });
+    return { lim: m, proibidas: proibidas };
+  }
+
+  // Retângulo que a torre ocupa em relação a (wipe_tower_x, wipe_tower_y),
+  // girado no sentido anti-horário como no fatiador.
+  function pegadaDaTorre(config) {
+    var largura = Math.max(TORRE.lado, primeiroNumero(config.prime_tower_width) || 0);
+    var angulo = (primeiroNumero(config.wipe_tower_rotation_angle) || 0) * Math.PI / 180;
+    var c = Math.cos(angulo), s = Math.sin(angulo);
+    var cantos = [[0, 0], [largura, 0], [0, TORRE.lado], [largura, TORRE.lado]].map(function (p) {
+      return [p[0] * c - p[1] * s, p[0] * s + p[1] * c];
+    });
+    function arred(v) { return Math.round(v * 1000) / 1000; }
+    var xs = cantos.map(function (p) { return p[0]; });
+    var ys = cantos.map(function (p) { return p[1]; });
+    return [arred(Math.min.apply(null, xs)), arred(Math.min.apply(null, ys)), arred(Math.max.apply(null, xs)), arred(Math.max.apply(null, ys))];
+  }
+
+  function lugarDaTorre(config, pecas, candidatos) {
+    var regiao = regiaoDaTorre(config);
+    if (!regiao) return null;
+    var lim = regiao.lim, M = TORRE.margem, F = TORRE.folga, t = pegadaDaTorre(config);
+    var obstaculos = pecas.map(function (c) { return [c[0] - F, c[1] - F, c[2] + F, c[3] + F]; }).concat(regiao.proibidas);
+    // posições (x, y) em que a torre inteira, com a margem, fica na mesa
+    var xMin = lim.x0 - t[0] + M, xMax = lim.x1 - t[2] - M;
+    var yMin = lim.y0 - t[1] + M, yMax = lim.y1 - t[3] - M;
+    // área da torre (com a margem) em cima de peças ou de áreas proibidas
+    function sobre(x, y) {
+      var total = 0;
+      for (var i = 0; i < obstaculos.length; i++) {
+        var c = obstaculos[i];
+        var w = Math.min(x + t[2] + M, c[2]) - Math.max(x + t[0] - M, c[0]);
+        var h = Math.min(y + t[3] + M, c[3]) - Math.max(y + t[1] - M, c[1]);
+        if (w > 0 && h > 0) total += w * h;
+      }
+      return total;
+    }
+    function livre(x, y) {
+      return x >= xMin && x <= xMax && y >= yMin && y <= yMax && sobre(x, y) === 0;
+    }
+    var validos = candidatos.filter(Boolean);
+    for (var k = 0; k < validos.length; k++) {
+      if (livre(validos[k][0], validos[k][1])) return validos[k];
+    }
+    // o ponto livre mais perto da referência; mesa cheia: o que menos cobre
+    var ref = validos[0] || [xMin, yMax];
+    var melhor = null, menorSobre = Infinity, menorDist = Infinity;
+    for (var x = xMin; x <= xMax; x += TORRE.passo) {
+      for (var y = yMin; y <= yMax; y += TORRE.passo) {
+        var cobre = sobre(x, y);
+        var dist = (x - ref[0]) * (x - ref[0]) + (y - ref[1]) * (y - ref[1]);
+        if (cobre < menorSobre || (cobre === menorSobre && dist < menorDist)) {
+          melhor = [x, y]; menorSobre = cobre; menorDist = dist;
+        }
+      }
+    }
+    if (melhor) return melhor;
+    // mesa menor que a torre: fica na referência, só puxada para dentro
+    if (!validos.length) return null;
+    return [Math.min(Math.max(ref[0], xMin), Math.max(xMin, xMax)), Math.min(Math.max(ref[1], yMin), Math.max(yMin, yMax))];
+  }
+
+  // `configOrigem` é o project_settings.config original (torre do autor, mesa
+  // de origem), `configDestino` o já convertido (mesa, áreas e bicos do
+  // destino, torre configurada no processo), `baseDestino` o perfil de
+  // destino (torre de fábrica) e `pegadas` o de pegadasPorMesa. Devolve null
+  // sem torre: desligada ou com um filamento só, não há troca e o fatiador
+  // não a imprime.
+  function posicionarTorres(configOrigem, configDestino, baseDestino, pegadas) {
+    var ligada = String([].concat(configDestino.enable_prime_tower == null ? "1" : configDestino.enable_prime_tower)[0]) !== "0";
+    var filamentos = [].concat(configDestino.filament_colour || []).length;
+    if (!ligada || filamentos < 2 || configOrigem.wipe_tower_x == null || configOrigem.wipe_tower_y == null) return null;
+    var a = gradeDaMesa(configOrigem.printable_area);
+    var b = gradeDaMesa(configDestino.printable_area);
+    if (!a || !b) return null;
+    var xs = [].concat(configOrigem.wipe_tower_x);
+    var ys = [].concat(configOrigem.wipe_tower_y);
+    var fabrica = [primeiroNumero(baseDestino.wipe_tower_x), primeiroNumero(baseDestino.wipe_tower_y)];
+    if (isNaN(fabrica[0]) || isNaN(fabrica[1])) fabrica = null;
+
+    // Sem lugar calculado (região da torre inválida no perfil), a torre só
+    // acompanha as peças, como em reposicionarTorres.
+    var simples = reposicionarTorres(configOrigem, configOrigem.printable_area, configDestino.printable_area);
+    var simplesX = [].concat(simples.wipe_tower_x), simplesY = [].concat(simples.wipe_tower_y);
+    var novosX = [], novosY = [];
+    for (var i = 0; i < xs.length; i++) {
+      var autor = [parseFloat(xs[i]) + b.cx - a.cx, parseFloat(ys[Math.min(i, ys.length - 1)]) + b.cy - a.cy];
+      if (isNaN(autor[0]) || isNaN(autor[1])) autor = null;
+      var lugar = lugarDaTorre(configDestino, pegadas[i] || [], [autor, fabrica]);
+      novosX.push(lugar ? String(+lugar[0].toFixed(3)) : simplesX[i]);
+      novosY.push(lugar ? String(+lugar[1].toFixed(3)) : simplesY[Math.min(i, simplesY.length - 1)]);
+    }
+    return {
+      wipe_tower_x: Array.isArray(configOrigem.wipe_tower_x) ? novosX : novosX[0],
+      wipe_tower_y: Array.isArray(configOrigem.wipe_tower_y) ? novosY : novosY[0]
+    };
   }
 
   // A posição da torre de purga (wipe_tower_x/y, uma por mesa, em
@@ -838,8 +1089,13 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     parse3MFPerfil: parse3MFPerfil,
     parsePlateAssignments: parsePlateAssignments,
     calcularChapas: calcularChapas,
+    contarTriangulos3MF: contarTriangulos3MF,
+    contarTriangulosSTL: contarTriangulosSTL,
+    temPartesNaoSolidas: function (modelSettingsText) { return !!parsePartesNaoSolidas(modelSettingsText); },
     reposicionarPorMesa: reposicionarPorMesa,
     reposicionarTorres: reposicionarTorres,
+    pegadasPorMesa: pegadasPorMesa,
+    posicionarTorres: posicionarTorres,
     mapearCopiasDeMalha: mapearCopiasDeMalha,
     paraCadaCopia: paraCadaCopia,
     copiasDoTriangulo: copiasDoTriangulo,
