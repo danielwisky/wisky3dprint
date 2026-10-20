@@ -554,7 +554,9 @@
       outEl.textContent = "Não foi possível gerar o(s) projeto(s) convertido(s).";
     }).then(function () {
       gerando = false;
-      if (estado === projeto) gerarBtn.disabled = projeto.destinoKeys.length === 0;
+      // Se outro arquivo foi carregado no meio, a seleção dele montou o botão
+      // ainda com gerando = true e o deixou desabilitado.
+      if (estado) gerarBtn.disabled = estado.destinoKeys.length === 0;
     });
   }
 
