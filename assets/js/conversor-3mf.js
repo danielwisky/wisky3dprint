@@ -93,6 +93,23 @@
     return VERSAO_FATIADOR_POR_MARCA[perfil.marca] || perfil.base.version;
   }
 
+  // Mesma opção com nome diferente em cada família de fatiador: Bambu Studio
+  // e QIDI Studio gravam o primeiro, os derivados do OrcaSlicer o segundo.
+  // O valor do perfil de destino diz qual família ele usa; sem a tradução o
+  // fatiador de destino avisa que substituiu o valor ao abrir o projeto.
+  var VALORES_EQUIVALENTES = {
+    ensure_vertical_shell_thickness: [["enabled", "ensure_all"]]
+  };
+
+  function traduzirValoresEquivalentes(config, perfilDestino) {
+    Object.keys(VALORES_EQUIVALENTES).forEach(function (campo) {
+      VALORES_EQUIVALENTES[campo].forEach(function (par) {
+        var i = par.indexOf(config[campo]);
+        if (i !== -1 && perfilDestino.base[campo] === par[1 - i]) config[campo] = par[1 - i];
+      });
+    });
+  }
+
   function ehCampoDestino(campo) {
     if (CAMPOS_DESTINO.indexOf(campo) !== -1) return true;
     return PREFIXOS_CAMPOS_DESTINO.some(function (prefixo) {
@@ -352,6 +369,7 @@
       if (ehCampoDestino(k)) novo[k] = perfilDestino.base[k];
     });
     if (versaoFatiador(perfilDestino)) novo.version = versaoFatiador(perfilDestino);
+    traduzirValoresEquivalentes(novo, perfilDestino);
     return novo;
   }
 
