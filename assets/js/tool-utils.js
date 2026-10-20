@@ -61,15 +61,18 @@
       var modelFile = ModelParser.localizarModeloRaiz(zip);
       var configFile = ModelParser.localizarArquivoUnico(zip, "project_settings.config");
       var modelSettingsFile = ModelParser.localizarArquivoUnico(zip, "model_settings.config");
+      var sliceInfoFile = ModelParser.localizarArquivoUnico(zip, "slice_info.config");
 
-      return Promise.all([texto(modelFile), texto(configFile), texto(modelSettingsFile)]).then(function (r) {
+      return Promise.all([texto(modelFile), texto(configFile), texto(modelSettingsFile), texto(sliceInfoFile)]).then(function (r) {
         return {
           zip: zip,
           modelPath: modelFile ? modelFile.name : null,
           modelText: r[0],
           configPath: configFile ? configFile.name : null,
           configText: r[1],
-          modelSettingsText: r[2]
+          modelSettingsText: r[2],
+          sliceInfoPath: sliceInfoFile ? sliceInfoFile.name : null,
+          sliceInfoText: r[3]
         };
       });
     });

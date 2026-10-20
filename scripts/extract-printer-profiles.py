@@ -70,6 +70,8 @@ def main():
     # JSON exige aspas — só o nível superior precisa disso, o resto do objeto
     # (dentro de "base": {...}) já vem com todas as chaves entre aspas.
     obj_text = re.sub(r'(?m)^(\s*)([A-Za-z_][A-Za-z0-9_]*):(\s*\{)', r'\1"\2":\3', obj_text)
+    # JS também aceita vírgula após a última impressora; JSON não.
+    obj_text = re.sub(r',(\s*)\}$', r'\1}', obj_text)
 
     perfis = json.loads(obj_text)
 
