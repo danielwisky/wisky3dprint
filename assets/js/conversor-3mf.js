@@ -370,17 +370,23 @@
     });
     if (versaoFatiador(perfilDestino)) novo.version = versaoFatiador(perfilDestino);
     traduzirValoresEquivalentes(novo, perfilDestino);
+    var torres = ModelParser.reposicionarTorres(configOriginal, configOriginal.printable_area, perfilDestino.base.printable_area);
+    if (torres) {
+      novo.wipe_tower_x = torres.wipe_tower_x;
+      novo.wipe_tower_y = torres.wipe_tower_y;
+    }
     return novo;
   }
 
-  function montarNovoModelo(modelText, perfilDestino) {
+  function montarNovoModelo(modelText, printableAreaOrigem, perfilDestino) {
+    var novo = ModelParser.reposicionarPorMesa(modelText, printableAreaOrigem, perfilDestino.base.printable_area) || modelText;
     var formato = APLICACAO_POR_MARCA[perfilDestino.marca];
-    if (!formato || !versaoFatiador(perfilDestino)) return modelText;
+    if (!formato || !versaoFatiador(perfilDestino)) return novo;
     var aplicacao = formato.replace("{v}", versaoFatiador(perfilDestino));
     // OrcaSlicer e Elegoo Slicer priorizam a versão de <metadata
     // name="OrcaSlicer"> sobre a de Application; a do projeto original
     // dispararia o mesmo aviso.
-    var novo = modelText.replace(/\s*<metadata\s+name="OrcaSlicer"\s*>[^<]*<\/metadata>/g, "");
+    novo = novo.replace(/\s*<metadata\s+name="OrcaSlicer"\s*>[^<]*<\/metadata>/g, "");
     var tag = /(<metadata\s+name="Application"\s*>)[^<]*(<\/metadata>)/;
     if (tag.test(novo)) return novo.replace(tag, "$1" + aplicacao + "$2");
     return novo.replace(/(<model\b[^>]*>)/, '$1\n <metadata name="Application">' + aplicacao + "</metadata>");
@@ -411,7 +417,7 @@
   function gerarProjetoUnico(projeto, perfilDestino, nivelCompressao) {
     var novoConfig = montarNovoConfig(projeto.projectConfig, perfilDestino);
     projeto.zip.file(projeto.projectConfigPath, JSON.stringify(novoConfig, null, 4));
-    if (projeto.modelText) projeto.zip.file(projeto.modelPath, montarNovoModelo(projeto.modelText, perfilDestino));
+    if (projeto.modelText) projeto.zip.file(projeto.modelPath, montarNovoModelo(projeto.modelText, projeto.projectConfig.printable_area, perfilDestino));
     if (projeto.sliceInfoText) projeto.zip.file(projeto.sliceInfoPath, montarNovoSliceInfo(projeto.sliceInfoText, perfilDestino));
     // Sem compression:"DEFLATE" o JSZip descompacta o conteúdo original e
     // regrava sem compactar, inflando um 3MF de dezenas de MB pra centenas.
