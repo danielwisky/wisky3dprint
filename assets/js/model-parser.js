@@ -714,6 +714,63 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     return porChapa;
   }
 
+  // Um mesmo object referenciado por dois <item>/<component> vira, em
+  // extractTriangles3MF, duas cópias da malha com os mesmos triângulos de
+  // origem (path, objectId, localIndex). No 3MF exportado só existe uma cor
+  // por triângulo de origem, então as cópias precisam ser pintadas juntas.
+  // Cada cópia é um trecho contínuo de `triangleOrigins` (onMesh empilha a
+  // malha inteira de uma vez, com localIndex crescente): o mapa guarda o
+  // início de cada trecho e, para trechos repetidos, o início de todas as
+  // cópias, em vez de um registro por triângulo. Devolve null sem cópias.
+  function mapearCopiasDeMalha(triangleOrigins) {
+    var inicios = [];
+    var chaves = [];
+    for (var t = 0; t < triangleOrigins.length; t++) {
+      var o = triangleOrigins[t];
+      var anterior = t > 0 ? triangleOrigins[t - 1] : null;
+      var continua = o && anterior && o.path === anterior.path && o.objectId === anterior.objectId && o.localIndex > anterior.localIndex;
+      if (!continua) {
+        inicios.push(t);
+        chaves.push(o ? o.path + "|" + o.objectId : null);
+      }
+    }
+
+    var porChave = new Map();
+    chaves.forEach(function (chave, i) {
+      if (chave === null) return;
+      if (!porChave.has(chave)) porChave.set(chave, []);
+      porChave.get(chave).push(inicios[i]);
+    });
+
+    var temCopias = false;
+    var copias = chaves.map(function (chave) {
+      var grupo = chave === null ? null : porChave.get(chave);
+      if (!grupo || grupo.length < 2) return null;
+      temCopias = true;
+      return grupo;
+    });
+    return temCopias ? { inicios: inicios, copias: copias } : null;
+  }
+
+  // Índices dos triângulos que são o mesmo triângulo de origem que `t` nas
+  // outras cópias da malha (ver mapearCopiasDeMalha).
+  function copiasDoTriangulo(mapa, t) {
+    if (!mapa) return [];
+    var baixo = 0;
+    var alto = mapa.inicios.length - 1;
+    while (baixo < alto) {
+      var meio = (baixo + alto + 1) >> 1;
+      if (mapa.inicios[meio] <= t) baixo = meio;
+      else alto = meio - 1;
+    }
+    var grupo = mapa.copias[baixo];
+    if (!grupo) return [];
+    var deslocamento = t - mapa.inicios[baixo];
+    return grupo
+      .filter(function (inicio) { return inicio !== mapa.inicios[baixo]; })
+      .map(function (inicio) { return inicio + deslocamento; });
+  }
+
   window.Wisky3D.ModelParser = {
     parseSTL: parseSTL,
     computeBoundingBox: computeBoundingBox,
@@ -733,6 +790,8 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     calcularChapas: calcularChapas,
     reposicionarPorMesa: reposicionarPorMesa,
     reposicionarTorres: reposicionarTorres,
+    mapearCopiasDeMalha: mapearCopiasDeMalha,
+    copiasDoTriangulo: copiasDoTriangulo,
     mapearTriangulosParaChapas: mapearTriangulosParaChapas
   };
 })();

@@ -535,11 +535,14 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils)
 
   function paintTriangles(triList, rgb) {
     pushUndo();
-    for (let i = 0; i < triList.length; i++) {
-      const t = triList[i];
+    const pintar = (t) => {
       state.baseColors[t * 3] = rgb[0];
       state.baseColors[t * 3 + 1] = rgb[1];
       state.baseColors[t * 3 + 2] = rgb[2];
+    };
+    for (let i = 0; i < triList.length; i++) {
+      pintar(triList[i]);
+      if (state.copias) ModelParser.copiasDoTriangulo(state.copias, triList[i]).forEach(pintar);
     }
     refreshColorBuffer();
   }
@@ -926,7 +929,10 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils)
       // exportação, remendar o pacote original (preservando Metadata/,
       // thumbnails etc.) em vez de reconstruir tudo do zero.
       triangleOrigins: (origem && origem.origins) || null,
-      zip: (origem && origem.zip) || null
+      zip: (origem && origem.zip) || null,
+      // Cópias de uma mesma malha (o mesmo object em dois <item>) pintam
+      // juntas: no 3MF exportado elas têm uma cor só (ver mapearCopiasDeMalha).
+      copias: origem && origem.origins ? ModelParser.mapearCopiasDeMalha(origem.origins) : null
     };
 
     // Chapas (plates) detectadas num 3MF multi-plate (ver detectarChapas em
