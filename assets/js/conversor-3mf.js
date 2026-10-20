@@ -182,15 +182,34 @@
     return campo;
   }
 
+  // Casa primeiro o printer_model (único por perfil) e o printer_settings_id
+  // exatos. Na falta deles, fica com o perfil de nome mais longo que seja
+  // prefixo do modelo: "Bambu Lab A1 mini" não pode cair em "Bambu Lab A1".
+  // As Qidi gravam o modelo sem a marca ("Q1 Pro"), por isso o casamento
+  // exato vem antes do nome.
   function detectarPerfilOrigem(config, perfis) {
-    var alvo = (config.printer_model || config.printer_settings_id || "").toLowerCase();
+    var modelo = String(config.printer_model || "").toLowerCase();
+    var settingsId = String(config.printer_settings_id || "").toLowerCase();
+    var alvo = modelo || settingsId;
     if (!alvo) return null;
     var chaves = Object.keys(perfis);
-    for (var i = 0; i < chaves.length; i++) {
-      var base = nomeBaseImpressora(perfis[chaves[i]].nome).toLowerCase();
-      if (alvo.indexOf(base) === 0 || base.indexOf(alvo) === 0) return chaves[i];
+    var campos = [["printer_model", modelo], ["printer_settings_id", settingsId]];
+    for (var c = 0; c < campos.length; c++) {
+      if (!campos[c][1]) continue;
+      for (var i = 0; i < chaves.length; i++) {
+        if (String(perfis[chaves[i]].base[campos[c][0]] || "").toLowerCase() === campos[c][1]) return chaves[i];
+      }
     }
-    return null;
+    var melhor = null;
+    var tamanhoMelhor = 0;
+    chaves.forEach(function (chave) {
+      var base = nomeBaseImpressora(perfis[chave].nome).toLowerCase();
+      if (base.length > tamanhoMelhor && alvo.indexOf(base) === 0) {
+        melhor = chave;
+        tamanhoMelhor = base.length;
+      }
+    });
+    return melhor;
   }
 
   function renderPaleta(el, cores) {
