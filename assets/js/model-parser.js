@@ -460,7 +460,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // é o objectid do build item de nível topo (usado pra casar o triângulo com
   // a chapa/plate a que pertence, ver mapearTriangulosParaChapas) — os dois
   // divergem quando o object de topo é montado via <components> aninhados.
-  function resolveObjectTriangles(zip, docCache, doc, objectId, accumTransform, outTriangulos, path, outOrigins) {
+  function resolveObjectTriangles(zip, docCache, doc, objectId, accumTransform, outTriangulos, path, outOrigins, componentesIgnorados) {
     function onMesh(leafTriangles, localIndices, meshBbox, meshPath, meshObjectId, rootObjectId) {
       leafTriangles.forEach(function (tri, i) {
         outTriangulos.push(tri);
@@ -468,7 +468,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
       });
     }
 
-    return resolveObjectRecursivo(zip, docCache, doc, objectId, accumTransform, path, onMesh);
+    return resolveObjectRecursivo(zip, docCache, doc, objectId, accumTransform, path, onMesh, undefined, componentesIgnorados);
   }
 
   // Extrai a malha de um pacote 3MF já aberto (JSZip) como array de
@@ -478,8 +478,12 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // 3dmodel.model dentro do zip, usado como origem de quem não vem de
   // component externo. Retorna também `origins` (ver resolveObjectTriangles),
   // usado na exportação pra editar o pacote original em vez de recriá-lo.
-  function extractTriangles3MF(zip, rootXmlText, rootPath) {
+  // Com `modelSettingsText`, modificadores e bloqueadores de suporte ficam de
+  // fora: não são impressos, então não há o que pintar (ver
+  // parsePartesNaoSolidas).
+  function extractTriangles3MF(zip, rootXmlText, rootPath, modelSettingsText) {
     var doc = parseXmlDoc(rootXmlText);
+    var partesNaoSolidas = parsePartesNaoSolidas(modelSettingsText);
     var unidadeAttr = doc.documentElement.getAttribute("unit");
     var escala = UNIDADE_PARA_MM[unidadeAttr] || 1;
     var docCache = {};
@@ -511,7 +515,8 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
           return resolveObjectTriangles(zip, docCache, extDoc, objectId, transform, triangulos, externo.normalizedPath, origins);
         });
       }
-      return resolveObjectTriangles(zip, docCache, doc, objectId, transform, triangulos, rootPath, origins);
+      var ignorados = partesNaoSolidas ? partesNaoSolidas.get(objectId) : undefined;
+      return resolveObjectTriangles(zip, docCache, doc, objectId, transform, triangulos, rootPath, origins, ignorados);
     });
 
     return Promise.all(promises).then(function () {

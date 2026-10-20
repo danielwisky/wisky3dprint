@@ -101,3 +101,14 @@ test("parse3MFPackage não aplica as partes de model_settings a item com p:path 
     assert.ok(Math.abs(r.volumeMm3 - 126000) < 1e-6, `volume=${r.volumeMm3}`);
   });
 });
+
+test("extractTriangles3MF deixa de fora as partes que não são normal_part (Colorir)", () => {
+  return Promise.all([
+    ModelParser.extractTriangles3MF(fakeZip(), MODELO, "3D/3dmodel.model"),
+    ModelParser.extractTriangles3MF(fakeZip(), MODELO, "3D/3dmodel.model", settings("modifier_part"))
+  ]).then(([todos, semModificador]) => {
+    assert.equal(todos.triangulos.length, 24, "peça + modificador");
+    assert.equal(semModificador.triangulos.length, 12, "só a peça");
+    assert.ok(semModificador.origins.every((o) => o.objectId === "1"));
+  });
+});

@@ -984,7 +984,7 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils)
 
     return ToolUtils.lerPacote3MF(file).then((pacote) => {
       if (!pacote.modelText) throw new Error("3dmodel.model não encontrado no pacote 3MF");
-      return ModelParser.extractTriangles3MF(pacote.zip, pacote.modelText, pacote.modelPath).then((resultado) => ({
+      return ModelParser.extractTriangles3MF(pacote.zip, pacote.modelText, pacote.modelPath, pacote.modelSettingsText).then((resultado) => ({
         triangulos: resultado.triangulos,
         origins: resultado.origins,
         zip: pacote.zip,
