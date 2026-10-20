@@ -60,3 +60,18 @@ test("contarTriangulosSTL conta as facets do STL ASCII", () => {
 
   assert.equal(contarTriangulosSTL(new TextEncoder().encode(texto).buffer), 4);
 });
+
+test("contarTriangulos3MF conta o 3dmodel.model já lido sem ler a entrada dele de novo", () => {
+  let leuRaiz = false;
+  const zip = fakeZip({ "3D/Objects/object_1.model": triangulos(5) });
+  const arquivos = zip.file;
+  zip.file = (p) => {
+    const r = arquivos(p);
+    return p instanceof RegExp ? r.concat([{ name: "3D/3dmodel.model", async: () => { leuRaiz = true; return Promise.resolve(""); } }]) : r;
+  };
+
+  return contarTriangulos3MF(zip, triangulos(3), "3D/3dmodel.model").then((n) => {
+    assert.equal(n, 8);
+    assert.equal(leuRaiz, false);
+  });
+});

@@ -652,8 +652,8 @@
           var fatiado = r[1];
           if (!cargas.ehAtual(id)) return;
           var bbox = res ? res.bbox : null;
-          var mesas = ModelParser.parsePlateAssignments(pacote.modelSettingsText);
-          var chapas = res ? ModelParser.calcularChapas(res.itens, mesas) : null;
+          var chapas = res ? ModelParser.calcularChapas(res.itens, ModelParser.parsePlateAssignments(pacote.modelSettingsText)) : null;
+          var mesas = ModelParser.parsePlateAssignments(pacote.modelSettingsText, true);
 
           estado = { file: file, zip: pacote.zip, projectConfig: config, projectConfigPath: pacote.configPath, modelText: pacote.modelText, modelPath: pacote.modelPath, sliceInfoText: pacote.sliceInfoText, sliceInfoPath: pacote.sliceInfoPath, fatiado: fatiado, geometria: res ? { itens: res.itens, mesas: mesas } : null, destinoKeys: [] };
           var chaveDetectada = renderOrigem(config, perfis, bbox, chapas);

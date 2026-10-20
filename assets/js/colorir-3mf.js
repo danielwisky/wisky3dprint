@@ -998,7 +998,11 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils)
 
     return ToolUtils.lerPacote3MF(file).then((pacote) => {
       if (!pacote.modelText) throw new Error("3dmodel.model não encontrado no pacote 3MF");
-      return ModelParser.contarTriangulos3MF(pacote.zip).then((qtd) => {
+      // Com modificadores ou bloqueadores de suporte, a contagem prévia (que
+      // inclui as partes que a extração deixa de fora) poderia recusar um
+      // modelo que cabe: fica só a checagem depois da extração.
+      if (ModelParser.temPartesNaoSolidas(pacote.modelSettingsText)) return pacote;
+      return ModelParser.contarTriangulos3MF(pacote.zip, pacote.modelText, pacote.modelPath).then((qtd) => {
         if (qtd > ToolUtils.MAX_TRIANGULOS) throw erroDeLimite(qtd);
         return pacote;
       });

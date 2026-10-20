@@ -116,3 +116,28 @@ test("posicionarTorres devolve null com torre desligada ou um filamento só", ()
   assert.equal(posicionarTorres(origem(["40"], ["40"]), destino({ enable_prime_tower: "0" }), FABRICA, [[]]), null);
   assert.equal(posicionarTorres(origem(["40"], ["40"]), destino({ filament_colour: ["#FFFFFF"] }), FABRICA, [[]]), null);
 });
+
+test("pegadasPorMesa usa a posição do item (como reposicionarPorMesa), não o centro do bbox", () => {
+  // peça comprida: posição na célula 0, mas o centro do bbox já passa de 0,5 × passo
+  const item = { objectId: "1", posicao: [128, 128], bbox: bbox(100, 100, 400, 150) };
+
+  const pegadas = pegadasPorMesa([item], null, MESA_256, MESA_220, 1);
+
+  assert.deepEqual(pegadas, [[[82, 82, 382, 132]]]);
+});
+
+test("posicionarTorres volta ao deslocamento simples quando o perfil não tem região válida para a torre", () => {
+  // as áreas dos dois bicos não se cruzam
+  const config = destino({ extruder_printable_area: ["0x0,100x0,100x220,0x220", "120x0,220x0,220x220,120x220"] });
+
+  const torres = posicionarTorres(origem(["40"], ["40"]), config, FABRICA, [[]]);
+
+  assert.deepEqual(torres, { wipe_tower_x: ["22"], wipe_tower_y: ["22"] });
+});
+
+test("posicionarTorres aceita bed_exclude_area com os pontos num texto só", () => {
+  const torres = posicionarTorres(origem(["40"], ["40"]), destino({ bed_exclude_area: ["0x0,80x0,80x80,0x80"] }), { wipe_tower_x: ["22"], wipe_tower_y: ["22"] }, [[]]);
+
+  const [x, y] = [Number(torres.wipe_tower_x[0]), Number(torres.wipe_tower_y[0])];
+  assert.ok(!(x < 86 && y < 86), `torre na área proibida: ${x},${y}`);
+});

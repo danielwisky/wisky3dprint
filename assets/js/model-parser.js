@@ -123,23 +123,40 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // cabeçalho; no ASCII, um por "endfacet".
   function contarTriangulosSTL(buffer) {
     if (detectBinarySTL(buffer)) return new DataView(buffer).getUint32(80, true);
-    return contarOcorrencias(new TextDecoder("utf-8").decode(buffer), "endfacet");
+    // Direto nos bytes: decodificar para texto aqui e de novo no parseSTL
+    // dobraria a memória de um STL ASCII grande.
+    var bytes = new Uint8Array(buffer);
+    var alvo = [101, 110, 100, 102, 97, 99, 101, 116]; // "endfacet"
+    var n = 0;
+    for (var i = 0; i + alvo.length <= bytes.length; i++) {
+      if (bytes[i] !== 101) continue;
+      var k = 1;
+      while (k < alvo.length && bytes[i + k] === alvo[k]) k++;
+      if (k === alvo.length) { n++; i += alvo.length - 1; }
+    }
+    return n;
   }
 
   // Quantos <triangle> há nos .model do pacote, sem interpretar o XML nem
   // montar a malha, para recusar modelos grandes demais antes de alocar
   // milhões de arrays. É uma estimativa: um objeto usado por dois <item>
   // conta uma vez só. Lê um arquivo por vez para não manter todos os textos
-  // em memória ao mesmo tempo.
-  function contarTriangulos3MF(zip) {
-    var arquivos = zip.file(/\.model$/i);
+  // em memória ao mesmo tempo. `rootXmlText`/`rootPath` (opcionais): o
+  // 3dmodel.model raiz já lido, contado sem descompactar de novo.
+  function contarTriangulos3MF(zip, rootXmlText, rootPath) {
+    function contar(texto) {
+      return contarOcorrencias(texto, "<triangle ") + contarOcorrencias(texto, "<triangle/");
+    }
+    var arquivos = zip.file(/\.model$/i).filter(function (arquivo) {
+      return rootXmlText == null || arquivo.name !== rootPath;
+    });
     return arquivos.reduce(function (promessa, arquivo) {
       return promessa.then(function (total) {
         return arquivo.async("text").then(function (texto) {
-          return total + contarOcorrencias(texto, "<triangle ") + contarOcorrencias(texto, "<triangle/");
+          return total + contar(texto);
         });
       });
-    }, Promise.resolve(0));
+    }, Promise.resolve(rootXmlText == null ? 0 : contar(rootXmlText)));
   }
 
   var TRANSFORM_IDENTIDADE = { M: [[1, 0, 0], [0, 1, 0], [0, 0, 1]], t: [0, 0, 0] };
@@ -421,6 +438,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     );
 
     var objectIds = items.map(function (item) { return item.getAttribute("objectid"); });
+    var translacoes = items.map(function (item) { return parseTransformAttr(item.getAttribute("transform")).t; });
     var promises = items.map(function (item) {
       var transform = parseTransformAttr(item.getAttribute("transform"));
       var objectId = item.getAttribute("objectid");
@@ -470,8 +488,10 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
         // Usado pra separar por chapa/plate em arquivos multi-plate (ver
         // conversor-3mf.js), já que o bbox combinado acima soma objetos que
         // na real impressora nunca ficam juntos na mesma mesa.
+        // `posicao` é a translação do item: a mesma que reposicionarPorMesa
+        // usa para achar a célula da grade.
         itens: results.map(function (r, i) {
-          return { objectId: objectIds[i], bbox: escalarBBox(r.bbox) };
+          return { objectId: objectIds[i], bbox: escalarBBox(r.bbox), posicao: [translacoes[i][0] * escala, translacoes[i][1] * escala] };
         })
       };
     });
@@ -619,8 +639,10 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // dava um "tamanho" maior que qualquer mesa real e gerava avisos de encaixe
   // falsos. Lê Metadata/model_settings.config e devolve, por chapa, a lista de
   // object_id das peças que pertencem a ela (ou null se o arquivo não tem
-  // metadados de chapa, caso de projetos com uma chapa só).
-  function parsePlateAssignments(modelSettingsText) {
+  // metadados de chapa, caso de projetos com uma chapa só). Com
+  // `manterVazias`, mesas sem peças continuam na lista (vazias), para o
+  // índice ser o da mesa, e uma mesa só também volta.
+  function parsePlateAssignments(modelSettingsText, manterVazias) {
     if (!modelSettingsText || typeof DOMParser === "undefined") return null;
     try {
       var doc = new DOMParser().parseFromString(modelSettingsText, "application/xml");
@@ -640,8 +662,9 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
             }
           }
         }
-        if (ids.length) chapas.push(ids);
+        if (ids.length || manterVazias) chapas.push(ids);
       }
+      if (manterVazias) return chapas.length ? chapas : null;
       return chapas.length > 1 ? chapas : null;
     } catch (e) {
       return null;
@@ -702,6 +725,20 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     };
   }
 
+  // Célula (coluna, linha) da grade da origem em que está o ponto (x, y) e o
+  // deslocamento [dx, dy] que o leva para a mesma célula no destino,
+  // mantendo o afastamento do centro da mesa (ver reposicionarPorMesa).
+  function celulaNoDestino(x, y, a, b) {
+    var coluna = Math.round((x - a.cx) / a.passoX);
+    var linha = Math.round((y - a.cy) / a.passoY);
+    return {
+      coluna: coluna,
+      linha: linha,
+      dx: b.cx - a.cx + coluna * (b.passoX - a.passoX),
+      dy: b.cy - a.cy + linha * (b.passoY - a.passoY)
+    };
+  }
+
   // Bambu Studio e os fatiadores derivados (QIDI, Orca, Creality Print...)
   // guardam a mesa k de um projeto numa célula de uma grade com passo de 1,2 ×
   // a largura e 1,2 × a profundidade da mesa da impressora (as linhas crescem
@@ -720,20 +757,19 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
       var x = Number(partes[9]);
       var y = Number(partes[10]);
       if (partes.length !== 12 || isNaN(x) || isNaN(y)) return inteiro;
-      var coluna = Math.round((x - a.cx) / a.passoX);
-      var linha = Math.round((y - a.cy) / a.passoY);
-      partes[9] = String(+(b.cx + coluna * b.passoX + (x - a.cx - coluna * a.passoX)).toFixed(6));
-      partes[10] = String(+(b.cy + linha * b.passoY + (y - a.cy - linha * a.passoY)).toFixed(6));
+      var celula = celulaNoDestino(x, y, a, b);
+      partes[9] = String(+(x + celula.dx).toFixed(6));
+      partes[10] = String(+(y + celula.dy).toFixed(6));
       return inicio + partes.join(" ") + fim;
     });
   }
 
   // Pegada [x0, y0, x1, y1] de cada item no destino, em coordenadas da mesa
-  // dele, agrupada por mesa. `itens` são os de parse3MFPackage (bbox global
-  // na origem), `mesas` a lista de object_id por mesa de parsePlateAssignments
-  // (null: tudo na mesa 1). reposicionarPorMesa mantém o afastamento do
-  // centro da mesa, então a pegada é a da origem sem a célula da grade, mais
-  // a diferença entre os centros das mesas.
+  // dele, agrupada por mesa. `itens` são os de parse3MFPackage (bbox global e
+  // posição na origem), `mesas` a lista de object_id por mesa de
+  // parsePlateAssignments com manterVazias (null: tudo na mesa 1). A pegada
+  // anda o mesmo que reposicionarPorMesa anda o item, e perde a célula da
+  // grade do destino.
   function pegadasPorMesa(itens, mesas, printableAreaOrigem, printableAreaDestino, qtdMesas) {
     var a = gradeDaMesa(printableAreaOrigem);
     var b = gradeDaMesa(printableAreaDestino);
@@ -751,10 +787,10 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
         }
       }
       if (indice < 0 || indice >= qtdMesas) return;
-      var coluna = Math.round(((c.minX + c.maxX) / 2 - a.cx) / a.passoX);
-      var linha = Math.round(((c.minY + c.maxY) / 2 - a.cy) / a.passoY);
-      var dx = b.cx - a.cx - coluna * a.passoX;
-      var dy = b.cy - a.cy - linha * a.passoY;
+      var p = item.posicao || [(c.minX + c.maxX) / 2, (c.minY + c.maxY) / 2];
+      var celula = celulaNoDestino(p[0], p[1], a, b);
+      var dx = celula.dx - celula.coluna * b.passoX;
+      var dy = celula.dy - celula.linha * b.passoY;
       porMesa[indice].push([c.minX + dx, c.minY + dy, c.maxX + dx, c.maxY + dy]);
     });
     return porMesa;
@@ -793,7 +829,10 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     var proibidas = [];
     var areaMesa = (m.x1 - m.x0) * (m.y1 - m.y0);
     ["bed_exclude_area", "wrapping_exclude_area"].forEach(function (campo) {
-      var pontos = [].concat(config[campo] || []);
+      var pontos = [];
+      [].concat(config[campo] || []).forEach(function (trecho) {
+        pontos = pontos.concat(String(trecho).split(","));
+      });
       for (var i = 0; i + 4 <= pontos.length; i += 4) {
         var e = limitesDePontos(pontos.slice(i, i + 4));
         if (e && e.x1 > e.x0 && e.y1 > e.y0 && (e.x1 - e.x0) * (e.y1 - e.y0) < areaMesa / 2) proibidas.push([e.x0, e.y0, e.x1, e.y1]);
@@ -879,13 +918,17 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     var fabrica = [primeiroNumero(baseDestino.wipe_tower_x), primeiroNumero(baseDestino.wipe_tower_y)];
     if (isNaN(fabrica[0]) || isNaN(fabrica[1])) fabrica = null;
 
+    // Sem lugar calculado (região da torre inválida no perfil), a torre só
+    // acompanha as peças, como em reposicionarTorres.
+    var simples = reposicionarTorres(configOrigem, configOrigem.printable_area, configDestino.printable_area);
+    var simplesX = [].concat(simples.wipe_tower_x), simplesY = [].concat(simples.wipe_tower_y);
     var novosX = [], novosY = [];
     for (var i = 0; i < xs.length; i++) {
       var autor = [parseFloat(xs[i]) + b.cx - a.cx, parseFloat(ys[Math.min(i, ys.length - 1)]) + b.cy - a.cy];
       if (isNaN(autor[0]) || isNaN(autor[1])) autor = null;
       var lugar = lugarDaTorre(configDestino, pegadas[i] || [], [autor, fabrica]);
-      novosX.push(lugar ? String(+lugar[0].toFixed(3)) : xs[i]);
-      novosY.push(lugar ? String(+lugar[1].toFixed(3)) : ys[Math.min(i, ys.length - 1)]);
+      novosX.push(lugar ? String(+lugar[0].toFixed(3)) : simplesX[i]);
+      novosY.push(lugar ? String(+lugar[1].toFixed(3)) : simplesY[Math.min(i, simplesY.length - 1)]);
     }
     return {
       wipe_tower_x: Array.isArray(configOrigem.wipe_tower_x) ? novosX : novosX[0],
@@ -1048,6 +1091,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     calcularChapas: calcularChapas,
     contarTriangulos3MF: contarTriangulos3MF,
     contarTriangulosSTL: contarTriangulosSTL,
+    temPartesNaoSolidas: function (modelSettingsText) { return !!parsePartesNaoSolidas(modelSettingsText); },
     reposicionarPorMesa: reposicionarPorMesa,
     reposicionarTorres: reposicionarTorres,
     pegadasPorMesa: pegadasPorMesa,
