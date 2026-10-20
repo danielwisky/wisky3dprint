@@ -698,7 +698,6 @@
   applyLogoState();
 
   var MODELO_MAX_BYTES = 60 * 1024 * 1024;
-  var MODELO_MAX_TRIANGULOS = 6000000;
   var lastMeshStats = null;
   var cargasModelo = ToolUtils ? ToolUtils.criarSequenciador() : null;
   var perfilDoArquivo = null;
@@ -794,7 +793,7 @@
       mostrarErroModelo("Não foi possível ler triângulos desse arquivo.");
       return;
     }
-    if (triangleCount > MODELO_MAX_TRIANGULOS) {
+    if (triangleCount > ToolUtils.MAX_TRIANGULOS) {
       mostrarErroModelo("Modelo muito complexo para calcular no navegador. Tente simplificar a malha ou informe peso/tempo manualmente.");
       return;
     }

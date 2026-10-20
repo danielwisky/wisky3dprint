@@ -206,7 +206,7 @@
   }
 
   var perfisPromise = null;
-  var estado = null; // { file, zip, projectConfig, projectConfigPath, modelText, modelPath, sliceInfoText, sliceInfoPath, destinoKeys }
+  var estado = null; // { file, zip, projectConfig, projectConfigPath, modelText, modelPath, sliceInfoText, sliceInfoPath, fatiado, destinoKeys }
   // Cada geração regrava project_settings.config no mesmo zip compartilhado;
   // duas gerações simultâneas misturariam a config de uma impressora no
   // arquivo da outra.
@@ -501,10 +501,10 @@
     return novo.replace(/(<model\b[^>]*>)/, '$1\n <metadata name="Application">' + aplicacao + "</metadata>");
   }
 
-  function montarNovoSliceInfo(sliceInfoText, perfilDestino) {
-    // Os <plate> descrevem o fatiamento da origem (tempo, peso, modelo da
-    // impressora), que só existe num .gcode.3mf: ver removerGcodeFatiado.
-    var novo = sliceInfoText.replace(/\s*<plate>[\s\S]*?<\/plate>/g, "");
+  function montarNovoSliceInfo(sliceInfoText, perfilDestino, fatiado) {
+    // Num projeto fatiado, os <plate> descrevem o fatiamento da origem
+    // (tempo, peso, modelo da impressora): ver removerGcodeFatiado.
+    var novo = fatiado ? sliceInfoText.replace(/\s*<plate\b[^>]*>[\s\S]*?<\/plate>/g, "") : sliceInfoText;
     var versao = versaoFatiador(perfilDestino);
     if (!versao) return novo;
     return novo.replace(/(<header_item\s+key="X-BBL-Client-Version"\s+value=")[^"]*(")/, "$1" + versao + "$2");
@@ -526,9 +526,12 @@
   // para a impressora de origem. O projeto convertido sai como um projeto sem
   // fatiar: sem os plate_N.gcode, sem a referência gcode_file das mesas e sem
   // a relação que aponta para eles; o fatiador de destino gera o próprio.
+  // Devolve (em promessa) se o projeto estava fatiado.
   function removerGcodeFatiado(pacote) {
     var zip = pacote.zip;
-    zip.file(/(^|\/)plate_\d+\.gcode(\.md5)?$/i).forEach(function (arquivo) {
+    var gcodes = zip.file(/(^|\/)plate_\d+\.gcode(\.md5)?$/i);
+    if (!gcodes.length) return Promise.resolve(false);
+    gcodes.forEach(function (arquivo) {
       zip.remove(arquivo.name);
     });
     if (pacote.modelSettingsText && pacote.modelSettingsPath) {
@@ -536,11 +539,15 @@
       if (settings !== pacote.modelSettingsText) zip.file(pacote.modelSettingsPath, settings);
     }
     var rels = ModelParser.localizarArquivoUnico(zip, "model_settings.config.rels");
-    if (!rels) return Promise.resolve();
+    if (!rels) return Promise.resolve(true);
     return rels.async("text").then(function (texto) {
       var semGcode = texto.replace(/\s*<Relationship\b[^>]*\bTarget="[^"]*\.gcode"[^>]*\/>/g, "");
       if (!/<Relationship\b/.test(semGcode)) zip.remove(rels.name);
       else if (semGcode !== texto) zip.file(rels.name, semGcode);
+      return true;
+    }, function () {
+      // A relação só aponta para o G-code: ilegível, não impede a conversão.
+      return true;
     });
   }
 
@@ -552,7 +559,7 @@
     var novoConfig = montarNovoConfig(projeto.projectConfig, perfilDestino);
     projeto.zip.file(projeto.projectConfigPath, JSON.stringify(novoConfig, null, 4));
     if (projeto.modelText) projeto.zip.file(projeto.modelPath, montarNovoModelo(projeto.modelText, projeto.projectConfig.printable_area, perfilDestino));
-    if (projeto.sliceInfoText) projeto.zip.file(projeto.sliceInfoPath, montarNovoSliceInfo(projeto.sliceInfoText, perfilDestino));
+    if (projeto.sliceInfoText) projeto.zip.file(projeto.sliceInfoPath, montarNovoSliceInfo(projeto.sliceInfoText, perfilDestino, projeto.fatiado));
     // Sem compression:"DEFLATE" o JSZip descompacta o conteúdo original e
     // regrava sem compactar, inflando um 3MF de dezenas de MB pra centenas.
     // O nível é reduzido quando há vários destinos: a malha (que não muda
@@ -634,11 +641,12 @@
 
         return Promise.all([geometriaPromise, removerGcodeFatiado(pacote)]).then(function (r) {
           var res = r[0];
+          var fatiado = r[1];
           if (!cargas.ehAtual(id)) return;
           var bbox = res ? res.bbox : null;
           var chapas = res ? ModelParser.calcularChapas(res.itens, ModelParser.parsePlateAssignments(pacote.modelSettingsText)) : null;
 
-          estado = { file: file, zip: pacote.zip, projectConfig: config, projectConfigPath: pacote.configPath, modelText: pacote.modelText, modelPath: pacote.modelPath, sliceInfoText: pacote.sliceInfoText, sliceInfoPath: pacote.sliceInfoPath, destinoKeys: [] };
+          estado = { file: file, zip: pacote.zip, projectConfig: config, projectConfigPath: pacote.configPath, modelText: pacote.modelText, modelPath: pacote.modelPath, sliceInfoText: pacote.sliceInfoText, sliceInfoPath: pacote.sliceInfoPath, fatiado: fatiado, destinoKeys: [] };
           var chaveDetectada = renderOrigem(config, perfis, bbox, chapas);
           destinosData = { perfis: perfis, chaveDetectada: chaveDetectada, bbox: bbox, chapas: chapas };
           buscaEl.value = "";

@@ -87,3 +87,17 @@ test("parse3MFPackage mantém parte normal_part e ignora model_settings inválid
     rs.forEach((r) => assert.ok(Math.abs(r.volumeMm3 - 126000) < 1e-6, `volume=${r.volumeMm3}`));
   });
 });
+
+test("parse3MFPackage não aplica as partes de model_settings a item com p:path (ids de outro arquivo)", () => {
+  const externo = MODELO.replace("<build><item objectid=\"4\"/></build>", "<build/>");
+  const raiz = `<?xml version="1.0" encoding="UTF-8"?>
+<model unit="millimeter" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" xmlns:p="http://schemas.microsoft.com/3dmanufacturing/production/2015/06">
+  <resources/>
+  <build><item p:path="/3D/Objects/x.model" objectid="4"/></build>
+</model>`;
+  const zip = { file: (p) => (p === "3D/Objects/x.model" ? { async: () => Promise.resolve(externo) } : null) };
+
+  return ModelParser.parse3MFPackage(zip, raiz, settings("support_blocker")).then((r) => {
+    assert.ok(Math.abs(r.volumeMm3 - 126000) < 1e-6, `volume=${r.volumeMm3}`);
+  });
+});

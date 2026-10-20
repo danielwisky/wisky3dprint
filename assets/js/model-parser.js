@@ -395,7 +395,6 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     var promises = items.map(function (item) {
       var transform = parseTransformAttr(item.getAttribute("transform"));
       var objectId = item.getAttribute("objectid");
-      var ignorados = partesNaoSolidas ? partesNaoSolidas.get(objectId) : undefined;
       // 3MF Production Extension: <item> também pode apontar pra um arquivo
       // externo via p:path (padrão do Bambu Studio/Orca pra separar cada
       // object/chapa em 3D/Objects/*.model), não só <component> (ver
@@ -403,6 +402,9 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
       // no doc raiz e, se coincidisse por acaso com outro object definido
       // ali, a geometria errada (de outra chapa) era resolvida.
       var itemPath = item.getAttribute("p:path");
+      // Os ids de model_settings.config são os do 3dmodel.model raiz: um item
+      // com p:path aponta para um id de outro arquivo.
+      var ignorados = partesNaoSolidas && !itemPath ? partesNaoSolidas.get(objectId) : undefined;
       if (itemPath) {
         var externo = carregarDocExterno(zip, docCache, itemPath);
         if (!externo) return Promise.resolve({ triangleCount: 0, volumeMm3: 0, areaMm2: 0, bbox: bboxVazio() });
@@ -793,10 +795,11 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     return temCopias ? { inicios: inicios, copias: copias } : null;
   }
 
-  // Índices dos triângulos que são o mesmo triângulo de origem que `t` nas
-  // outras cópias da malha (ver mapearCopiasDeMalha).
-  function copiasDoTriangulo(mapa, t) {
-    if (!mapa) return [];
+  // Chama `fn(indice)` para cada triângulo que é o mesmo triângulo de origem
+  // que `t` nas outras cópias da malha (ver mapearCopiasDeMalha). Sem criar
+  // arrays: roda para cada triângulo de um balde que pode ter milhões.
+  function paraCadaCopia(mapa, t, fn) {
+    if (!mapa) return;
     var baixo = 0;
     var alto = mapa.inicios.length - 1;
     while (baixo < alto) {
@@ -805,11 +808,17 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
       else alto = meio - 1;
     }
     var grupo = mapa.copias[baixo];
-    if (!grupo) return [];
-    var deslocamento = t - mapa.inicios[baixo];
-    return grupo
-      .filter(function (inicio) { return inicio !== mapa.inicios[baixo]; })
-      .map(function (inicio) { return inicio + deslocamento; });
+    if (!grupo) return;
+    var inicio = mapa.inicios[baixo];
+    for (var i = 0; i < grupo.length; i++) {
+      if (grupo[i] !== inicio) fn(grupo[i] + t - inicio);
+    }
+  }
+
+  function copiasDoTriangulo(mapa, t) {
+    var indices = [];
+    paraCadaCopia(mapa, t, function (indice) { indices.push(indice); });
+    return indices;
   }
 
   window.Wisky3D.ModelParser = {
@@ -832,6 +841,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     reposicionarPorMesa: reposicionarPorMesa,
     reposicionarTorres: reposicionarTorres,
     mapearCopiasDeMalha: mapearCopiasDeMalha,
+    paraCadaCopia: paraCadaCopia,
     copiasDoTriangulo: copiasDoTriangulo,
     mapearTriangulosParaChapas: mapearTriangulosParaChapas
   };

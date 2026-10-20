@@ -47,9 +47,6 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils)
   const DEFAULT_COLOR = ThreeMFWriter.DEFAULT_COLOR;
   const HIGHLIGHT_COLOR = [255, 214, 51];
   const AVISO_TRIANGULOS_GRANDE = 150000;
-  // Cada triângulo custa uns 290 bytes de memória (3,7 milhões ocupam ~1 GB):
-  // acima disso a aba corre risco de travar. Mesmo limite do Orçamento.
-  const MAX_TRIANGULOS = 6000000;
   const MAX_UNDO = 20;
   const PALETA_PRESETS = ["#3fb6e8", "#ff6b4a", "#8b7cf6", "#5cd65c", "#ffd633", "#ff4fa3", "#4dd0e1", "#ffa726"];
 
@@ -543,7 +540,7 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils)
     };
     for (let i = 0; i < triList.length; i++) {
       pintar(triList[i]);
-      if (state.copias) ModelParser.copiasDoTriangulo(state.copias, triList[i]).forEach(pintar);
+      if (state.copias) ModelParser.paraCadaCopia(state.copias, triList[i], pintar);
     }
     refreshColorBuffer();
   }
@@ -1027,8 +1024,8 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils)
       .then((resultado) => {
         if (!cargas.ehAtual(id)) return;
         if (!resultado.triangulos.length) throw new Error("nenhuma geometria encontrada no arquivo");
-        if (resultado.triangulos.length > MAX_TRIANGULOS) {
-          mostrarErro("Modelo muito complexo para pintar no navegador (" + resultado.triangulos.length.toLocaleString("pt-BR") + " triângulos, máx. 6 milhões). Tente simplificar a malha.");
+        if (resultado.triangulos.length > ToolUtils.MAX_TRIANGULOS) {
+          mostrarErro("Modelo muito complexo para pintar no navegador (" + resultado.triangulos.length.toLocaleString("pt-BR") + " triângulos, máx. " + (ToolUtils.MAX_TRIANGULOS / 1e6).toLocaleString("pt-BR") + " milhões). Tente simplificar a malha.");
           return;
         }
         resultado.chapas = detectarChapas(resultado.modelSettingsText);
@@ -1295,9 +1292,18 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils)
     }
     exportando = true;
     exportBtn.disabled = true;
-    exportarModelo().then(() => {
-      exportando = false;
-      exportBtn.disabled = !state;
-    });
+    // Promise.resolve().then: um erro síncrono na montagem do arquivo (ex.:
+    // string grande demais) também cai no catch, em vez de deixar o botão
+    // desabilitado para sempre.
+    Promise.resolve()
+      .then(exportarModelo)
+      .catch((err) => {
+        if (window.console && console.error) console.error("Colorir 3MF:", err);
+        outEl.textContent = "Não foi possível gerar o arquivo 3MF.";
+      })
+      .then(() => {
+        exportando = false;
+        exportBtn.disabled = !state;
+      });
   });
 }
