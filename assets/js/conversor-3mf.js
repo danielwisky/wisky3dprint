@@ -206,7 +206,7 @@
   }
 
   var perfisPromise = null;
-  var estado = null; // { file, zip, projectConfig, projectConfigPath, modelText, modelPath, sliceInfoText, sliceInfoPath, fatiado, destinoKeys }
+  var estado = null; // { file, zip, projectConfig, projectConfigPath, modelText, modelPath, sliceInfoText, sliceInfoPath, fatiado, geometria, destinoKeys }
   // Cada geração regrava project_settings.config no mesmo zip compartilhado;
   // duas gerações simultâneas misturariam a config de uma impressora no
   // arquivo da outra.
@@ -465,7 +465,9 @@
     return largura <= area.largura && profundidade <= area.profundidade && (!altura || alturaModelo <= altura);
   }
 
-  function montarNovoConfig(configOriginal, perfilDestino) {
+  // `geometria` ({ itens, mesas }, ver processarArquivo) permite pôr a torre
+  // de purga num lugar livre de cada mesa (ver posicionarTorres).
+  function montarNovoConfig(configOriginal, perfilDestino, geometria) {
     var novo = {};
     // Campos de hardware que o perfil de destino não tem são de outra
     // impressora (AMS de uma Bambu numa Ender-3, segundo bico de uma H2D...).
@@ -479,7 +481,13 @@
     if (versaoFatiador(perfilDestino)) novo.version = versaoFatiador(perfilDestino);
     traduzirValoresPorFamilia(novo, perfilDestino);
     aplicarGcodeDeFilamento(novo, configOriginal, perfilDestino);
-    var torres = ModelParser.reposicionarTorres(configOriginal, configOriginal.printable_area, perfilDestino.base.printable_area);
+    var torres = null;
+    if (geometria && geometria.itens) {
+      var qtdMesas = [].concat(configOriginal.wipe_tower_x == null ? [] : configOriginal.wipe_tower_x).length;
+      var pegadas = ModelParser.pegadasPorMesa(geometria.itens, geometria.mesas, configOriginal.printable_area, novo.printable_area, qtdMesas);
+      torres = ModelParser.posicionarTorres(configOriginal, novo, perfilDestino.base, pegadas);
+    }
+    if (!torres) torres = ModelParser.reposicionarTorres(configOriginal, configOriginal.printable_area, perfilDestino.base.printable_area);
     if (torres) {
       novo.wipe_tower_x = torres.wipe_tower_x;
       novo.wipe_tower_y = torres.wipe_tower_y;
@@ -556,7 +564,7 @@
   }
 
   function gerarProjetoUnico(projeto, perfilDestino, nivelCompressao) {
-    var novoConfig = montarNovoConfig(projeto.projectConfig, perfilDestino);
+    var novoConfig = montarNovoConfig(projeto.projectConfig, perfilDestino, projeto.geometria);
     projeto.zip.file(projeto.projectConfigPath, JSON.stringify(novoConfig, null, 4));
     if (projeto.modelText) projeto.zip.file(projeto.modelPath, montarNovoModelo(projeto.modelText, projeto.projectConfig.printable_area, perfilDestino));
     if (projeto.sliceInfoText) projeto.zip.file(projeto.sliceInfoPath, montarNovoSliceInfo(projeto.sliceInfoText, perfilDestino, projeto.fatiado));
@@ -644,9 +652,10 @@
           var fatiado = r[1];
           if (!cargas.ehAtual(id)) return;
           var bbox = res ? res.bbox : null;
-          var chapas = res ? ModelParser.calcularChapas(res.itens, ModelParser.parsePlateAssignments(pacote.modelSettingsText)) : null;
+          var mesas = ModelParser.parsePlateAssignments(pacote.modelSettingsText);
+          var chapas = res ? ModelParser.calcularChapas(res.itens, mesas) : null;
 
-          estado = { file: file, zip: pacote.zip, projectConfig: config, projectConfigPath: pacote.configPath, modelText: pacote.modelText, modelPath: pacote.modelPath, sliceInfoText: pacote.sliceInfoText, sliceInfoPath: pacote.sliceInfoPath, fatiado: fatiado, destinoKeys: [] };
+          estado = { file: file, zip: pacote.zip, projectConfig: config, projectConfigPath: pacote.configPath, modelText: pacote.modelText, modelPath: pacote.modelPath, sliceInfoText: pacote.sliceInfoText, sliceInfoPath: pacote.sliceInfoPath, fatiado: fatiado, geometria: res ? { itens: res.itens, mesas: mesas } : null, destinoKeys: [] };
           var chaveDetectada = renderOrigem(config, perfis, bbox, chapas);
           destinosData = { perfis: perfis, chaveDetectada: chaveDetectada, bbox: bbox, chapas: chapas };
           buscaEl.value = "";

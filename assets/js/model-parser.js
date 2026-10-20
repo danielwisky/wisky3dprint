@@ -633,13 +633,13 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     return chapas.length > 1 ? chapas : null;
   }
 
-  // Centro e passo da grade de mesas a partir do printable_area do perfil
-  // (lista de "XxY", ex.: ["0x0","256x0","256x256","0x256"]).
-  function gradeDaMesa(printableArea) {
-    if (!Array.isArray(printableArea)) return null;
+  // Retângulo {x0, x1, y0, y1} que contém os pontos de uma lista de "XxY"
+  // (cada item pode ter vários pontos separados por vírgula, como no
+  // extruder_printable_area). null sem nenhum ponto válido.
+  function limitesDePontos(pontos) {
     var xs = [];
     var ys = [];
-    printableArea.forEach(function (trecho) {
+    [].concat(pontos || []).forEach(function (trecho) {
       String(trecho).split(",").forEach(function (par) {
         var xy = par.split("x").map(Number);
         if (xy.length === 2 && !isNaN(xy[0]) && !isNaN(xy[1])) {
@@ -649,13 +649,22 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
       });
     });
     if (!xs.length) return null;
-    var x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs);
-    var y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys);
-    if (!(x1 > x0 && y1 > y0)) return null;
     return {
-      x0: x0, x1: x1, y0: y0, y1: y1,
-      cx: (x0 + x1) / 2, cy: (y0 + y1) / 2,
-      passoX: 1.2 * (x1 - x0), passoY: 1.2 * (y1 - y0)
+      x0: Math.min.apply(null, xs), x1: Math.max.apply(null, xs),
+      y0: Math.min.apply(null, ys), y1: Math.max.apply(null, ys)
+    };
+  }
+
+  // Centro e passo da grade de mesas a partir do printable_area do perfil
+  // (lista de "XxY", ex.: ["0x0","256x0","256x256","0x256"]).
+  function gradeDaMesa(printableArea) {
+    if (!Array.isArray(printableArea)) return null;
+    var m = limitesDePontos(printableArea);
+    if (!m || !(m.x1 > m.x0 && m.y1 > m.y0)) return null;
+    return {
+      x0: m.x0, x1: m.x1, y0: m.y0, y1: m.y1,
+      cx: (m.x0 + m.x1) / 2, cy: (m.y0 + m.y1) / 2,
+      passoX: 1.2 * (m.x1 - m.x0), passoY: 1.2 * (m.y1 - m.y0)
     };
   }
 
@@ -683,6 +692,171 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
       partes[10] = String(+(b.cy + linha * b.passoY + (y - a.cy - linha * a.passoY)).toFixed(6));
       return inicio + partes.join(" ") + fim;
     });
+  }
+
+  // Pegada [x0, y0, x1, y1] de cada item no destino, em coordenadas da mesa
+  // dele, agrupada por mesa. `itens` são os de parse3MFPackage (bbox global
+  // na origem), `mesas` a lista de object_id por mesa de parsePlateAssignments
+  // (null: tudo na mesa 1). reposicionarPorMesa mantém o afastamento do
+  // centro da mesa, então a pegada é a da origem sem a célula da grade, mais
+  // a diferença entre os centros das mesas.
+  function pegadasPorMesa(itens, mesas, printableAreaOrigem, printableAreaDestino, qtdMesas) {
+    var a = gradeDaMesa(printableAreaOrigem);
+    var b = gradeDaMesa(printableAreaDestino);
+    var porMesa = [];
+    for (var i = 0; i < qtdMesas; i++) porMesa.push([]);
+    if (!a || !b) return porMesa;
+    (itens || []).forEach(function (item) {
+      var c = item.bbox;
+      if (!c || !(c.maxX >= c.minX)) return;
+      var indice = 0;
+      if (mesas) {
+        indice = -1;
+        for (var k = 0; k < mesas.length; k++) {
+          if (mesas[k].indexOf(item.objectId) !== -1) { indice = k; break; }
+        }
+      }
+      if (indice < 0 || indice >= qtdMesas) return;
+      var coluna = Math.round(((c.minX + c.maxX) / 2 - a.cx) / a.passoX);
+      var linha = Math.round(((c.minY + c.maxY) / 2 - a.cy) / a.passoY);
+      var dx = b.cx - a.cx - coluna * a.passoX;
+      var dy = b.cy - a.cy - linha * a.passoY;
+      porMesa[indice].push([c.minX + dx, c.minY + dy, c.maxX + dx, c.maxY + dy]);
+    });
+    return porMesa;
+  }
+
+  // Torre de purga (wipe_tower_x/y, uma por mesa, em coordenadas da mesa).
+  // Nem a posição em que o autor deixou a torre nem a de fábrica do destino
+  // servem sempre: conferido no CLI dos fatiadores, a de fábrica cai fora da
+  // mesa ou na faixa que só um bico alcança (H2D, P1S) e a do autor encosta
+  // nas peças. Em cada mesa a torre vai para o primeiro lugar livre entre a
+  // do autor (com o deslocamento das peças) e a de fábrica, ou, se nenhuma
+  // servir, para o ponto livre mais perto da do autor. Livre = dentro da mesa
+  // com margem, fora das áreas proibidas do perfil (bed_exclude_area,
+  // wrapping_exclude_area) e da faixa que só um bico alcança
+  // (extruder_printable_area), e longe das peças. A torre ocupa até 40 mm de
+  // profundidade e a largura configurada, girada pelo
+  // wipe_tower_rotation_angle (medido no G-code dos fatiadores).
+  var TORRE = { lado: 40, margem: 6, folga: 6, passo: 5 };
+
+  function primeiroNumero(valor) {
+    return parseFloat([].concat(valor == null ? [] : valor)[0]);
+  }
+
+  function regiaoDaTorre(config) {
+    var m = limitesDePontos(config.printable_area);
+    if (!m) return null;
+    [].concat(config.extruder_printable_area || []).forEach(function (area) {
+      var e = limitesDePontos(area);
+      if (e) m = { x0: Math.max(m.x0, e.x0), x1: Math.min(m.x1, e.x1), y0: Math.max(m.y0, e.y0), y1: Math.min(m.y1, e.y1) };
+    });
+    if (!(m.x1 > m.x0 && m.y1 > m.y0)) return null;
+    // A lista pode trazer vários retângulos emendados num contorno só, de 4
+    // em 4 pontos, com trechos de largura zero entre eles (Qidi X-Max 4: 4
+    // cantos; Anycubic Kobra 3: 4 bordas). Retângulo com metade da mesa ou
+    // mais é o contorno, não uma área proibida.
+    var proibidas = [];
+    var areaMesa = (m.x1 - m.x0) * (m.y1 - m.y0);
+    ["bed_exclude_area", "wrapping_exclude_area"].forEach(function (campo) {
+      var pontos = [].concat(config[campo] || []);
+      for (var i = 0; i + 4 <= pontos.length; i += 4) {
+        var e = limitesDePontos(pontos.slice(i, i + 4));
+        if (e && e.x1 > e.x0 && e.y1 > e.y0 && (e.x1 - e.x0) * (e.y1 - e.y0) < areaMesa / 2) proibidas.push([e.x0, e.y0, e.x1, e.y1]);
+      }
+    });
+    return { lim: m, proibidas: proibidas };
+  }
+
+  // Retângulo que a torre ocupa em relação a (wipe_tower_x, wipe_tower_y),
+  // girado no sentido anti-horário como no fatiador.
+  function pegadaDaTorre(config) {
+    var largura = Math.max(TORRE.lado, primeiroNumero(config.prime_tower_width) || 0);
+    var angulo = (primeiroNumero(config.wipe_tower_rotation_angle) || 0) * Math.PI / 180;
+    var c = Math.cos(angulo), s = Math.sin(angulo);
+    var cantos = [[0, 0], [largura, 0], [0, TORRE.lado], [largura, TORRE.lado]].map(function (p) {
+      return [p[0] * c - p[1] * s, p[0] * s + p[1] * c];
+    });
+    function arred(v) { return Math.round(v * 1000) / 1000; }
+    var xs = cantos.map(function (p) { return p[0]; });
+    var ys = cantos.map(function (p) { return p[1]; });
+    return [arred(Math.min.apply(null, xs)), arred(Math.min.apply(null, ys)), arred(Math.max.apply(null, xs)), arred(Math.max.apply(null, ys))];
+  }
+
+  function lugarDaTorre(config, pecas, candidatos) {
+    var regiao = regiaoDaTorre(config);
+    if (!regiao) return null;
+    var lim = regiao.lim, M = TORRE.margem, F = TORRE.folga, t = pegadaDaTorre(config);
+    var obstaculos = pecas.map(function (c) { return [c[0] - F, c[1] - F, c[2] + F, c[3] + F]; }).concat(regiao.proibidas);
+    // posições (x, y) em que a torre inteira, com a margem, fica na mesa
+    var xMin = lim.x0 - t[0] + M, xMax = lim.x1 - t[2] - M;
+    var yMin = lim.y0 - t[1] + M, yMax = lim.y1 - t[3] - M;
+    // área da torre (com a margem) em cima de peças ou de áreas proibidas
+    function sobre(x, y) {
+      var total = 0;
+      for (var i = 0; i < obstaculos.length; i++) {
+        var c = obstaculos[i];
+        var w = Math.min(x + t[2] + M, c[2]) - Math.max(x + t[0] - M, c[0]);
+        var h = Math.min(y + t[3] + M, c[3]) - Math.max(y + t[1] - M, c[1]);
+        if (w > 0 && h > 0) total += w * h;
+      }
+      return total;
+    }
+    function livre(x, y) {
+      return x >= xMin && x <= xMax && y >= yMin && y <= yMax && sobre(x, y) === 0;
+    }
+    var validos = candidatos.filter(Boolean);
+    for (var k = 0; k < validos.length; k++) {
+      if (livre(validos[k][0], validos[k][1])) return validos[k];
+    }
+    // o ponto livre mais perto da referência; mesa cheia: o que menos cobre
+    var ref = validos[0] || [xMin, yMax];
+    var melhor = null, menorSobre = Infinity, menorDist = Infinity;
+    for (var x = xMin; x <= xMax; x += TORRE.passo) {
+      for (var y = yMin; y <= yMax; y += TORRE.passo) {
+        var cobre = sobre(x, y);
+        var dist = (x - ref[0]) * (x - ref[0]) + (y - ref[1]) * (y - ref[1]);
+        if (cobre < menorSobre || (cobre === menorSobre && dist < menorDist)) {
+          melhor = [x, y]; menorSobre = cobre; menorDist = dist;
+        }
+      }
+    }
+    if (melhor) return melhor;
+    // mesa menor que a torre: fica na referência, só puxada para dentro
+    if (!validos.length) return null;
+    return [Math.min(Math.max(ref[0], xMin), Math.max(xMin, xMax)), Math.min(Math.max(ref[1], yMin), Math.max(yMin, yMax))];
+  }
+
+  // `configOrigem` é o project_settings.config original (torre do autor, mesa
+  // de origem), `configDestino` o já convertido (mesa, áreas e bicos do
+  // destino, torre configurada no processo), `baseDestino` o perfil de
+  // destino (torre de fábrica) e `pegadas` o de pegadasPorMesa. Devolve null
+  // sem torre: desligada ou com um filamento só, não há troca e o fatiador
+  // não a imprime.
+  function posicionarTorres(configOrigem, configDestino, baseDestino, pegadas) {
+    var ligada = String([].concat(configDestino.enable_prime_tower == null ? "1" : configDestino.enable_prime_tower)[0]) !== "0";
+    var filamentos = [].concat(configDestino.filament_colour || []).length;
+    if (!ligada || filamentos < 2 || configOrigem.wipe_tower_x == null || configOrigem.wipe_tower_y == null) return null;
+    var a = gradeDaMesa(configOrigem.printable_area);
+    var b = gradeDaMesa(configDestino.printable_area);
+    if (!a || !b) return null;
+    var xs = [].concat(configOrigem.wipe_tower_x);
+    var ys = [].concat(configOrigem.wipe_tower_y);
+    var fabrica = [primeiroNumero(baseDestino.wipe_tower_x), primeiroNumero(baseDestino.wipe_tower_y)];
+    if (isNaN(fabrica[0]) || isNaN(fabrica[1])) fabrica = null;
+
+    var novosX = [], novosY = [];
+    for (var i = 0; i < xs.length; i++) {
+      var autor = [parseFloat(xs[i]) + b.cx - a.cx, parseFloat(ys[Math.min(i, ys.length - 1)]) + b.cy - a.cy];
+      if (isNaN(autor[0]) || isNaN(autor[1])) autor = null;
+      var lugar = lugarDaTorre(configDestino, pegadas[i] || [], [autor, fabrica]);
+      novosX.push(lugar ? String(+lugar[0].toFixed(3)) : xs[i]);
+      novosY.push(lugar ? String(+lugar[1].toFixed(3)) : ys[Math.min(i, ys.length - 1)]);
+    }
+    return {
+      wipe_tower_x: Array.isArray(configOrigem.wipe_tower_x) ? novosX : novosX[0],
+      wipe_tower_y: Array.isArray(configOrigem.wipe_tower_y) ? novosY : novosY[0]
+    };
   }
 
   // A posição da torre de purga (wipe_tower_x/y, uma por mesa, em
@@ -840,6 +1014,8 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     calcularChapas: calcularChapas,
     reposicionarPorMesa: reposicionarPorMesa,
     reposicionarTorres: reposicionarTorres,
+    pegadasPorMesa: pegadasPorMesa,
+    posicionarTorres: posicionarTorres,
     mapearCopiasDeMalha: mapearCopiasDeMalha,
     paraCadaCopia: paraCadaCopia,
     copiasDoTriangulo: copiasDoTriangulo,
