@@ -480,13 +480,16 @@
   }
 
   function montarNovoSliceInfo(sliceInfoText, perfilDestino) {
+    // Os <plate> descrevem o fatiamento da origem (tempo, peso, modelo da
+    // impressora), que só existe num .gcode.3mf: ver removerGcodeFatiado.
+    var novo = sliceInfoText.replace(/\s*<plate>[\s\S]*?<\/plate>/g, "");
     var versao = versaoFatiador(perfilDestino);
-    if (!versao) return sliceInfoText;
-    return sliceInfoText.replace(/(<header_item\s+key="X-BBL-Client-Version"\s+value=")[^"]*(")/, "$1" + versao + "$2");
+    if (!versao) return novo;
+    return novo.replace(/(<header_item\s+key="X-BBL-Client-Version"\s+value=")[^"]*(")/, "$1" + versao + "$2");
   }
 
   function nomeArquivoDestino(nomeOriginal, perfilDestino) {
-    var base = nomeOriginal.replace(/\.3mf$/i, "");
+    var base = nomeOriginal.replace(/(\.gcode)?\.3mf$/i, "");
     var slug = nomeBaseImpressora(perfilDestino.nome)
       .toLowerCase()
       .normalize("NFD").replace(DIACRITICOS_REGEX, "")
@@ -497,8 +500,30 @@
 
   var baixarBlob = ModelParser.baixarBlob;
 
+  // Um .gcode.3mf (projeto já fatiado) traz o G-code de cada mesa, feito
+  // para a impressora de origem. O projeto convertido sai como um projeto sem
+  // fatiar: sem os plate_N.gcode, sem a referência gcode_file das mesas e sem
+  // a relação que aponta para eles; o fatiador de destino gera o próprio.
+  function removerGcodeFatiado(pacote) {
+    var zip = pacote.zip;
+    zip.file(/(^|\/)plate_\d+\.gcode(\.md5)?$/i).forEach(function (arquivo) {
+      zip.remove(arquivo.name);
+    });
+    if (pacote.modelSettingsText && pacote.modelSettingsPath) {
+      var settings = pacote.modelSettingsText.replace(/[ \t]*<metadata\s+key="gcode_file"\s+value="[^"]*"\s*\/>\r?\n?/g, "");
+      if (settings !== pacote.modelSettingsText) zip.file(pacote.modelSettingsPath, settings);
+    }
+    var rels = ModelParser.localizarArquivoUnico(zip, "model_settings.config.rels");
+    if (!rels) return Promise.resolve();
+    return rels.async("text").then(function (texto) {
+      var semGcode = texto.replace(/\s*<Relationship\b[^>]*\bTarget="[^"]*\.gcode"[^>]*\/>/g, "");
+      if (!/<Relationship\b/.test(semGcode)) zip.remove(rels.name);
+      else if (semGcode !== texto) zip.file(rels.name, semGcode);
+    });
+  }
+
   function nomeArquivoZip(nomeOriginal) {
-    return nomeOriginal.replace(/\.3mf$/i, "") + "-convertidos.zip";
+    return nomeOriginal.replace(/(\.gcode)?\.3mf$/i, "") + "-convertidos.zip";
   }
 
   function gerarProjetoUnico(projeto, perfilDestino, nivelCompressao) {
@@ -585,7 +610,8 @@
           ? ModelParser.parse3MFPackage(pacote.zip, pacote.modelText)
           : Promise.resolve(null);
 
-        return geometriaPromise.then(function (res) {
+        return Promise.all([geometriaPromise, removerGcodeFatiado(pacote)]).then(function (r) {
+          var res = r[0];
           if (!cargas.ehAtual(id)) return;
           var bbox = res ? res.bbox : null;
           var chapas = res ? ModelParser.calcularChapas(res.itens, ModelParser.parsePlateAssignments(pacote.modelSettingsText)) : null;

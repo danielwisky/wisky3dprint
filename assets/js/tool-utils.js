@@ -70,6 +70,7 @@
           modelText: r[0],
           configPath: configFile ? configFile.name : null,
           configText: r[1],
+          modelSettingsPath: modelSettingsFile ? modelSettingsFile.name : null,
           modelSettingsText: r[2],
           sliceInfoPath: sliceInfoFile ? sliceInfoFile.name : null,
           sliceInfoText: r[3]
