@@ -68,12 +68,12 @@
   // Cada fatiador lê a versão do projeto em <metadata name="Application">
   // no 3dmodel.model e avisa que o software está desatualizado quando ela é
   // maior que a dele. Gravamos o mesmo valor que o fatiador da marca de
-  // destino grava ao exportar ({v} = campo "version" do perfil). O Flash
-  // Studio compara com a versão do OrcaSlicer em que se baseia (2.3.0), não
-  // com a dos perfis.
+  // destino grava ao exportar ({v} = versaoFatiador). O mesmo valor vai
+  // para o campo "version" do project_settings.config e para o
+  // X-BBL-Client-Version do slice_info.config.
   var APLICACAO_POR_MARCA = {
     "Bambu Lab": "BambuStudio-{v}",
-    "Flashforge": "BambuStudio-2.3.0",
+    "Flashforge": "BambuStudio-{v}",
     "WonderMaker": "OrcaSlicer-{v}",
     "Anycubic": "BambuStudio-{v}",
     "Creality": "Creality_Print V{v}",
@@ -81,6 +81,17 @@
     "Snapmaker": "Snapmaker_Orca-{v}",
     "Qidi": "QIDIStudio-{v}"
   };
+
+  // O "version" dos perfis Flashforge é o do pacote de perfis (01.10.x), não
+  // o do Flash Studio, que compara com a versão do OrcaSlicer em que se
+  // baseia (2.3.x).
+  var VERSAO_FATIADOR_POR_MARCA = {
+    "Flashforge": "2.3.0"
+  };
+
+  function versaoFatiador(perfil) {
+    return VERSAO_FATIADOR_POR_MARCA[perfil.marca] || perfil.base.version;
+  }
 
   function ehCampoDestino(campo) {
     if (CAMPOS_DESTINO.indexOf(campo) !== -1) return true;
@@ -90,7 +101,7 @@
   }
 
   var perfisPromise = null;
-  var estado = null; // { file, zip, projectConfig, projectConfigPath, modelText, modelPath, destinoKeys }
+  var estado = null; // { file, zip, projectConfig, projectConfigPath, modelText, modelPath, sliceInfoText, sliceInfoPath, destinoKeys }
   // Cada geração regrava project_settings.config no mesmo zip compartilhado;
   // duas gerações simultâneas misturariam a config de uma impressora no
   // arquivo da outra.
@@ -340,13 +351,14 @@
     Object.keys(perfilDestino.base).forEach(function (k) {
       if (ehCampoDestino(k)) novo[k] = perfilDestino.base[k];
     });
+    if (versaoFatiador(perfilDestino)) novo.version = versaoFatiador(perfilDestino);
     return novo;
   }
 
   function montarNovoModelo(modelText, perfilDestino) {
     var formato = APLICACAO_POR_MARCA[perfilDestino.marca];
-    if (!formato || !perfilDestino.base.version) return modelText;
-    var aplicacao = formato.replace("{v}", perfilDestino.base.version);
+    if (!formato || !versaoFatiador(perfilDestino)) return modelText;
+    var aplicacao = formato.replace("{v}", versaoFatiador(perfilDestino));
     // OrcaSlicer e Elegoo Slicer priorizam a versão de <metadata
     // name="OrcaSlicer"> sobre a de Application; a do projeto original
     // dispararia o mesmo aviso.
@@ -354,6 +366,12 @@
     var tag = /(<metadata\s+name="Application"\s*>)[^<]*(<\/metadata>)/;
     if (tag.test(novo)) return novo.replace(tag, "$1" + aplicacao + "$2");
     return novo.replace(/(<model\b[^>]*>)/, '$1\n <metadata name="Application">' + aplicacao + "</metadata>");
+  }
+
+  function montarNovoSliceInfo(sliceInfoText, perfilDestino) {
+    var versao = versaoFatiador(perfilDestino);
+    if (!versao) return sliceInfoText;
+    return sliceInfoText.replace(/(<header_item\s+key="X-BBL-Client-Version"\s+value=")[^"]*(")/, "$1" + versao + "$2");
   }
 
   function nomeArquivoDestino(nomeOriginal, perfilDestino) {
@@ -376,6 +394,7 @@
     var novoConfig = montarNovoConfig(projeto.projectConfig, perfilDestino);
     projeto.zip.file(projeto.projectConfigPath, JSON.stringify(novoConfig, null, 4));
     if (projeto.modelText) projeto.zip.file(projeto.modelPath, montarNovoModelo(projeto.modelText, perfilDestino));
+    if (projeto.sliceInfoText) projeto.zip.file(projeto.sliceInfoPath, montarNovoSliceInfo(projeto.sliceInfoText, perfilDestino));
     // Sem compression:"DEFLATE" o JSZip descompacta o conteúdo original e
     // regrava sem compactar, inflando um 3MF de dezenas de MB pra centenas.
     // O nível é reduzido quando há vários destinos: a malha (que não muda
@@ -458,7 +477,7 @@
           var bbox = res ? res.bbox : null;
           var chapas = res ? ModelParser.calcularChapas(res.itens, ModelParser.parsePlateAssignments(pacote.modelSettingsText)) : null;
 
-          estado = { file: file, zip: pacote.zip, projectConfig: config, projectConfigPath: pacote.configPath, modelText: pacote.modelText, modelPath: pacote.modelPath, destinoKeys: [] };
+          estado = { file: file, zip: pacote.zip, projectConfig: config, projectConfigPath: pacote.configPath, modelText: pacote.modelText, modelPath: pacote.modelPath, sliceInfoText: pacote.sliceInfoText, sliceInfoPath: pacote.sliceInfoPath, destinoKeys: [] };
           var chaveDetectada = renderOrigem(config, perfis, bbox, chapas);
           destinosData = { perfis: perfis, chaveDetectada: chaveDetectada, bbox: bbox, chapas: chapas };
           buscaEl.value = "";
