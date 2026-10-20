@@ -584,6 +584,84 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     return chapas.length > 1 ? chapas : null;
   }
 
+  // Centro e passo da grade de mesas a partir do printable_area do perfil
+  // (lista de "XxY", ex.: ["0x0","256x0","256x256","0x256"]).
+  function gradeDaMesa(printableArea) {
+    if (!Array.isArray(printableArea)) return null;
+    var xs = [];
+    var ys = [];
+    printableArea.forEach(function (trecho) {
+      String(trecho).split(",").forEach(function (par) {
+        var xy = par.split("x").map(Number);
+        if (xy.length === 2 && !isNaN(xy[0]) && !isNaN(xy[1])) {
+          xs.push(xy[0]);
+          ys.push(xy[1]);
+        }
+      });
+    });
+    if (!xs.length) return null;
+    var x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs);
+    var y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys);
+    if (!(x1 > x0 && y1 > y0)) return null;
+    return {
+      x0: x0, x1: x1, y0: y0, y1: y1,
+      cx: (x0 + x1) / 2, cy: (y0 + y1) / 2,
+      passoX: 1.2 * (x1 - x0), passoY: 1.2 * (y1 - y0)
+    };
+  }
+
+  // Bambu Studio e os fatiadores derivados (QIDI, Orca, Creality Print...)
+  // guardam a mesa k de um projeto numa célula de uma grade com passo de 1,2 ×
+  // a largura e 1,2 × a profundidade da mesa da impressora (as linhas crescem
+  // para Y negativo). Com mesas de tamanhos diferentes, manter as coordenadas
+  // da origem tira as peças das mesas 2+ da célula delas e o fatiador de
+  // destino junta tudo na mesa 1 ou recusa o arquivo. Cada <item> do <build>
+  // vai para a mesma célula no destino, mantendo o afastamento do centro da
+  // mesa; com uma mesa só a peça fica centralizada como estava na origem.
+  // Devolve null quando falta a área de uma das mesas.
+  function reposicionarPorMesa(modelText, printableAreaOrigem, printableAreaDestino) {
+    var a = gradeDaMesa(printableAreaOrigem);
+    var b = gradeDaMesa(printableAreaDestino);
+    if (!a || !b) return null;
+    return modelText.replace(/(<item\b[^>]*\btransform=")([^"]*)(")/g, function (inteiro, inicio, transform, fim) {
+      var partes = transform.trim().split(/\s+/);
+      var x = Number(partes[9]);
+      var y = Number(partes[10]);
+      if (partes.length !== 12 || isNaN(x) || isNaN(y)) return inteiro;
+      var coluna = Math.round((x - a.cx) / a.passoX);
+      var linha = Math.round((y - a.cy) / a.passoY);
+      partes[9] = String(+(b.cx + coluna * b.passoX + (x - a.cx - coluna * a.passoX)).toFixed(6));
+      partes[10] = String(+(b.cy + linha * b.passoY + (y - a.cy - linha * a.passoY)).toFixed(6));
+      return inicio + partes.join(" ") + fim;
+    });
+  }
+
+  // A posição da torre de purga (wipe_tower_x/y, uma por mesa, em
+  // coordenadas da própria mesa) acompanha o deslocamento que
+  // reposicionarPorMesa dá às peças, para não cair em cima delas, e é
+  // limitada à mesa de destino. Devolve null sem torre ou sem área de mesa.
+  function reposicionarTorres(config, printableAreaOrigem, printableAreaDestino) {
+    var a = gradeDaMesa(printableAreaOrigem);
+    var b = gradeDaMesa(printableAreaDestino);
+    if (!a || !b || config.wipe_tower_x == null || config.wipe_tower_y == null) return null;
+    var largura = parseFloat(config.prime_tower_width) || 35;
+
+    function mover(valor, delta, minimo, maximo) {
+      var n = parseFloat(valor);
+      if (isNaN(n)) return valor;
+      return String(+Math.min(Math.max(n + delta, minimo), Math.max(minimo, maximo - largura)).toFixed(4));
+    }
+    function moverTodos(valores, delta, minimo, maximo) {
+      if (!Array.isArray(valores)) return mover(valores, delta, minimo, maximo);
+      return valores.map(function (v) { return mover(v, delta, minimo, maximo); });
+    }
+
+    return {
+      wipe_tower_x: moverTodos(config.wipe_tower_x, b.cx - a.cx, b.x0, b.x1),
+      wipe_tower_y: moverTodos(config.wipe_tower_y, b.cy - a.cy, b.y0, b.y1)
+    };
+  }
+
   // Agrupa índices de triângulo por chapa, numa única varredura de
   // `triangleOrigins` (formato `{path, objectId, rootObjectId, localIndex}`
   // por triângulo, ver resolveObjectTriangles/extractTriangles3MF). Pra cada
@@ -647,6 +725,8 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     parse3MFPerfil: parse3MFPerfil,
     parsePlateAssignments: parsePlateAssignments,
     calcularChapas: calcularChapas,
+    reposicionarPorMesa: reposicionarPorMesa,
+    reposicionarTorres: reposicionarTorres,
     mapearTriangulosParaChapas: mapearTriangulosParaChapas
   };
 })();
