@@ -6,12 +6,13 @@ permalink: /sw-orcamento.js
 // Colorir 3MF) — cache só do essencial pra abrir offline depois de
 // instalado. Escopo cobrindo o site inteiro (ver registro em pwa.js).
 //
-// O nome do cache incorpora os asset_hash do JS/CSS: assim, sempre que
-// esses arquivos mudarem de conteúdo, o cache muda de nome e a limpeza
-// no "activate" descarta a versão anterior — sem isso, entradas com
-// ?v=hash antigo ficariam acumuladas pra sempre no mesmo cache.
+// O nome do cache incorpora os asset_hash do JS/CSS e dos perfis do
+// Conversor 3MF: assim, sempre que esses arquivos mudarem de conteúdo, o
+// cache muda de nome e a limpeza no "activate" descarta a versão anterior
+// — sem isso, entradas com ?v=hash antigo ficariam acumuladas pra sempre no
+// mesmo cache.
 {%- assign scripts = "price-formula,model-parser,tool-utils,threemf-writer,orcamento,conversor-3mf,colorir-3mf,pwa" | split: "," %}
-var CACHE_NAME = "orcamento-app{% for s in scripts %}-{{ '/assets/js/' | append: s | append: '.js' | asset_hash }}{% endfor %}-{{ '/assets/css/style.scss' | asset_hash }}";
+var CACHE_NAME = "orcamento-app{% for s in scripts %}-{{ '/assets/js/' | append: s | append: '.js' | asset_hash }}{% endfor %}-{{ '/assets/css/style.scss' | asset_hash }}-{{ '/assets/data/printer-profiles.json' | asset_hash }}";
 var TIMEOUT_REDE_MS = 3000;
 var URLS_TO_CACHE = [
   "{{ '/orcamento/' | relative_url }}",
@@ -22,7 +23,7 @@ var URLS_TO_CACHE = [
   {%- assign js = '/assets/js/' | append: s | append: '.js' %}
   "{{ js | relative_url }}?v={{ js | asset_hash }}",
 {%- endfor %}
-  "{{ '/assets/data/printer-profiles.json' | relative_url }}",
+  "{{ '/assets/data/printer-profiles.json' | relative_url }}?v={{ '/assets/data/printer-profiles.json' | asset_hash }}",
   "{{ '/manifest-orcamento.webmanifest' | relative_url }}",
   "{{ '/assets/img/icon-orcamento-192.png' | relative_url }}",
   "{{ '/assets/img/icon-orcamento-512.png' | relative_url }}"
