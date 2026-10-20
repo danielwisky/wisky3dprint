@@ -976,7 +976,7 @@
     return ToolUtils.lerPacote3MF(file).then(function (pacote) {
       if (!pacote.modelText) throw new Error("modelo não encontrado no 3MF");
       var perfil = pacote.configText ? ModelParser.parse3MFPerfil(pacote.configText) : null;
-      return ModelParser.parse3MFPackage(pacote.zip, pacote.modelText).then(function (stats) {
+      return ModelParser.parse3MFPackage(pacote.zip, pacote.modelText, pacote.modelSettingsText).then(function (stats) {
         return { stats: stats, perfil: perfil };
       });
     });

@@ -607,7 +607,7 @@
 
         var config = JSON.parse(pacote.configText);
         var geometriaPromise = pacote.modelText
-          ? ModelParser.parse3MFPackage(pacote.zip, pacote.modelText)
+          ? ModelParser.parse3MFPackage(pacote.zip, pacote.modelText, pacote.modelSettingsText)
           : Promise.resolve(null);
 
         return Promise.all([geometriaPromise, removerGcodeFatiado(pacote)]).then(function (r) {

@@ -249,8 +249,10 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // contém a <mesh>. Precisamos dos dois porque model_settings.config
   // (chapas) referencia o build item de topo, enquanto a exportação
   // (ThreeMFWriter) precisa do objectId do object-folha pra achar o
-  // <triangle> exato a recolorir.
-  function resolveObjectRecursivo(zip, docCache, doc, objectId, accumTransform, path, onMesh, rootObjectId) {
+  // <triangle> exato a recolorir. `componentesIgnorados` (Set de objectid,
+  // opcional) vale só para os <component> deste nível: ver
+  // parsePartesNaoSolidas.
+  function resolveObjectRecursivo(zip, docCache, doc, objectId, accumTransform, path, onMesh, rootObjectId, componentesIgnorados) {
     var objectEl = findObjectElement(doc, objectId);
     if (!objectEl) return Promise.resolve();
     if (rootObjectId === undefined) rootObjectId = objectId;
@@ -288,7 +290,10 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     var componentsEl = directChild(objectEl, "components");
     if (!componentsEl) return Promise.resolve();
 
-    var promises = directChildren(componentsEl, "component").map(function (comp) {
+    var componentes = directChildren(componentsEl, "component").filter(function (comp) {
+      return !componentesIgnorados || !componentesIgnorados.has(comp.getAttribute("objectid"));
+    });
+    var promises = componentes.map(function (comp) {
       var childObjectId = comp.getAttribute("objectid");
       var childTransform = parseTransformAttr(comp.getAttribute("transform"));
       var combined = composeTransform(accumTransform, childTransform);
@@ -314,7 +319,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // miniaturas Bambu Studio) podem passar de 3-4 milhões de triângulos e
   // manter tudo em arrays de arrays estouraria memória no navegador sem
   // necessidade (só usamos os agregados).
-  function resolveObjectGeometry(zip, docCache, doc, objectId, accumTransform) {
+  function resolveObjectGeometry(zip, docCache, doc, objectId, accumTransform, componentesIgnorados) {
     var triangleCount = 0;
     var volumeMm3 = 0;
     var areaMm2 = 0;
@@ -329,13 +334,48 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
       }
     }
 
-    return resolveObjectRecursivo(zip, docCache, doc, objectId, accumTransform, null, onMesh).then(function () {
+    return resolveObjectRecursivo(zip, docCache, doc, objectId, accumTransform, null, onMesh, undefined, componentesIgnorados).then(function () {
       return { triangleCount: triangleCount, volumeMm3: volumeMm3, areaMm2: areaMm2, bbox: bbox };
     });
   }
 
-  function parse3MFPackage(zip, rootXmlText) {
+  // Bambu Studio e derivados guardam em model_settings.config o tipo de cada
+  // parte de um objeto (<object id> com <part id subtype>, em que part id é o
+  // objectid do <component> do objeto no 3dmodel.model). Modificadores,
+  // partes negativas e bloqueadores/reforçadores de suporte não são
+  // impressos: somados como peça, inflavam peso, tempo e tamanho (um cubo
+  // modificador de 50 mm sobre uma peça pequena dava "não cabe na mesa").
+  // Ignorar a parte negativa em vez de subtrair o volume dela é uma
+  // aproximação. Devolve Map de objectid do objeto → Set de objectid dos
+  // componentes a ignorar, ou null.
+  function parsePartesNaoSolidas(modelSettingsText) {
+    if (!modelSettingsText || typeof DOMParser === "undefined") return null;
+    try {
+      var doc = new DOMParser().parseFromString(modelSettingsText, "application/xml");
+      if (doc.getElementsByTagName("parsererror").length) return null;
+      var porObjeto = new Map();
+      var objetos = doc.getElementsByTagName("object");
+      for (var i = 0; i < objetos.length; i++) {
+        var partes = directChildren(objetos[i], "part");
+        for (var j = 0; j < partes.length; j++) {
+          var subtype = partes[j].getAttribute("subtype");
+          if (!subtype || subtype === "normal_part") continue;
+          var objectId = objetos[i].getAttribute("id");
+          if (!porObjeto.has(objectId)) porObjeto.set(objectId, new Set());
+          porObjeto.get(objectId).add(partes[j].getAttribute("id"));
+        }
+      }
+      return porObjeto.size ? porObjeto : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // `modelSettingsText` (opcional) é o Metadata/model_settings.config: ver
+  // parsePartesNaoSolidas.
+  function parse3MFPackage(zip, rootXmlText, modelSettingsText) {
     var doc = parseXmlDoc(rootXmlText);
+    var partesNaoSolidas = parsePartesNaoSolidas(modelSettingsText);
     var unidadeAttr = doc.documentElement.getAttribute("unit");
     var escala = UNIDADE_PARA_MM[unidadeAttr] || 1;
     var docCache = {};
@@ -355,6 +395,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     var promises = items.map(function (item) {
       var transform = parseTransformAttr(item.getAttribute("transform"));
       var objectId = item.getAttribute("objectid");
+      var ignorados = partesNaoSolidas ? partesNaoSolidas.get(objectId) : undefined;
       // 3MF Production Extension: <item> também pode apontar pra um arquivo
       // externo via p:path (padrão do Bambu Studio/Orca pra separar cada
       // object/chapa em 3D/Objects/*.model), não só <component> (ver
@@ -366,10 +407,10 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
         var externo = carregarDocExterno(zip, docCache, itemPath);
         if (!externo) return Promise.resolve({ triangleCount: 0, volumeMm3: 0, areaMm2: 0, bbox: bboxVazio() });
         return externo.docPromise.then(function (extDoc) {
-          return resolveObjectGeometry(zip, docCache, extDoc, objectId, transform);
+          return resolveObjectGeometry(zip, docCache, extDoc, objectId, transform, ignorados);
         });
       }
-      return resolveObjectGeometry(zip, docCache, doc, objectId, transform);
+      return resolveObjectGeometry(zip, docCache, doc, objectId, transform, ignorados);
     });
 
     return Promise.all(promises).then(function (results) {
