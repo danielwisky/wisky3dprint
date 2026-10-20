@@ -76,7 +76,7 @@
     "Flashforge": "BambuStudio-{v}",
     "WonderMaker": "OrcaSlicer-{v}",
     "Anycubic": "BambuStudio-{v}",
-    "Creality": "Creality_Print V{v}",
+    "Creality": "Creality_Print V{v} Release",
     "Elegoo": "ElegooSlicer-{v}",
     "Snapmaker": "Snapmaker_Orca-{v}",
     "Qidi": "QIDIStudio-{v}"
