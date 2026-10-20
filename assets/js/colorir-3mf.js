@@ -69,6 +69,9 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils)
   let needsRender = true;
   let modelRadius = 1; // raio da esfera envolvente do modelo, fixo desde o carregamento
   let state = null;
+  // Exportação em andamento: as duas exportações gravariam no mesmo zip
+  // (state.zip) ao mesmo tempo.
+  let exportando = false;
   /*
    * state = {
    *   fileName, triCount,
@@ -960,7 +963,7 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils)
       avisoGrandeTextoEl.textContent = "Modelo com " + triCount.toLocaleString("pt-BR") + " triângulos, pintar regiões grandes pode ficar um pouco mais lento.";
     }
 
-    exportBtn.disabled = false;
+    exportBtn.disabled = exportando;
     resetarBtn.disabled = false;
     desfazerBtn.disabled = true;
     setTool("balde");
@@ -1085,6 +1088,9 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils)
   // quando o pacote deixa de parecer um projeto legítimo.
   function exportarModeloPreservandoPacote() {
     outEl.textContent = "Gerando arquivo 3MF...";
+    // Lido agora: se outro arquivo for carregado durante a exportação, state
+    // passa a ser o dele.
+    const nomeSaida = nomeArquivoSaida(state.fileName);
 
     const porArquivo = new Map();
     for (let t = 0; t < state.triCount; t++) {
@@ -1152,10 +1158,10 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils)
       ]);
     });
 
-    tarefas
+    return tarefas
       .then(() => zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } }))
       .then((blob) => {
-        baixarBlob(blob, nomeArquivoSaida(state.fileName));
+        baixarBlob(blob, nomeSaida);
         outEl.textContent = "3MF colorido baixado.";
       })
       .catch((err) => {
@@ -1165,17 +1171,15 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils)
   }
 
   function exportarModelo() {
-    if (state.zip && state.triangleOrigins) {
-      exportarModeloPreservandoPacote();
-      return;
-    }
-    exportarModeloDoZero();
+    if (state.zip && state.triangleOrigins) return exportarModeloPreservandoPacote();
+    return exportarModeloDoZero();
   }
 
   // Caminho usado quando o arquivo de origem é um .stl (não existe pacote
   // 3MF original pra preservar): monta um .3mf novo do zero via JSZip.
   function exportarModeloDoZero() {
     outEl.textContent = "Gerando arquivo 3MF...";
+    const nomeSaida = nomeArquivoSaida(state.fileName);
 
     const triangulos = new Array(state.triCount);
     for (let t = 0; t < state.triCount; t++) {
@@ -1196,9 +1200,9 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils)
     zip.file("_rels/.rels", relsXml);
     zip.file("3D/3dmodel.model", modelXml);
 
-    zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } })
+    return zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } })
       .then((blob) => {
-        baixarBlob(blob, nomeArquivoSaida(state.fileName));
+        baixarBlob(blob, nomeSaida);
         outEl.textContent = "3MF colorido baixado.";
       })
       .catch((err) => {
@@ -1270,11 +1274,16 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils)
   });
 
   exportBtn.addEventListener("click", () => {
-    if (!state) return;
+    if (!state || exportando) return;
     if (typeof JSZip === "undefined") {
       outEl.textContent = "Não foi possível carregar o gerador de 3MF. Verifique sua conexão e tente novamente.";
       return;
     }
-    exportarModelo();
+    exportando = true;
+    exportBtn.disabled = true;
+    exportarModelo().then(() => {
+      exportando = false;
+      exportBtn.disabled = !state;
+    });
   });
 }
