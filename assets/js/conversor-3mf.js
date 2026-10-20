@@ -175,6 +175,29 @@
     });
   }
 
+  // G-code de filamento é configuração de filamento (mantida do projeto),
+  // mas escrito para a máquina: o da Bambu liga a ventoinha auxiliar dela
+  // (M106 P3), o dos Creality K controla a temperatura do bico. Vem do perfil
+  // de destino, repetido para cada filamento do projeto (o perfil tem só a
+  // quantidade de filamentos dele).
+  var GCODE_FILAMENTO_DESTINO = ["filament_start_gcode", "filament_end_gcode"];
+
+  function aplicarGcodeDeFilamento(novo, configOriginal, perfilDestino) {
+    var qtdFilamentos = Array.isArray(configOriginal.filament_colour) ? configOriginal.filament_colour.length : 1;
+    GCODE_FILAMENTO_DESTINO.forEach(function (campo) {
+      if (!Object.prototype.hasOwnProperty.call(perfilDestino.base, campo)) return;
+      var doDestino = perfilDestino.base[campo];
+      if (!Array.isArray(doDestino)) {
+        novo[campo] = doDestino;
+        return;
+      }
+      var qtd = Array.isArray(configOriginal[campo]) ? configOriginal[campo].length : qtdFilamentos;
+      var valor = doDestino.length ? doDestino[0] : "";
+      novo[campo] = [];
+      for (var i = 0; i < qtd; i++) novo[campo].push(valor);
+    });
+  }
+
   function ehCampoDestino(campo) {
     if (CAMPOS_DESTINO.indexOf(campo) !== -1 || OPCOES_IMPRESSORA_FATIADORES.indexOf(campo) !== -1) return true;
     return PREFIXOS_CAMPOS_DESTINO.some(function (prefixo) {
@@ -183,7 +206,7 @@
   }
 
   var perfisPromise = null;
-  var estado = null; // { file, zip, projectConfig, projectConfigPath, modelText, modelPath, sliceInfoText, sliceInfoPath, destinoKeys }
+  var estado = null; // { file, zip, projectConfig, projectConfigPath, modelText, modelPath, sliceInfoText, sliceInfoPath, fatiado, destinoKeys }
   // Cada geração regrava project_settings.config no mesmo zip compartilhado;
   // duas gerações simultâneas misturariam a config de uma impressora no
   // arquivo da outra.
@@ -329,7 +352,7 @@
     var selecionado = estado.destinoKeys.indexOf(chave) !== -1;
     if (btn) {
       btn.classList.toggle("is-selecionado", selecionado);
-      btn.setAttribute("aria-selected", selecionado ? "true" : "false");
+      btn.setAttribute("aria-pressed", selecionado ? "true" : "false");
     }
     atualizarSelecaoUI();
   }
@@ -405,7 +428,6 @@
         marcaAtual = perfil.marca;
         var grupo = document.createElement("div");
         grupo.className = "conv3mf-grupo";
-        grupo.setAttribute("role", "presentation");
         grupo.textContent = marcaAtual;
         destinosEl.appendChild(grupo);
       }
@@ -414,8 +436,7 @@
       var btn = document.createElement("button");
       btn.type = "button";
       btn.className = "conv3mf-destino";
-      btn.setAttribute("role", "option");
-      btn.setAttribute("aria-selected", jaSelecionado ? "true" : "false");
+      btn.setAttribute("aria-pressed", jaSelecionado ? "true" : "false");
       btn.dataset.key = chave;
       if (chave === chaveDetectada) btn.classList.add("is-atual");
       if (jaSelecionado) btn.classList.add("is-selecionado");
@@ -457,6 +478,7 @@
     });
     if (versaoFatiador(perfilDestino)) novo.version = versaoFatiador(perfilDestino);
     traduzirValoresPorFamilia(novo, perfilDestino);
+    aplicarGcodeDeFilamento(novo, configOriginal, perfilDestino);
     var torres = ModelParser.reposicionarTorres(configOriginal, configOriginal.printable_area, perfilDestino.base.printable_area);
     if (torres) {
       novo.wipe_tower_x = torres.wipe_tower_x;
@@ -479,14 +501,17 @@
     return novo.replace(/(<model\b[^>]*>)/, '$1\n <metadata name="Application">' + aplicacao + "</metadata>");
   }
 
-  function montarNovoSliceInfo(sliceInfoText, perfilDestino) {
+  function montarNovoSliceInfo(sliceInfoText, perfilDestino, fatiado) {
+    // Num projeto fatiado, os <plate> descrevem o fatiamento da origem
+    // (tempo, peso, modelo da impressora): ver removerGcodeFatiado.
+    var novo = fatiado ? sliceInfoText.replace(/\s*<plate\b[^>]*>[\s\S]*?<\/plate>/g, "") : sliceInfoText;
     var versao = versaoFatiador(perfilDestino);
-    if (!versao) return sliceInfoText;
-    return sliceInfoText.replace(/(<header_item\s+key="X-BBL-Client-Version"\s+value=")[^"]*(")/, "$1" + versao + "$2");
+    if (!versao) return novo;
+    return novo.replace(/(<header_item\s+key="X-BBL-Client-Version"\s+value=")[^"]*(")/, "$1" + versao + "$2");
   }
 
   function nomeArquivoDestino(nomeOriginal, perfilDestino) {
-    var base = nomeOriginal.replace(/\.3mf$/i, "");
+    var base = nomeOriginal.replace(/(\.gcode)?\.3mf$/i, "");
     var slug = nomeBaseImpressora(perfilDestino.nome)
       .toLowerCase()
       .normalize("NFD").replace(DIACRITICOS_REGEX, "")
@@ -497,15 +522,44 @@
 
   var baixarBlob = ModelParser.baixarBlob;
 
+  // Um .gcode.3mf (projeto já fatiado) traz o G-code de cada mesa, feito
+  // para a impressora de origem. O projeto convertido sai como um projeto sem
+  // fatiar: sem os plate_N.gcode, sem a referência gcode_file das mesas e sem
+  // a relação que aponta para eles; o fatiador de destino gera o próprio.
+  // Devolve (em promessa) se o projeto estava fatiado.
+  function removerGcodeFatiado(pacote) {
+    var zip = pacote.zip;
+    var gcodes = zip.file(/(^|\/)plate_\d+\.gcode(\.md5)?$/i);
+    if (!gcodes.length) return Promise.resolve(false);
+    gcodes.forEach(function (arquivo) {
+      zip.remove(arquivo.name);
+    });
+    if (pacote.modelSettingsText && pacote.modelSettingsPath) {
+      var settings = pacote.modelSettingsText.replace(/[ \t]*<metadata\s+key="gcode_file"\s+value="[^"]*"\s*\/>\r?\n?/g, "");
+      if (settings !== pacote.modelSettingsText) zip.file(pacote.modelSettingsPath, settings);
+    }
+    var rels = ModelParser.localizarArquivoUnico(zip, "model_settings.config.rels");
+    if (!rels) return Promise.resolve(true);
+    return rels.async("text").then(function (texto) {
+      var semGcode = texto.replace(/\s*<Relationship\b[^>]*\bTarget="[^"]*\.gcode"[^>]*\/>/g, "");
+      if (!/<Relationship\b/.test(semGcode)) zip.remove(rels.name);
+      else if (semGcode !== texto) zip.file(rels.name, semGcode);
+      return true;
+    }, function () {
+      // A relação só aponta para o G-code: ilegível, não impede a conversão.
+      return true;
+    });
+  }
+
   function nomeArquivoZip(nomeOriginal) {
-    return nomeOriginal.replace(/\.3mf$/i, "") + "-convertidos.zip";
+    return nomeOriginal.replace(/(\.gcode)?\.3mf$/i, "") + "-convertidos.zip";
   }
 
   function gerarProjetoUnico(projeto, perfilDestino, nivelCompressao) {
     var novoConfig = montarNovoConfig(projeto.projectConfig, perfilDestino);
     projeto.zip.file(projeto.projectConfigPath, JSON.stringify(novoConfig, null, 4));
     if (projeto.modelText) projeto.zip.file(projeto.modelPath, montarNovoModelo(projeto.modelText, projeto.projectConfig.printable_area, perfilDestino));
-    if (projeto.sliceInfoText) projeto.zip.file(projeto.sliceInfoPath, montarNovoSliceInfo(projeto.sliceInfoText, perfilDestino));
+    if (projeto.sliceInfoText) projeto.zip.file(projeto.sliceInfoPath, montarNovoSliceInfo(projeto.sliceInfoText, perfilDestino, projeto.fatiado));
     // Sem compression:"DEFLATE" o JSZip descompacta o conteúdo original e
     // regrava sem compactar, inflando um 3MF de dezenas de MB pra centenas.
     // O nível é reduzido quando há vários destinos: a malha (que não muda
@@ -554,7 +608,9 @@
       outEl.textContent = "Não foi possível gerar o(s) projeto(s) convertido(s).";
     }).then(function () {
       gerando = false;
-      if (estado === projeto) gerarBtn.disabled = projeto.destinoKeys.length === 0;
+      // Se outro arquivo foi carregado no meio, a seleção dele montou o botão
+      // ainda com gerando = true e o deixou desabilitado.
+      if (estado) gerarBtn.disabled = estado.destinoKeys.length === 0;
     });
   }
 
@@ -580,15 +636,17 @@
 
         var config = JSON.parse(pacote.configText);
         var geometriaPromise = pacote.modelText
-          ? ModelParser.parse3MFPackage(pacote.zip, pacote.modelText)
+          ? ModelParser.parse3MFPackage(pacote.zip, pacote.modelText, pacote.modelSettingsText)
           : Promise.resolve(null);
 
-        return geometriaPromise.then(function (res) {
+        return Promise.all([geometriaPromise, removerGcodeFatiado(pacote)]).then(function (r) {
+          var res = r[0];
+          var fatiado = r[1];
           if (!cargas.ehAtual(id)) return;
           var bbox = res ? res.bbox : null;
           var chapas = res ? ModelParser.calcularChapas(res.itens, ModelParser.parsePlateAssignments(pacote.modelSettingsText)) : null;
 
-          estado = { file: file, zip: pacote.zip, projectConfig: config, projectConfigPath: pacote.configPath, modelText: pacote.modelText, modelPath: pacote.modelPath, sliceInfoText: pacote.sliceInfoText, sliceInfoPath: pacote.sliceInfoPath, destinoKeys: [] };
+          estado = { file: file, zip: pacote.zip, projectConfig: config, projectConfigPath: pacote.configPath, modelText: pacote.modelText, modelPath: pacote.modelPath, sliceInfoText: pacote.sliceInfoText, sliceInfoPath: pacote.sliceInfoPath, fatiado: fatiado, destinoKeys: [] };
           var chaveDetectada = renderOrigem(config, perfis, bbox, chapas);
           destinosData = { perfis: perfis, chaveDetectada: chaveDetectada, bbox: bbox, chapas: chapas };
           buscaEl.value = "";

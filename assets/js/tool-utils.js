@@ -70,6 +70,7 @@
           modelText: r[0],
           configPath: configFile ? configFile.name : null,
           configText: r[1],
+          modelSettingsPath: modelSettingsFile ? modelSettingsFile.name : null,
           modelSettingsText: r[2],
           sliceInfoPath: sliceInfoFile ? sliceInfoFile.name : null,
           sliceInfoText: r[3]
@@ -78,7 +79,13 @@
     });
   }
 
+  // Acima disso o navegador corre risco de travar a aba: cada triângulo custa
+  // uns 290 bytes no Colorir (3,7 milhões ocupam ~1 GB). Vale para o
+  // Orçamento e o Colorir.
+  var MAX_TRIANGULOS = 6000000;
+
   window.Wisky3D.ToolUtils = {
+    MAX_TRIANGULOS: MAX_TRIANGULOS,
     ligarDropzone: ligarDropzone,
     criarSequenciador: criarSequenciador,
     lerPacote3MF: lerPacote3MF

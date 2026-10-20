@@ -1,4 +1,4 @@
-<div class="conv3mf calc" id="conv3mf" data-profiles-url="{{ '/assets/data/printer-profiles.json' | relative_url }}">
+<div class="conv3mf calc" id="conv3mf" data-profiles-url="{{ '/assets/data/printer-profiles.json' | relative_url }}?v={{ '/assets/data/printer-profiles.json' | asset_hash }}">
   <div class="calc-field calc-field-upload">
     <span class="calc-field-label-sr" id="conv3mf-upload-label">Arquivo do projeto (3MF)</span>
     <label for="conv3mf-upload" class="calc-dropzone" id="conv3mf-dropzone">
@@ -7,7 +7,7 @@
     </label>
     <input type="file" id="conv3mf-upload" accept=".3mf" aria-labelledby="conv3mf-upload-label">
   </div>
-  <p class="calc-modelo-erro" id="conv3mf-erro" hidden></p>
+  <p class="calc-modelo-erro" id="conv3mf-erro" role="alert" hidden></p>
 
   <div id="conv3mf-painel" hidden>
     <div class="calc-section">
@@ -23,7 +23,7 @@
         <span class="conv3mf-destinos-contagem" id="conv3mf-destinos-contagem"></span>
       </div>
       <input type="search" class="conv3mf-busca" id="conv3mf-busca" placeholder="Buscar por nome ou marca..." aria-label="Buscar impressora de destino">
-      <div class="conv3mf-grid" id="conv3mf-destinos" role="listbox" aria-multiselectable="true" aria-labelledby="conv3mf-destinos-lab"></div>
+      <div class="conv3mf-grid" id="conv3mf-destinos" role="group" aria-labelledby="conv3mf-destinos-lab"></div>
       <p class="conv3mf-sem-resultado" id="conv3mf-sem-resultado" hidden>Nenhuma impressora encontrada com esse termo.</p>
     </div>
 

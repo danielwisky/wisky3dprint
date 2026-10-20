@@ -249,8 +249,10 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // contém a <mesh>. Precisamos dos dois porque model_settings.config
   // (chapas) referencia o build item de topo, enquanto a exportação
   // (ThreeMFWriter) precisa do objectId do object-folha pra achar o
-  // <triangle> exato a recolorir.
-  function resolveObjectRecursivo(zip, docCache, doc, objectId, accumTransform, path, onMesh, rootObjectId) {
+  // <triangle> exato a recolorir. `componentesIgnorados` (Set de objectid,
+  // opcional) vale só para os <component> deste nível: ver
+  // parsePartesNaoSolidas.
+  function resolveObjectRecursivo(zip, docCache, doc, objectId, accumTransform, path, onMesh, rootObjectId, componentesIgnorados) {
     var objectEl = findObjectElement(doc, objectId);
     if (!objectEl) return Promise.resolve();
     if (rootObjectId === undefined) rootObjectId = objectId;
@@ -288,7 +290,10 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     var componentsEl = directChild(objectEl, "components");
     if (!componentsEl) return Promise.resolve();
 
-    var promises = directChildren(componentsEl, "component").map(function (comp) {
+    var componentes = directChildren(componentsEl, "component").filter(function (comp) {
+      return !componentesIgnorados || !componentesIgnorados.has(comp.getAttribute("objectid"));
+    });
+    var promises = componentes.map(function (comp) {
       var childObjectId = comp.getAttribute("objectid");
       var childTransform = parseTransformAttr(comp.getAttribute("transform"));
       var combined = composeTransform(accumTransform, childTransform);
@@ -314,7 +319,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // miniaturas Bambu Studio) podem passar de 3-4 milhões de triângulos e
   // manter tudo em arrays de arrays estouraria memória no navegador sem
   // necessidade (só usamos os agregados).
-  function resolveObjectGeometry(zip, docCache, doc, objectId, accumTransform) {
+  function resolveObjectGeometry(zip, docCache, doc, objectId, accumTransform, componentesIgnorados) {
     var triangleCount = 0;
     var volumeMm3 = 0;
     var areaMm2 = 0;
@@ -329,13 +334,48 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
       }
     }
 
-    return resolveObjectRecursivo(zip, docCache, doc, objectId, accumTransform, null, onMesh).then(function () {
+    return resolveObjectRecursivo(zip, docCache, doc, objectId, accumTransform, null, onMesh, undefined, componentesIgnorados).then(function () {
       return { triangleCount: triangleCount, volumeMm3: volumeMm3, areaMm2: areaMm2, bbox: bbox };
     });
   }
 
-  function parse3MFPackage(zip, rootXmlText) {
+  // Bambu Studio e derivados guardam em model_settings.config o tipo de cada
+  // parte de um objeto (<object id> com <part id subtype>, em que part id é o
+  // objectid do <component> do objeto no 3dmodel.model). Modificadores,
+  // partes negativas e bloqueadores/reforçadores de suporte não são
+  // impressos: somados como peça, inflavam peso, tempo e tamanho (um cubo
+  // modificador de 50 mm sobre uma peça pequena dava "não cabe na mesa").
+  // Ignorar a parte negativa em vez de subtrair o volume dela é uma
+  // aproximação. Devolve Map de objectid do objeto → Set de objectid dos
+  // componentes a ignorar, ou null.
+  function parsePartesNaoSolidas(modelSettingsText) {
+    if (!modelSettingsText || typeof DOMParser === "undefined") return null;
+    try {
+      var doc = new DOMParser().parseFromString(modelSettingsText, "application/xml");
+      if (doc.getElementsByTagName("parsererror").length) return null;
+      var porObjeto = new Map();
+      var objetos = doc.getElementsByTagName("object");
+      for (var i = 0; i < objetos.length; i++) {
+        var partes = directChildren(objetos[i], "part");
+        for (var j = 0; j < partes.length; j++) {
+          var subtype = partes[j].getAttribute("subtype");
+          if (!subtype || subtype === "normal_part") continue;
+          var objectId = objetos[i].getAttribute("id");
+          if (!porObjeto.has(objectId)) porObjeto.set(objectId, new Set());
+          porObjeto.get(objectId).add(partes[j].getAttribute("id"));
+        }
+      }
+      return porObjeto.size ? porObjeto : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // `modelSettingsText` (opcional) é o Metadata/model_settings.config: ver
+  // parsePartesNaoSolidas.
+  function parse3MFPackage(zip, rootXmlText, modelSettingsText) {
     var doc = parseXmlDoc(rootXmlText);
+    var partesNaoSolidas = parsePartesNaoSolidas(modelSettingsText);
     var unidadeAttr = doc.documentElement.getAttribute("unit");
     var escala = UNIDADE_PARA_MM[unidadeAttr] || 1;
     var docCache = {};
@@ -362,14 +402,17 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
       // no doc raiz e, se coincidisse por acaso com outro object definido
       // ali, a geometria errada (de outra chapa) era resolvida.
       var itemPath = item.getAttribute("p:path");
+      // Os ids de model_settings.config são os do 3dmodel.model raiz: um item
+      // com p:path aponta para um id de outro arquivo.
+      var ignorados = partesNaoSolidas && !itemPath ? partesNaoSolidas.get(objectId) : undefined;
       if (itemPath) {
         var externo = carregarDocExterno(zip, docCache, itemPath);
         if (!externo) return Promise.resolve({ triangleCount: 0, volumeMm3: 0, areaMm2: 0, bbox: bboxVazio() });
         return externo.docPromise.then(function (extDoc) {
-          return resolveObjectGeometry(zip, docCache, extDoc, objectId, transform);
+          return resolveObjectGeometry(zip, docCache, extDoc, objectId, transform, ignorados);
         });
       }
-      return resolveObjectGeometry(zip, docCache, doc, objectId, transform);
+      return resolveObjectGeometry(zip, docCache, doc, objectId, transform, ignorados);
     });
 
     return Promise.all(promises).then(function (results) {
@@ -473,8 +516,14 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
 
     return Promise.all(promises).then(function () {
       if (escala !== 1) {
+        // Triângulos vizinhos compartilham o mesmo array de vértice: sem
+        // marcar os já escalados, cada vértice seria multiplicado uma vez
+        // por triângulo que o usa.
+        var escalados = new Set();
         triangulos.forEach(function (tri) {
           tri.forEach(function (p) {
+            if (escalados.has(p)) return;
+            escalados.add(p);
             p[0] *= escala; p[1] *= escala; p[2] *= escala;
           });
         });
@@ -708,6 +757,70 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     return porChapa;
   }
 
+  // Um mesmo object referenciado por dois <item>/<component> vira, em
+  // extractTriangles3MF, duas cópias da malha com os mesmos triângulos de
+  // origem (path, objectId, localIndex). No 3MF exportado só existe uma cor
+  // por triângulo de origem, então as cópias precisam ser pintadas juntas.
+  // Cada cópia é um trecho contínuo de `triangleOrigins` (onMesh empilha a
+  // malha inteira de uma vez, com localIndex crescente): o mapa guarda o
+  // início de cada trecho e, para trechos repetidos, o início de todas as
+  // cópias, em vez de um registro por triângulo. Devolve null sem cópias.
+  function mapearCopiasDeMalha(triangleOrigins) {
+    var inicios = [];
+    var chaves = [];
+    for (var t = 0; t < triangleOrigins.length; t++) {
+      var o = triangleOrigins[t];
+      var anterior = t > 0 ? triangleOrigins[t - 1] : null;
+      var continua = o && anterior && o.path === anterior.path && o.objectId === anterior.objectId && o.localIndex > anterior.localIndex;
+      if (!continua) {
+        inicios.push(t);
+        chaves.push(o ? o.path + "|" + o.objectId : null);
+      }
+    }
+
+    var porChave = new Map();
+    chaves.forEach(function (chave, i) {
+      if (chave === null) return;
+      if (!porChave.has(chave)) porChave.set(chave, []);
+      porChave.get(chave).push(inicios[i]);
+    });
+
+    var temCopias = false;
+    var copias = chaves.map(function (chave) {
+      var grupo = chave === null ? null : porChave.get(chave);
+      if (!grupo || grupo.length < 2) return null;
+      temCopias = true;
+      return grupo;
+    });
+    return temCopias ? { inicios: inicios, copias: copias } : null;
+  }
+
+  // Chama `fn(indice)` para cada triângulo que é o mesmo triângulo de origem
+  // que `t` nas outras cópias da malha (ver mapearCopiasDeMalha). Sem criar
+  // arrays: roda para cada triângulo de um balde que pode ter milhões.
+  function paraCadaCopia(mapa, t, fn) {
+    if (!mapa) return;
+    var baixo = 0;
+    var alto = mapa.inicios.length - 1;
+    while (baixo < alto) {
+      var meio = (baixo + alto + 1) >> 1;
+      if (mapa.inicios[meio] <= t) baixo = meio;
+      else alto = meio - 1;
+    }
+    var grupo = mapa.copias[baixo];
+    if (!grupo) return;
+    var inicio = mapa.inicios[baixo];
+    for (var i = 0; i < grupo.length; i++) {
+      if (grupo[i] !== inicio) fn(grupo[i] + t - inicio);
+    }
+  }
+
+  function copiasDoTriangulo(mapa, t) {
+    var indices = [];
+    paraCadaCopia(mapa, t, function (indice) { indices.push(indice); });
+    return indices;
+  }
+
   window.Wisky3D.ModelParser = {
     parseSTL: parseSTL,
     computeBoundingBox: computeBoundingBox,
@@ -727,6 +840,9 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     calcularChapas: calcularChapas,
     reposicionarPorMesa: reposicionarPorMesa,
     reposicionarTorres: reposicionarTorres,
+    mapearCopiasDeMalha: mapearCopiasDeMalha,
+    paraCadaCopia: paraCadaCopia,
+    copiasDoTriangulo: copiasDoTriangulo,
     mapearTriangulosParaChapas: mapearTriangulosParaChapas
   };
 })();

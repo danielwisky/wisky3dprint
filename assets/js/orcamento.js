@@ -698,7 +698,6 @@
   applyLogoState();
 
   var MODELO_MAX_BYTES = 60 * 1024 * 1024;
-  var MODELO_MAX_TRIANGULOS = 6000000;
   var lastMeshStats = null;
   var cargasModelo = ToolUtils ? ToolUtils.criarSequenciador() : null;
   var perfilDoArquivo = null;
@@ -794,7 +793,7 @@
       mostrarErroModelo("Não foi possível ler triângulos desse arquivo.");
       return;
     }
-    if (triangleCount > MODELO_MAX_TRIANGULOS) {
+    if (triangleCount > ToolUtils.MAX_TRIANGULOS) {
       mostrarErroModelo("Modelo muito complexo para calcular no navegador. Tente simplificar a malha ou informe peso/tempo manualmente.");
       return;
     }
@@ -976,7 +975,7 @@
     return ToolUtils.lerPacote3MF(file).then(function (pacote) {
       if (!pacote.modelText) throw new Error("modelo não encontrado no 3MF");
       var perfil = pacote.configText ? ModelParser.parse3MFPerfil(pacote.configText) : null;
-      return ModelParser.parse3MFPackage(pacote.zip, pacote.modelText).then(function (stats) {
+      return ModelParser.parse3MFPackage(pacote.zip, pacote.modelText, pacote.modelSettingsText).then(function (stats) {
         return { stats: stats, perfil: perfil };
       });
     });
