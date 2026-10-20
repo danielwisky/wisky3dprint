@@ -113,6 +113,35 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     return parseAsciiSTL(new TextDecoder("utf-8").decode(buffer));
   }
 
+  function contarOcorrencias(texto, trecho) {
+    var n = 0;
+    for (var i = texto.indexOf(trecho); i !== -1; i = texto.indexOf(trecho, i + trecho.length)) n++;
+    return n;
+  }
+
+  // Quantos triângulos o STL tem, sem montar a malha: no binário vem no
+  // cabeçalho; no ASCII, um por "endfacet".
+  function contarTriangulosSTL(buffer) {
+    if (detectBinarySTL(buffer)) return new DataView(buffer).getUint32(80, true);
+    return contarOcorrencias(new TextDecoder("utf-8").decode(buffer), "endfacet");
+  }
+
+  // Quantos <triangle> há nos .model do pacote, sem interpretar o XML nem
+  // montar a malha, para recusar modelos grandes demais antes de alocar
+  // milhões de arrays. É uma estimativa: um objeto usado por dois <item>
+  // conta uma vez só. Lê um arquivo por vez para não manter todos os textos
+  // em memória ao mesmo tempo.
+  function contarTriangulos3MF(zip) {
+    var arquivos = zip.file(/\.model$/i);
+    return arquivos.reduce(function (promessa, arquivo) {
+      return promessa.then(function (total) {
+        return arquivo.async("text").then(function (texto) {
+          return total + contarOcorrencias(texto, "<triangle ") + contarOcorrencias(texto, "<triangle/");
+        });
+      });
+    }, Promise.resolve(0));
+  }
+
   var TRANSFORM_IDENTIDADE = { M: [[1, 0, 0], [0, 1, 0], [0, 0, 1]], t: [0, 0, 0] };
 
   // Fator pra converter a unidade declarada no <model unit="..."> pra mm.
@@ -1017,6 +1046,8 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     parse3MFPerfil: parse3MFPerfil,
     parsePlateAssignments: parsePlateAssignments,
     calcularChapas: calcularChapas,
+    contarTriangulos3MF: contarTriangulos3MF,
+    contarTriangulosSTL: contarTriangulosSTL,
     reposicionarPorMesa: reposicionarPorMesa,
     reposicionarTorres: reposicionarTorres,
     pegadasPorMesa: pegadasPorMesa,
