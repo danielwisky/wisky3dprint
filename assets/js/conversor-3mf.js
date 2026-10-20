@@ -175,6 +175,29 @@
     });
   }
 
+  // G-code de filamento é configuração de filamento (mantida do projeto),
+  // mas escrito para a máquina: o da Bambu liga a ventoinha auxiliar dela
+  // (M106 P3), o dos Creality K controla a temperatura do bico. Vem do perfil
+  // de destino, repetido para cada filamento do projeto (o perfil tem só a
+  // quantidade de filamentos dele).
+  var GCODE_FILAMENTO_DESTINO = ["filament_start_gcode", "filament_end_gcode"];
+
+  function aplicarGcodeDeFilamento(novo, configOriginal, perfilDestino) {
+    var qtdFilamentos = Array.isArray(configOriginal.filament_colour) ? configOriginal.filament_colour.length : 1;
+    GCODE_FILAMENTO_DESTINO.forEach(function (campo) {
+      if (!Object.prototype.hasOwnProperty.call(perfilDestino.base, campo)) return;
+      var doDestino = perfilDestino.base[campo];
+      if (!Array.isArray(doDestino)) {
+        novo[campo] = doDestino;
+        return;
+      }
+      var qtd = Array.isArray(configOriginal[campo]) ? configOriginal[campo].length : qtdFilamentos;
+      var valor = doDestino.length ? doDestino[0] : "";
+      novo[campo] = [];
+      for (var i = 0; i < qtd; i++) novo[campo].push(valor);
+    });
+  }
+
   function ehCampoDestino(campo) {
     if (CAMPOS_DESTINO.indexOf(campo) !== -1 || OPCOES_IMPRESSORA_FATIADORES.indexOf(campo) !== -1) return true;
     return PREFIXOS_CAMPOS_DESTINO.some(function (prefixo) {
@@ -455,6 +478,7 @@
     });
     if (versaoFatiador(perfilDestino)) novo.version = versaoFatiador(perfilDestino);
     traduzirValoresPorFamilia(novo, perfilDestino);
+    aplicarGcodeDeFilamento(novo, configOriginal, perfilDestino);
     var torres = ModelParser.reposicionarTorres(configOriginal, configOriginal.printable_area, perfilDestino.base.printable_area);
     if (torres) {
       novo.wipe_tower_x = torres.wipe_tower_x;
