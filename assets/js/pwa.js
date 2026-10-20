@@ -73,6 +73,7 @@
       // navegador descarta o worker antigo. Sem isso, o clique em
       // "Atualizar" ficaria mandando mensagem pra um worker morto.
       var workerAtual = null;
+      var atualizacaoPedida = false;
       function mostrarToastAtualizacao(worker) {
         if (!worker || !updateToast || !updateToastBtn) return;
         workerAtual = worker;
@@ -80,7 +81,9 @@
       }
       if (updateToastBtn) {
         updateToastBtn.addEventListener("click", function () {
-          if (workerAtual) workerAtual.postMessage("skipWaiting");
+          if (!workerAtual) return;
+          atualizacaoPedida = true;
+          workerAtual.postMessage("skipWaiting");
         });
       }
 
@@ -116,9 +119,16 @@
         setInterval(verificarAtualizacao, 60 * 60 * 1000);
       }).catch(function () {});
 
+      // Na primeira visita não há worker antigo: o novo ativa direto, o
+      // clients.claim() dispara controllerchange e recarregar aqui perderia
+      // o que o usuário já fez na página (ex.: um 3MF que acabou de soltar).
+      // Só recarrega numa troca de versão de verdade: a página já era
+      // controlada ao abrir (outra aba pediu a atualização) ou o usuário
+      // tocou em "Atualizar" nesta aba.
+      var tinhaController = !!navigator.serviceWorker.controller;
       var recarregando = false;
       navigator.serviceWorker.addEventListener("controllerchange", function () {
-        if (recarregando) return;
+        if ((!tinhaController && !atualizacaoPedida) || recarregando) return;
         recarregando = true;
         window.location.reload();
       });
