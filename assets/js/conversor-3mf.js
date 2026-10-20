@@ -65,6 +65,64 @@
     "time_lapse_gcode", "version"
   ];
 
+  // Demais opções de impressora do Bambu Studio e do OrcaSlicer
+  // (Preset::printer_options() no Preset.cpp de cada um: retração, z-hop,
+  // wipe, ventoinhas, troca de filamento, input shaping...), as que o próprio
+  // fatiador troca quando o usuário muda de impressora no projeto. Ficam de
+  // fora as já cobertas pelos prefixos e pela lista acima, e "inherits", que
+  // também é opção de processo.
+  var OPCOES_IMPRESSORA_FATIADORES = [
+    "adaptive_bed_mesh_margin", "auxiliary_fan", "bbl_use_printhost",
+    "belt_frame_tilt_angle", "belt_frame_tilt_decouple", "belt_printer",
+    "belt_printer_infinite_y", "belt_slice_rotation",
+    "belt_slice_rotation_angle", "belt_support_floor_offset",
+    "build_plate_tilt_x", "build_plate_tilt_y", "change_extrusion_role_gcode",
+    "cooling_filter_enabled", "cooling_tube_length",
+    "cooling_tube_retraction", "default_ams_type",
+    "default_nozzle_volume_type", "deretract_speed_extruder_change",
+    "deretraction_speed", "disable_m73", "emit_machine_limits_to_gcode",
+    "enable_belt_purge_tower", "enable_filament_ramming",
+    "enable_long_retraction_when_cut", "enable_power_loss_recovery",
+    "enable_pre_heating", "extra_loading_move", "fan_direction",
+    "fan_kickstart", "fan_speedup_overhangs", "fan_speedup_time",
+    "farthest_point_timelapse", "file_start_gcode",
+    "flashforge_serial_number", "gcode_remap_x", "gcode_remap_y",
+    "gcode_remap_z", "gcode_skip_config_block", "grab_length",
+    "group_algo_with_time", "high_current_on_filament_swap",
+    "hotend_cooling_rate", "hotend_heating_rate", "imex_carriage_margin",
+    "imex_firmware_managed_zones", "imex_gantry_count",
+    "imex_mode_active_tools", "imex_mode_gcodes", "imex_mode_names",
+    "imex_nozzle_clearance_x", "imex_nozzle_clearance_y", "imex_tool_layout",
+    "imex_tools_per_gantry", "imex_viz_theme", "input_shaping_damp_x",
+    "input_shaping_damp_y", "input_shaping_emit", "input_shaping_freq_x",
+    "input_shaping_freq_y", "input_shaping_type", "is_imex",
+    "long_retractions_when_cut", "manual_filament_change",
+    "master_extruder_id", "max_layer_height", "max_resonance_avoidance_speed",
+    "min_layer_height", "min_resonance_avoidance_speed",
+    "parallel_printheads_bed_exclude_areas", "parallel_printheads_count",
+    "parking_pos_retraction", "part_cooling_fan_min_pwm",
+    "pellet_modded_printer", "physical_extruder_map", "preferred_orientation",
+    "print_host", "print_host_webui", "print_in_clockwise",
+    "printhost_apikey", "printhost_authorization_type", "printhost_cafile",
+    "printhost_password", "printhost_port", "printhost_ssl_ignore_revoke",
+    "printhost_user", "printing_by_object_gcode", "purge_in_prime_tower",
+    "resonance_avoidance", "retract_after_wipe", "retract_before_wipe",
+    "retract_length_toolchange", "retract_lift_above", "retract_lift_below",
+    "retract_lift_enforce", "retract_restart_extra",
+    "retract_restart_extra_toolchange", "retract_when_changing_layer",
+    "retraction_distances_when_cut", "retraction_length",
+    "retraction_minimum_travel", "retraction_speed",
+    "single_extruder_multi_material", "support_air_filtration",
+    "support_chamber_temp_control", "support_cooling_filter",
+    "support_fast_purge_mode", "support_multi_bed_types",
+    "support_object_skip_flush", "support_parallel_printheads",
+    "template_custom_gcode", "thumbnail_size", "time_cost",
+    "tool_change_on_wipe_tower", "travel_slope", "use_3mf",
+    "use_firmware_retraction", "use_relative_e_distances",
+    "wait_for_temp_on_wipe_tower", "wipe", "wipe_distance", "wipe_tower_type",
+    "wrapping_detection_layers", "z_hop", "z_hop_types", "z_offset"
+  ];
+
   // Cada fatiador lê a versão do projeto em <metadata name="Application">
   // no 3dmodel.model e avisa que o software está desatualizado quando ela é
   // maior que a dele. Gravamos o mesmo valor que o fatiador da marca de
@@ -118,7 +176,7 @@
   }
 
   function ehCampoDestino(campo) {
-    if (CAMPOS_DESTINO.indexOf(campo) !== -1) return true;
+    if (CAMPOS_DESTINO.indexOf(campo) !== -1 || OPCOES_IMPRESSORA_FATIADORES.indexOf(campo) !== -1) return true;
     return PREFIXOS_CAMPOS_DESTINO.some(function (prefixo) {
       return campo.indexOf(prefixo) === 0;
     });
@@ -388,7 +446,10 @@
 
   function montarNovoConfig(configOriginal, perfilDestino) {
     var novo = {};
+    // Campos de hardware que o perfil de destino não tem são de outra
+    // impressora (AMS de uma Bambu numa Ender-3, segundo bico de uma H2D...).
     Object.keys(configOriginal).forEach(function (k) {
+      if (ehCampoDestino(k) && !Object.prototype.hasOwnProperty.call(perfilDestino.base, k)) return;
       novo[k] = configOriginal[k];
     });
     Object.keys(perfilDestino.base).forEach(function (k) {
