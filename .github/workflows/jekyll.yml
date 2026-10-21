@@ -28,6 +28,8 @@ jobs:
           cache: "npm"
       - name: Install JS dependencies
         run: npm ci
+      - name: Lint JS
+        run: npm run lint
       - name: Run JS unit tests
         run: npm test
       - name: Setup Ruby
