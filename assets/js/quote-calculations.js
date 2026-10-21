@@ -18,8 +18,12 @@ window.Wisky3D = window.Wisky3D || {};
     return isFinite(p.fixedWear) ? p.fixedWear : p.defaultWear;
   }
 
+  function marginValue(subtotalWithLoss, marginPct) {
+    return subtotalWithLoss * (marginPct / 100);
+  }
+
   function unitTotalWithMargin(subtotalWithLoss, marginPct, labor, packaging, shipping) {
-    return subtotalWithLoss + subtotalWithLoss * (marginPct / 100) + labor + packaging + shipping;
+    return subtotalWithLoss + marginValue(subtotalWithLoss, marginPct) + labor + packaging + shipping;
   }
 
   // A perda/retrabalho é aplicada sobre o subtotal (filamento + energia +
@@ -69,7 +73,7 @@ window.Wisky3D = window.Wisky3D || {};
       subtotal: subtotal,
       loss: loss,
       lossPct: e.lossPct,
-      margin: subtotalWithLoss * (e.marginPct / 100),
+      margin: marginValue(subtotalWithLoss, e.marginPct),
       marginPct: e.marginPct,
       manualHours: e.manualHours,
       hourlyRate: e.hourlyRate,
@@ -112,6 +116,15 @@ window.Wisky3D = window.Wisky3D || {};
       hours: Math.floor(roundedTotalMin / 60),
       minutes: roundedTotalMin % 60
     };
+  }
+
+  // Arredonda o total de minutos antes de separar em horas/minutos, pelo
+  // mesmo motivo de estimateWeightAndTime: evita "1h 60min".
+  function formatDuration(hours) {
+    const totalMin = Math.round(hours * 60);
+    const h = Math.floor(totalMin / 60);
+    const min = totalMin % 60;
+    return h + "h" + (min ? " " + min + "min" : "");
   }
 
   function itemName(item, i) {
@@ -198,6 +211,7 @@ window.Wisky3D = window.Wisky3D || {};
     calculateItem: calculateItem,
     calculateDiscount: calculateDiscount,
     estimateWeightAndTime: estimateWeightAndTime,
+    formatDuration: formatDuration,
     itemName: itemName,
     generateCsv: generateCsv
   };

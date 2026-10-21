@@ -146,3 +146,20 @@ test("generateCsv escapa campos com ponto e vírgula ou aspas", () => {
   const line = Calculations.generateCsv([item]).split("\r\n")[1];
   assert.ok(line.startsWith('"Peça ""A""; v2";2;'));
 });
+
+test("formatDuration arredonda o total antes de separar horas e minutos", () => {
+  assert.equal(Calculations.formatDuration(4.5), "4h 30min");
+  assert.equal(Calculations.formatDuration(2), "2h");
+  assert.equal(Calculations.formatDuration(14 / 60), "0h 14min");
+  // 1h 59,7min: arredondar só os minutos daria "1h 60min"
+  assert.equal(Calculations.formatDuration(1 + 59.7 / 60), "2h");
+});
+
+test("calculateItem: unitTotal bate com a soma das linhas do detalhamento", () => {
+  const item = Calculations.calculateItem(INPUT);
+  near(item.unitTotal, item.subtotalWithLoss + item.margin + item.labor + item.packaging + item.shipping);
+  near(
+    item.unitTotal,
+    Calculations.unitTotalWithMargin(item.subtotalWithLoss, item.marginPct, item.labor, item.packaging, item.shipping)
+  );
+});
