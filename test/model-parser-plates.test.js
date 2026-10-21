@@ -105,7 +105,7 @@ test("parsePlateAssignments ignora model_instances sem object_id", () => {
   assert.deepEqual(resultado[1], ["2"], "segunda chapa tem id 2");
 });
 
-test("calcularChapas com plateAssignments simples retorna bbox por chapa", () => {
+test("calculatePlates com plateAssignments simples retorna bbox por chapa", () => {
   const plateAssignments = [["1", "2"], ["3"]];
   const itens = [
     { objectId: "1", bbox: { minX: 0, minY: 0, minZ: 0, maxX: 10, maxY: 10, maxZ: 10 } },
@@ -113,7 +113,7 @@ test("calcularChapas com plateAssignments simples retorna bbox por chapa", () =>
     { objectId: "3", bbox: { minX: 20, minY: 20, minZ: 20, maxX: 30, maxY: 30, maxZ: 30 } }
   ];
 
-  const resultado = window.Wisky3D.ModelParser.calcularChapas(itens, plateAssignments);
+  const resultado = window.Wisky3D.ModelParser.calculatePlates(itens, plateAssignments);
 
   assert.ok(Array.isArray(resultado), "resultado deve ser array");
   assert.equal(resultado.length, 2, "deve ter 2 chapas");
@@ -133,7 +133,7 @@ test("calcularChapas com plateAssignments simples retorna bbox por chapa", () =>
   assert.equal(resultado[1].bbox.maxX, 30, "bbox chapa 2 maxX = 30");
 });
 
-test("calcularChapas com apenas 1 chapa retorna null", () => {
+test("calculatePlates com apenas 1 chapa retorna null", () => {
   const plateAssignments = [["1", "2", "3"]];
   const itens = [
     { objectId: "1", bbox: { minX: 0, minY: 0, minZ: 0, maxX: 10, maxY: 10, maxZ: 10 } },
@@ -141,19 +141,19 @@ test("calcularChapas com apenas 1 chapa retorna null", () => {
     { objectId: "3", bbox: { minX: 20, minY: 20, minZ: 20, maxX: 30, maxY: 30, maxZ: 30 } }
   ];
 
-  const resultado = window.Wisky3D.ModelParser.calcularChapas(itens, plateAssignments);
+  const resultado = window.Wisky3D.ModelParser.calculatePlates(itens, plateAssignments);
 
   assert.equal(resultado, null, "apenas 1 chapa retorna null");
 });
 
-test("calcularChapas descarta chapas sem bbox", () => {
+test("calculatePlates descarta chapas sem bbox", () => {
   const plateAssignments = [["1"], ["99"], ["2"]]; // 99 não existe nos items
   const itens = [
     { objectId: "1", bbox: { minX: 0, minY: 0, minZ: 0, maxX: 10, maxY: 10, maxZ: 10 } },
     { objectId: "2", bbox: { minX: 20, minY: 20, minZ: 20, maxX: 30, maxY: 30, maxZ: 30 } }
   ];
 
-  const resultado = window.Wisky3D.ModelParser.calcularChapas(itens, plateAssignments);
+  const resultado = window.Wisky3D.ModelParser.calculatePlates(itens, plateAssignments);
 
   assert.ok(Array.isArray(resultado), "resultado deve ser array");
   assert.equal(resultado.length, 2, "deve ter 2 chapas válidas (descartou a chapa 99)");
@@ -161,20 +161,20 @@ test("calcularChapas descarta chapas sem bbox", () => {
   assert.equal(resultado[1].indice, 3, "segunda chapa tem indice 3 (pulou 2)");
 });
 
-test("calcularChapas com plateAssignments null retorna null", () => {
+test("calculatePlates com plateAssignments null retorna null", () => {
   const itens = [
     { objectId: "1", bbox: { minX: 0, minY: 0, minZ: 0, maxX: 10, maxY: 10, maxZ: 10 } }
   ];
 
-  const resultado = window.Wisky3D.ModelParser.calcularChapas(itens, null);
+  const resultado = window.Wisky3D.ModelParser.calculatePlates(itens, null);
 
   assert.equal(resultado, null, "plateAssignments null retorna null");
 });
 
-test("calcularChapas com itens null retorna null", () => {
+test("calculatePlates com itens null retorna null", () => {
   const plateAssignments = [["1"]];
 
-  const resultado = window.Wisky3D.ModelParser.calcularChapas(null, plateAssignments);
+  const resultado = window.Wisky3D.ModelParser.calculatePlates(null, plateAssignments);
 
   assert.equal(resultado, null, "itens null retorna null");
 });

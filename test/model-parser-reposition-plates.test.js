@@ -12,7 +12,7 @@ global.window = global;
 global.DOMParser = DOMParser;
 new Function(source)();
 
-const { reposicionarPorMesa } = window.Wisky3D.ModelParser;
+const { repositionByPlate } = window.Wisky3D.ModelParser;
 
 const MESA_256 = ["0x0", "256x0", "256x256", "0x256"];
 const MESA_220 = ["0x0", "220x0", "220x220", "0x220"];
@@ -33,10 +33,10 @@ function translacao(xml, objectId) {
   return [Number(t[9]), Number(t[10]), Number(t[11])];
 }
 
-test("reposicionarPorMesa com uma mesa leva a peça ao centro da mesa de destino mantendo o afastamento", () => {
+test("repositionByPlate com uma mesa leva a peça ao centro da mesa de destino mantendo o afastamento", () => {
   const xml = modelo([["1", "1 0 0 0 1 0 0 0 1 149.1 105.4 12"]]);
 
-  const novo = reposicionarPorMesa(xml, MESA_256, MESA_220);
+  const novo = repositionByPlate(xml, MESA_256, MESA_220);
 
   const [x, y, z] = translacao(novo, "1");
   assert.ok(Math.abs(x - 131.1) < 1e-6, `x=${x}`);
@@ -44,7 +44,7 @@ test("reposicionarPorMesa com uma mesa leva a peça ao centro da mesa de destino
   assert.equal(z, 12, "altura não muda");
 });
 
-test("reposicionarPorMesa mantém cada peça na mesma célula da grade de mesas", () => {
+test("repositionByPlate mantém cada peça na mesma célula da grade de mesas", () => {
   // Monitor Grinch (X1 Carbon, 4 mesas): mesa 2 na coluna 1, mesa 3 na linha -1, mesa 4 nas duas
   const xml = modelo([
     ["4", "1 0 0 0 1 0 0 0 1 149.1 105.4 0"],
@@ -53,7 +53,7 @@ test("reposicionarPorMesa mantém cada peça na mesma célula da grade de mesas"
     ["10", "1 0 0 0 1 0 0 0 1 426.6 -207.1 0"]
   ]);
 
-  const novo = reposicionarPorMesa(xml, MESA_256, MESA_220);
+  const novo = repositionByPlate(xml, MESA_256, MESA_220);
 
   // passo da grade no destino: 1,2 × 220 = 264
   const esperado = {
@@ -69,70 +69,70 @@ test("reposicionarPorMesa mantém cada peça na mesma célula da grade de mesas"
   });
 });
 
-test("reposicionarPorMesa preserva rotação/escala do item e não mexe em components", () => {
+test("repositionByPlate preserva rotação/escala do item e não mexe em components", () => {
   const xml = modelo([["1", "0.707107 -0.707107 0 0.707107 0.707107 0 0 0 1.5 128 128 3.25"]]);
 
-  const novo = reposicionarPorMesa(xml, MESA_256, MESA_220);
+  const novo = repositionByPlate(xml, MESA_256, MESA_220);
 
   assert.match(novo, /<item objectid="1" transform="0\.707107 -0\.707107 0 0\.707107 0\.707107 0 0 0 1\.5 110 110 3\.25"/);
   assert.match(novo, /<component objectid="9" transform="1 0 0 0 1 0 0 0 1 5 6 7"\/>/);
 });
 
-test("reposicionarPorMesa considera mesas com origem fora do canto (área centrada em 0,0)", () => {
+test("repositionByPlate considera mesas com origem fora do canto (área centrada em 0,0)", () => {
   const centrada = ["-110x-110", "110x-110", "110x110", "-110x110"];
   const xml = modelo([["1", "1 0 0 0 1 0 0 0 1 138 118 0"]]);
 
-  const novo = reposicionarPorMesa(xml, MESA_256, centrada);
+  const novo = repositionByPlate(xml, MESA_256, centrada);
 
   const [x, y] = translacao(novo, "1");
   assert.ok(Math.abs(x - 10) < 1e-6, `x=${x}`);
   assert.ok(Math.abs(y + 10) < 1e-6, `y=${y}`);
 });
 
-test("reposicionarPorMesa devolve null quando falta a área de uma das mesas", () => {
+test("repositionByPlate devolve null quando falta a área de uma das mesas", () => {
   const xml = modelo([["1", "1 0 0 0 1 0 0 0 1 128 128 0"]]);
 
-  assert.equal(reposicionarPorMesa(xml, null, MESA_220), null);
-  assert.equal(reposicionarPorMesa(xml, MESA_256, ["0x0"]), null);
+  assert.equal(repositionByPlate(xml, null, MESA_220), null);
+  assert.equal(repositionByPlate(xml, MESA_256, ["0x0"]), null);
 });
 
-test("reposicionarPorMesa deixa intacto item com transform fora do formato de 12 números", () => {
+test("repositionByPlate deixa intacto item com transform fora do formato de 12 números", () => {
   const xml = modelo([["1", "1 0 0 0 1 0 0 0 1 128 128"]]);
 
-  assert.equal(reposicionarPorMesa(xml, MESA_256, MESA_220), xml);
+  assert.equal(repositionByPlate(xml, MESA_256, MESA_220), xml);
 });
 
-const { reposicionarTorres } = window.Wisky3D.ModelParser;
+const { repositionTowers } = window.Wisky3D.ModelParser;
 
-test("reposicionarTorres desloca a torre de cada mesa junto com as peças", () => {
+test("repositionTowers desloca a torre de cada mesa junto com as peças", () => {
   const config = {
     wipe_tower_x: ["81.1551", "149.919"],
     wipe_tower_y: ["160.819", "174.995"],
     prime_tower_width: "35"
   };
 
-  const torres = reposicionarTorres(config, MESA_256, MESA_220);
+  const torres = repositionTowers(config, MESA_256, MESA_220);
 
   assert.deepEqual(torres, { wipe_tower_x: ["63.1551", "131.919"], wipe_tower_y: ["142.819", "156.995"] });
 });
 
-test("reposicionarTorres mantém a torre inteira dentro da mesa de destino", () => {
+test("repositionTowers mantém a torre inteira dentro da mesa de destino", () => {
   const config = { wipe_tower_x: ["240"], wipe_tower_y: ["-30"], prime_tower_width: "35" };
 
-  const torres = reposicionarTorres(config, MESA_256, MESA_220);
+  const torres = repositionTowers(config, MESA_256, MESA_220);
 
   assert.deepEqual(torres, { wipe_tower_x: ["185"], wipe_tower_y: ["0"] });
 });
 
-test("reposicionarTorres aceita valor único (não lista) e devolve no mesmo formato", () => {
+test("repositionTowers aceita valor único (não lista) e devolve no mesmo formato", () => {
   const config = { wipe_tower_x: "100", wipe_tower_y: "100" };
 
-  const torres = reposicionarTorres(config, MESA_256, MESA_220);
+  const torres = repositionTowers(config, MESA_256, MESA_220);
 
   assert.deepEqual(torres, { wipe_tower_x: "82", wipe_tower_y: "82" });
 });
 
-test("reposicionarTorres devolve null sem torre ou sem área de mesa", () => {
-  assert.equal(reposicionarTorres({}, MESA_256, MESA_220), null);
-  assert.equal(reposicionarTorres({ wipe_tower_x: ["1"], wipe_tower_y: ["1"] }, null, MESA_220), null);
+test("repositionTowers devolve null sem torre ou sem área de mesa", () => {
+  assert.equal(repositionTowers({}, MESA_256, MESA_220), null);
+  assert.equal(repositionTowers({ wipe_tower_x: ["1"], wipe_tower_y: ["1"] }, null, MESA_220), null);
 });

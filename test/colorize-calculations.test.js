@@ -5,7 +5,7 @@ const fs = require("node:fs");
 
 global.window = global;
 new Function(fs.readFileSync(path.join(__dirname, "..", "assets", "js", "colorize-calculations.js"), "utf8"))();
-const C = window.Wisky3D.ColorirCalculo;
+const C = window.Wisky3D.ColorizeCalculations;
 
 // Cubo de lado 10 com as 12 faces voltadas pra fora, duas por lado.
 function cubo() {
@@ -75,31 +75,31 @@ test("hexToRgb", () => {
   assert.deepEqual(C.hexToRgb("#3fb6e8"), [63, 182, 232]);
 });
 
-test("paletaDeExportacao reserva o slot 1 pra área não pintada", () => {
-  const { paleta, slotPorCor } = C.paletaDeExportacao(cores([CINZA, VERMELHO, AZUL, VERMELHO]), 4, CINZA);
+test("exportPalette reserva o slot 1 pra área não pintada", () => {
+  const { paleta, slotPorCor } = C.exportPalette(cores([CINZA, VERMELHO, AZUL, VERMELHO]), 4, CINZA);
   assert.deepEqual(paleta, [CINZA, VERMELHO, AZUL]);
   assert.equal(slotPorCor.get("255,0,0"), 2);
   assert.equal(slotPorCor.get("0,0,255"), 3);
 });
 
-test("paletaDeExportacao omite a cor padrão quando tudo foi pintado", () => {
-  const { paleta, slotPorCor } = C.paletaDeExportacao(cores([AZUL, VERMELHO]), 2, CINZA);
+test("exportPalette omite a cor padrão quando tudo foi pintado", () => {
+  const { paleta, slotPorCor } = C.exportPalette(cores([AZUL, VERMELHO]), 2, CINZA);
   assert.deepEqual(paleta, [AZUL, VERMELHO]);
   assert.equal(slotPorCor.get("0,0,255"), 1);
 });
 
-test("paletaDeExportacao sem nenhum triângulo cai na cor padrão", () => {
-  assert.deepEqual(C.paletaDeExportacao(cores([]), 0, CINZA).paleta, [CINZA]);
+test("exportPalette sem nenhum triângulo cai na cor padrão", () => {
+  assert.deepEqual(C.exportPalette(cores([]), 0, CINZA).paleta, [CINZA]);
 });
 
-test("agruparCoresPorArquivo agrupa por path e objectId e ignora triângulos sem origem", () => {
+test("groupColorsByFile agrupa por path e objectId e ignora triângulos sem origem", () => {
   const origens = [
     { path: "3D/a.model", objectId: "1", localIndex: 0 },
     null,
     { path: "3D/a.model", objectId: "1", localIndex: 1 },
     { path: "3D/b.model", objectId: "7", localIndex: 0 }
   ];
-  const porArquivo = C.agruparCoresPorArquivo(origens, cores([VERMELHO, AZUL, AZUL, CINZA]), 4);
+  const porArquivo = C.groupColorsByFile(origens, cores([VERMELHO, AZUL, AZUL, CINZA]), 4);
   assert.deepEqual([...porArquivo.keys()], ["3D/a.model", "3D/b.model"]);
   assert.deepEqual(porArquivo.get("3D/a.model").get("1"), [
     { localIndex: 0, r: 255, g: 0, b: 0 },
@@ -108,8 +108,8 @@ test("agruparCoresPorArquivo agrupa por path e objectId e ignora triângulos sem
   assert.deepEqual(porArquivo.get("3D/b.model").get("7"), [{ localIndex: 0, r: 200, g: 200, b: 200 }]);
 });
 
-test("triangulosParaExportacao usa os índices soldados e a cor de cada triângulo", () => {
-  const tris = C.triangulosParaExportacao(new Int32Array([0, 1, 2, 2, 3, 0]), cores([VERMELHO, AZUL]), 2);
+test("trianglesForExport usa os índices soldados e a cor de cada triângulo", () => {
+  const tris = C.trianglesForExport(new Int32Array([0, 1, 2, 2, 3, 0]), cores([VERMELHO, AZUL]), 2);
   assert.deepEqual(tris, [
     { v1: 0, v2: 1, v3: 2, color: [255, 0, 0] },
     { v1: 2, v2: 3, v3: 0, color: [0, 0, 255] }

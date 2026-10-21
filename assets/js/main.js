@@ -168,7 +168,7 @@
 
   window.Wisky3D = window.Wisky3D || {};
 
-  window.Wisky3D.criarLightbox = function (config) {
+  window.Wisky3D.createLightbox = function (config) {
     var box = config.box;
     var items = [];
     var idx = 0;
@@ -251,7 +251,7 @@
     var nextBtn = box.querySelector(".img-lightbox-next");
     var counter = box.querySelector(".img-lightbox-counter");
 
-    var lightbox = window.Wisky3D.criarLightbox({
+    var lightbox = window.Wisky3D.createLightbox({
       box: box,
       prevBtn: prevBtn,
       nextBtn: nextBtn,

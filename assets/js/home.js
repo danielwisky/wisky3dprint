@@ -12,18 +12,18 @@
     var energiaInfo = document.getElementById("calc-result-energy");
     var energiaValorOut = document.getElementById("calc-result-energy-value");
     var d = form.dataset;
-    var fmt = window.Wisky3D.formatarMoeda;
+    var fmt = window.Wisky3D.currencyFormatter;
 
     function calc() {
-      var g = window.Wisky3D.parseNumeroPtBr(peso.value);
-      var h = window.Wisky3D.parseNumeroPtBr(tempo.value);
+      var g = window.Wisky3D.parsePtBrNumber(peso.value);
+      var h = window.Wisky3D.parsePtBrNumber(tempo.value);
       if (!isFinite(g) || !isFinite(h) || g <= 0 || h <= 0) {
         out.textContent = "Preencha os campos";
         out.classList.remove("has-value");
         energiaInfo.hidden = true;
         return;
       }
-      var base = window.Wisky3D.calcularSubtotalBase({
+      var base = window.Wisky3D.calculateBaseSubtotal({
         pesoG: g,
         horas: h,
         filamentoKg: parseFloat(d.filamentKg),
@@ -64,7 +64,7 @@
       return item && !item.hidden;
     }
 
-    var lightbox = window.Wisky3D.criarLightbox({
+    var lightbox = window.Wisky3D.createLightbox({
       box: modal,
       prevBtn: prevBtn,
       nextBtn: nextBtn,

@@ -37,7 +37,7 @@
     return;
   }
 
-  var cargas = ToolUtils.criarSequenciador();
+  var cargas = ToolUtils.createSequencer();
 
   // Guarda os dados do último arquivo processado pra poder re-renderizar o
   // grid de destinos quando o usuário digita na busca, sem reler o 3MF.
@@ -483,9 +483,9 @@
   }
 
   // `geometria` ({ itens, mesas }, ver processarArquivo) permite pôr a torre
-  // de purga num lugar livre de cada mesa (ver posicionarTorres).
+  // de purga num lugar livre de cada mesa (ver placeTowers).
   function montarNovoConfig(configOriginal, perfilDestino, geometria) {
-    var ajustado = ModelParser.ajustarPurgaPorBico(ModelParser.ajustarVariantesDeBico(configOriginal, perfilDestino.base), perfilDestino.base);
+    var ajustado = ModelParser.adjustFlushPerNozzle(ModelParser.adjustNozzleVariants(configOriginal, perfilDestino.base), perfilDestino.base);
     var novo = {};
     // Campos de hardware que o perfil de destino não tem são de outra
     // impressora (AMS de uma Bambu numa Ender-3, segundo bico de uma H2D...).
@@ -502,10 +502,10 @@
     var torres = null;
     if (geometria && geometria.itens) {
       var qtdMesas = [].concat(configOriginal.wipe_tower_x == null ? [] : configOriginal.wipe_tower_x).length;
-      var pegadas = ModelParser.pegadasPorMesa(geometria.itens, geometria.mesas, configOriginal.printable_area, novo.printable_area, qtdMesas);
-      torres = ModelParser.posicionarTorres(configOriginal, novo, perfilDestino.base, pegadas);
+      var pegadas = ModelParser.footprintsByPlate(geometria.itens, geometria.mesas, configOriginal.printable_area, novo.printable_area, qtdMesas);
+      torres = ModelParser.placeTowers(configOriginal, novo, perfilDestino.base, pegadas);
     }
-    if (!torres) torres = ModelParser.reposicionarTorres(configOriginal, configOriginal.printable_area, perfilDestino.base.printable_area);
+    if (!torres) torres = ModelParser.repositionTowers(configOriginal, configOriginal.printable_area, perfilDestino.base.printable_area);
     if (torres) {
       novo.wipe_tower_x = torres.wipe_tower_x;
       novo.wipe_tower_y = torres.wipe_tower_y;
@@ -514,7 +514,7 @@
   }
 
   function montarNovoModelo(modelText, printableAreaOrigem, perfilDestino) {
-    var novo = ModelParser.reposicionarPorMesa(modelText, printableAreaOrigem, perfilDestino.base.printable_area) || modelText;
+    var novo = ModelParser.repositionByPlate(modelText, printableAreaOrigem, perfilDestino.base.printable_area) || modelText;
     var formato = APLICACAO_POR_MARCA[perfilDestino.marca];
     if (!formato || !versaoFatiador(perfilDestino)) return novo;
     var aplicacao = formato.replace("{v}", versaoFatiador(perfilDestino));
@@ -546,7 +546,7 @@
     return base + "_" + slug + ".3mf";
   }
 
-  var baixarBlob = ModelParser.baixarBlob;
+  var downloadBlob = ModelParser.downloadBlob;
 
   // Um .gcode.3mf (projeto já fatiado) traz o G-code de cada mesa, feito
   // para a impressora de origem. O projeto convertido sai como um projeto sem
@@ -564,7 +564,7 @@
       var settings = pacote.modelSettingsText.replace(/[ \t]*<metadata\s+key="gcode_file"\s+value="[^"]*"\s*\/>\r?\n?/g, "");
       if (settings !== pacote.modelSettingsText) zip.file(pacote.modelSettingsPath, settings);
     }
-    var rels = ModelParser.localizarArquivoUnico(zip, "model_settings.config.rels");
+    var rels = ModelParser.findUniqueFile(zip, "model_settings.config.rels");
     if (!rels) return Promise.resolve(true);
     return rels.async("text").then(function (texto) {
       var semGcode = texto.replace(/\s*<Relationship\b[^>]*\bTarget="[^"]*\.gcode"[^>]*\/>/g, "");
@@ -606,7 +606,7 @@
         var perfilDestino = perfis[chaves[0]];
         outEl.textContent = "Gerando arquivo...";
         return gerarProjetoUnico(projeto, perfilDestino, 6).then(function (blob) {
-          baixarBlob(blob, nomeArquivoDestino(projeto.file.name, perfilDestino));
+          downloadBlob(blob, nomeArquivoDestino(projeto.file.name, perfilDestino));
           outEl.textContent = "Projeto convertido para " + nomeBaseImpressora(perfilDestino.nome) + " baixado.";
         });
       }
@@ -627,7 +627,7 @@
         outEl.textContent = "Compactando " + chaves.length + " projetos em um .zip...";
         return zipFinal.generateAsync({ type: "blob" });
       }).then(function (blob) {
-        baixarBlob(blob, nomeArquivoZip(projeto.file.name));
+        downloadBlob(blob, nomeArquivoZip(projeto.file.name));
         outEl.textContent = chaves.length + " projetos convertidos baixados em um .zip.";
       });
     }).catch(function () {
@@ -647,14 +647,14 @@
       return;
     }
 
-    var id = cargas.proximo();
+    var id = cargas.next();
     mostrarErro("");
     mostrarCarregando(true);
     painel.hidden = true;
     estado = null;
 
     var pacote = null;
-    Promise.all([ToolUtils.lerPacote3MF(file), carregarPerfis()])
+    Promise.all([ToolUtils.read3MFPackage(file), carregarPerfis()])
       .then(function (resultados) {
         pacote = resultados[0];
         var perfis = resultados[1];
@@ -668,9 +668,9 @@
         return Promise.all([geometriaPromise, removerGcodeFatiado(pacote)]).then(function (r) {
           var res = r[0];
           var fatiado = r[1];
-          if (!cargas.ehAtual(id)) return;
+          if (!cargas.isCurrent(id)) return;
           var bbox = res ? res.bbox : null;
-          var chapas = res ? ModelParser.calcularChapas(res.itens, ModelParser.parsePlateAssignments(pacote.modelSettingsText)) : null;
+          var chapas = res ? ModelParser.calculatePlates(res.itens, ModelParser.parsePlateAssignments(pacote.modelSettingsText)) : null;
           var mesas = ModelParser.parsePlateAssignments(pacote.modelSettingsText, true);
 
           estado = { file: file, zip: pacote.zip, projectConfig: config, projectConfigPath: pacote.configPath, modelText: pacote.modelText, modelPath: pacote.modelPath, sliceInfoText: pacote.sliceInfoText, sliceInfoPath: pacote.sliceInfoPath, fatiado: fatiado, geometria: res ? { itens: res.itens, mesas: mesas } : null, destinoKeys: [] };
@@ -687,17 +687,17 @@
         });
       })
       .catch(function (err) {
-        if (!cargas.ehAtual(id)) return;
+        if (!cargas.isCurrent(id)) return;
         if (window.console && console.error) console.error("Conversor 3MF:", err);
         var detalhe = err && err.message ? " (" + err.message + ")" : "";
         mostrarErro("Não foi possível ler esse arquivo 3MF. Confirme que é um projeto exportado do Bambu Studio ou Orca Slicer." + detalhe);
       })
       .then(function () {
-        if (cargas.ehAtual(id)) mostrarCarregando(false);
+        if (cargas.isCurrent(id)) mostrarCarregando(false);
       });
   }
 
-  ToolUtils.ligarDropzone(dropzone, upload, processarArquivo);
+  ToolUtils.bindDropzone(dropzone, upload, processarArquivo);
 
   gerarBtn.addEventListener("click", gerarProjeto);
 

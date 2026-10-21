@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // Cálculos da calculadora de orçamento (quote.js), sem acesso ao DOM:
 // custo do item, desgaste, desconto, estimativa de peso/tempo a partir da
-// malha e geração do CSV. Depende de price-formula.js (calcularSubtotalBase).
+// malha e geração do CSV. Depende de price-formula.js (calculateBaseSubtotal).
 // ---------------------------------------------------------------------------
 
 window.Wisky3D = window.Wisky3D || {};
@@ -10,14 +10,14 @@ window.Wisky3D = window.Wisky3D || {};
   // Se valor da máquina + vida útil forem informados, o desgaste é
   // proporcional ao tempo de impressão (valor/vida útil × horas); senão
   // cai no valor fixo por impressão.
-  function calcularDesgaste(p) {
+  function calculateWear(p) {
     if (isFinite(p.valorMaquina) && p.valorMaquina > 0 && isFinite(p.vidaUtilH) && p.vidaUtilH > 0) {
       return (p.valorMaquina / p.vidaUtilH) * p.horas;
     }
     return isFinite(p.desgasteFixo) ? p.desgasteFixo : p.desgastePadrao;
   }
 
-  function unitTotalComMargem(subtotalComPerda, margemPct, maoDeObra, embalagem, frete) {
+  function unitTotalWithMargin(subtotalComPerda, margemPct, maoDeObra, embalagem, frete) {
     return subtotalComPerda + subtotalComPerda * (margemPct / 100) + maoDeObra + embalagem + frete;
   }
 
@@ -25,14 +25,14 @@ window.Wisky3D = window.Wisky3D || {};
   // desgaste + hardware): equivale a reimprimir essa fração das peças do
   // item. Embalagem e frete são valores de repasse: entram só no total
   // final, sem incidência de perda nem de margem de lucro.
-  function calcularItem(e) {
+  function calculateItem(e) {
     var maoDeObra = e.horasManuais * e.valorHora;
 
     if (!isFinite(e.pesoG) || e.pesoG <= 0 || e.horas <= 0 || !isFinite(e.filamentoKg) || e.filamentoKg <= 0 || maoDeObra < 0 || e.margemPct < 0 || e.perdaPct < 0) {
       return null;
     }
 
-    var base = window.Wisky3D.calcularSubtotalBase({
+    var base = window.Wisky3D.calculateBaseSubtotal({
       pesoG: e.pesoG,
       horas: e.horas,
       filamentoKg: e.filamentoKg,
@@ -43,7 +43,7 @@ window.Wisky3D = window.Wisky3D || {};
     var subtotal = base.subtotal + e.hardware;
     var perda = subtotal * (e.perdaPct / 100);
     var subtotalComPerda = subtotal + perda;
-    var unitTotal = unitTotalComMargem(subtotalComPerda, e.margemPct, maoDeObra, e.embalagem, e.frete);
+    var unitTotal = unitTotalWithMargin(subtotalComPerda, e.margemPct, maoDeObra, e.embalagem, e.frete);
 
     return {
       nome: e.nome,
@@ -72,7 +72,7 @@ window.Wisky3D = window.Wisky3D || {};
 
   // tipo "pct" aplica percentual; qualquer outro valor é desconto em reais.
   // Nunca passa do subtotal.
-  function calcularDesconto(subtotal, valor, tipo) {
+  function calculateDiscount(subtotal, valor, tipo) {
     if (!isFinite(valor) || valor <= 0) return 0;
     var desconto = tipo === "pct" ? subtotal * (valor / 100) : valor;
     return Math.min(desconto, subtotal);
@@ -84,7 +84,7 @@ window.Wisky3D = window.Wisky3D || {};
   // como área de superfície × espessura de parede (nº de paredes × largura
   // de extrusão) e trata só o volume restante (o "miolo") como preenchido
   // a infill_pct.
-  function estimarPesoETempo(p) {
+  function estimateWeightAndTime(p) {
     var espessuraParede = p.paredes * p.larguraExtrusao;
     var volumeCascaMm3 = Math.min(p.areaMm2 * espessuraParede, p.volumeMm3);
     var volumeMioloMm3 = p.volumeMm3 - volumeCascaMm3;
@@ -106,7 +106,7 @@ window.Wisky3D = window.Wisky3D || {};
     };
   }
 
-  function nomeDoItem(item, i) {
+  function itemName(item, i) {
     return item.nome || "Peça " + (i + 1);
   }
 
@@ -126,13 +126,13 @@ window.Wisky3D = window.Wisky3D || {};
     "Embalagem", "Frete", "Valor unitário", "Valor total"
   ];
 
-  function gerarCsv(itens) {
+  function generateCsv(itens) {
     var total = 0;
     var linhas = [CSV_CABECALHO];
 
     itens.forEach(function (item, i) {
       total += item.itemTotal;
-      linhas.push([nomeDoItem(item, i), item.qtd].concat([
+      linhas.push([itemName(item, i), item.qtd].concat([
         item.custoFilamento, item.energia, item.desgaste, item.hardware,
         item.subtotal, item.perdaPct, item.perda, item.margemPct, item.margem,
         item.horasManuais, item.valorHora, item.maoDeObra, item.embalagem,
@@ -150,13 +150,13 @@ window.Wisky3D = window.Wisky3D || {};
     }).join("\r\n");
   }
 
-  window.Wisky3D.OrcamentoCalculo = {
-    calcularDesgaste: calcularDesgaste,
-    unitTotalComMargem: unitTotalComMargem,
-    calcularItem: calcularItem,
-    calcularDesconto: calcularDesconto,
-    estimarPesoETempo: estimarPesoETempo,
-    nomeDoItem: nomeDoItem,
-    gerarCsv: gerarCsv
+  window.Wisky3D.QuoteCalculations = {
+    calculateWear: calculateWear,
+    unitTotalWithMargin: unitTotalWithMargin,
+    calculateItem: calculateItem,
+    calculateDiscount: calculateDiscount,
+    estimateWeightAndTime: estimateWeightAndTime,
+    itemName: itemName,
+    generateCsv: generateCsv
   };
 })();

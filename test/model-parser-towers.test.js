@@ -12,7 +12,7 @@ global.window = global;
 global.DOMParser = DOMParser;
 new Function(source)();
 
-const { pegadasPorMesa, posicionarTorres } = window.Wisky3D.ModelParser;
+const { footprintsByPlate, placeTowers } = window.Wisky3D.ModelParser;
 
 const MESA_256 = ["0x0", "256x0", "256x256", "0x256"];
 const MESA_220 = ["0x0", "220x0", "220x220", "0x220"];
@@ -50,41 +50,41 @@ function sobrepoe(torre, pegada, lado) {
   return x < pegada[2] && x + lado > pegada[0] && y < pegada[3] && y + lado > pegada[1];
 }
 
-test("pegadasPorMesa leva cada item para as coordenadas da própria mesa no destino", () => {
+test("footprintsByPlate leva cada item para as coordenadas da própria mesa no destino", () => {
   // mesa 1 na célula (0,0), mesa 2 na coluna 1 (passo 1,2 × 256 = 307,2)
   const itens = [
     { objectId: "1", bbox: bbox(100, 100, 150, 150) },
     { objectId: "2", bbox: bbox(307.2 + 20, 30, 307.2 + 60, 70) }
   ];
 
-  const pegadas = pegadasPorMesa(itens, [["1"], ["2"]], MESA_256, MESA_220, 2);
+  const pegadas = footprintsByPlate(itens, [["1"], ["2"]], MESA_256, MESA_220, 2);
 
   // centro 128 → 110: tudo anda -18 em cada eixo, já na coordenada da mesa
   assert.deepEqual(pegadas, [[[82, 82, 132, 132]], [[2, 12, 42, 52]]]);
 });
 
-test("pegadasPorMesa sem atribuição de mesas põe todos os itens na mesa 1", () => {
-  const pegadas = pegadasPorMesa([{ objectId: "1", bbox: bbox(100, 100, 150, 150) }], null, MESA_256, MESA_220, 1);
+test("footprintsByPlate sem atribuição de mesas põe todos os itens na mesa 1", () => {
+  const pegadas = footprintsByPlate([{ objectId: "1", bbox: bbox(100, 100, 150, 150) }], null, MESA_256, MESA_220, 1);
 
   assert.deepEqual(pegadas, [[[82, 82, 132, 132]]]);
 });
 
-test("posicionarTorres mantém a torre onde o autor deixou (com o deslocamento das peças) se estiver livre", () => {
-  const torres = posicionarTorres(origem(["40"], ["40"]), destino(), FABRICA, [[[100, 100, 150, 150]]]);
+test("placeTowers mantém a torre onde o autor deixou (com o deslocamento das peças) se estiver livre", () => {
+  const torres = placeTowers(origem(["40"], ["40"]), destino(), FABRICA, [[[100, 100, 150, 150]]]);
 
   assert.deepEqual(torres, { wipe_tower_x: ["22"], wipe_tower_y: ["22"] });
 });
 
-test("posicionarTorres usa a posição de fábrica quando a do autor cai em cima de uma peça", () => {
+test("placeTowers usa a posição de fábrica quando a do autor cai em cima de uma peça", () => {
   const pecas = [[0, 0, 100, 100]];
-  const torres = posicionarTorres(origem(["40"], ["40"]), destino(), FABRICA, [pecas]);
+  const torres = placeTowers(origem(["40"], ["40"]), destino(), FABRICA, [pecas]);
 
   assert.deepEqual(torres, { wipe_tower_x: ["15"], wipe_tower_y: ["170"] });
 });
 
-test("posicionarTorres procura o ponto livre mais perto quando autor e fábrica estão ocupados", () => {
+test("placeTowers procura o ponto livre mais perto quando autor e fábrica estão ocupados", () => {
   const pecas = [[0, 0, 100, 100], [0, 120, 220, 220]];
-  const torres = posicionarTorres(origem(["40"], ["40"]), destino(), FABRICA, [pecas]);
+  const torres = placeTowers(origem(["40"], ["40"]), destino(), FABRICA, [pecas]);
 
   const lado = 40;
   pecas.forEach((p) => assert.ok(!sobrepoe([torres.wipe_tower_x[0], torres.wipe_tower_y[0]], p, lado), `torre em ${torres.wipe_tower_x[0]},${torres.wipe_tower_y[0]} encosta em ${p}`));
@@ -92,9 +92,9 @@ test("posicionarTorres procura o ponto livre mais perto quando autor e fábrica 
   assert.ok(x >= 6 && x + lado <= 214 && y >= 6 && y + lado <= 214, `torre fora da mesa: ${x},${y}`);
 });
 
-test("posicionarTorres respeita bed_exclude_area do destino", () => {
+test("placeTowers respeita bed_exclude_area do destino", () => {
   // canto onde o autor deixou a torre proibido no destino, e fábrica também
-  const torres = posicionarTorres(
+  const torres = placeTowers(
     origem(["40"], ["40"]),
     destino({ bed_exclude_area: ["0x0", "80x0", "80x80", "0x80", "0x150", "80x150", "80x220", "0x220"] }),
     FABRICA,
@@ -105,38 +105,38 @@ test("posicionarTorres respeita bed_exclude_area do destino", () => {
   assert.ok(!(x < 86 && y < 86) && !(x < 86 && y + 40 > 144), `torre na área proibida: ${x},${y}`);
 });
 
-test("posicionarTorres calcula uma posição por mesa", () => {
-  const torres = posicionarTorres(origem(["40", "150"], ["40", "150"]), destino(), FABRICA, [[[0, 0, 100, 100]], []]);
+test("placeTowers calcula uma posição por mesa", () => {
+  const torres = placeTowers(origem(["40", "150"], ["40", "150"]), destino(), FABRICA, [[[0, 0, 100, 100]], []]);
 
   assert.deepEqual(torres.wipe_tower_x, ["15", "132"]);
   assert.deepEqual(torres.wipe_tower_y, ["170", "132"]);
 });
 
-test("posicionarTorres devolve null com torre desligada ou um filamento só", () => {
-  assert.equal(posicionarTorres(origem(["40"], ["40"]), destino({ enable_prime_tower: "0" }), FABRICA, [[]]), null);
-  assert.equal(posicionarTorres(origem(["40"], ["40"]), destino({ filament_colour: ["#FFFFFF"] }), FABRICA, [[]]), null);
+test("placeTowers devolve null com torre desligada ou um filamento só", () => {
+  assert.equal(placeTowers(origem(["40"], ["40"]), destino({ enable_prime_tower: "0" }), FABRICA, [[]]), null);
+  assert.equal(placeTowers(origem(["40"], ["40"]), destino({ filament_colour: ["#FFFFFF"] }), FABRICA, [[]]), null);
 });
 
-test("pegadasPorMesa usa a posição do item (como reposicionarPorMesa), não o centro do bbox", () => {
+test("footprintsByPlate usa a posição do item (como repositionByPlate), não o centro do bbox", () => {
   // peça comprida: posição na célula 0, mas o centro do bbox já passa de 0,5 × passo
   const item = { objectId: "1", posicao: [128, 128], bbox: bbox(100, 100, 400, 150) };
 
-  const pegadas = pegadasPorMesa([item], null, MESA_256, MESA_220, 1);
+  const pegadas = footprintsByPlate([item], null, MESA_256, MESA_220, 1);
 
   assert.deepEqual(pegadas, [[[82, 82, 382, 132]]]);
 });
 
-test("posicionarTorres volta ao deslocamento simples quando o perfil não tem região válida para a torre", () => {
+test("placeTowers volta ao deslocamento simples quando o perfil não tem região válida para a torre", () => {
   // as áreas dos dois bicos não se cruzam
   const config = destino({ extruder_printable_area: ["0x0,100x0,100x220,0x220", "120x0,220x0,220x220,120x220"] });
 
-  const torres = posicionarTorres(origem(["40"], ["40"]), config, FABRICA, [[]]);
+  const torres = placeTowers(origem(["40"], ["40"]), config, FABRICA, [[]]);
 
   assert.deepEqual(torres, { wipe_tower_x: ["22"], wipe_tower_y: ["22"] });
 });
 
-test("posicionarTorres aceita bed_exclude_area com os pontos num texto só", () => {
-  const torres = posicionarTorres(origem(["40"], ["40"]), destino({ bed_exclude_area: ["0x0,80x0,80x80,0x80"] }), { wipe_tower_x: ["22"], wipe_tower_y: ["22"] }, [[]]);
+test("placeTowers aceita bed_exclude_area com os pontos num texto só", () => {
+  const torres = placeTowers(origem(["40"], ["40"]), destino({ bed_exclude_area: ["0x0,80x0,80x80,0x80"] }), { wipe_tower_x: ["22"], wipe_tower_y: ["22"] }, [[]]);
 
   const [x, y] = [Number(torres.wipe_tower_x[0]), Number(torres.wipe_tower_y[0])];
   assert.ok(!(x < 86 && y < 86), `torre na área proibida: ${x},${y}`);

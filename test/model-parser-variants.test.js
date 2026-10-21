@@ -12,7 +12,7 @@ global.window = global;
 global.DOMParser = DOMParser;
 new Function(source)();
 
-const { ajustarVariantesDeBico } = window.Wisky3D.ModelParser;
+const { adjustNozzleVariants } = window.Wisky3D.ModelParser;
 
 const STD = "Direct Drive Standard";
 const HF = "Direct Drive High Flow";
@@ -55,7 +55,7 @@ function projetoBambu() {
 }
 
 test("fica um valor por filamento, o da variante do destino", () => {
-  const novo = ajustarVariantesDeBico(projetoBambu(), CREATOR_5);
+  const novo = adjustNozzleVariants(projetoBambu(), CREATOR_5);
   assert.deepEqual(novo.filament_self_index, ["1", "2", "3"]);
   assert.deepEqual(novo.filament_extruder_variant, [STD, STD, STD]);
   assert.deepEqual(novo.filament_max_volumetric_speed, ["21", "22", "23"]);
@@ -64,7 +64,7 @@ test("fica um valor por filamento, o da variante do destino", () => {
 });
 
 test("opções de processo ficam com a variante do destino, no formato do perfil", () => {
-  const novo = ajustarVariantesDeBico(projetoBambu(), CREATOR_5);
+  const novo = adjustNozzleVariants(projetoBambu(), CREATOR_5);
   assert.deepEqual(novo.print_extruder_id, ["1"]);
   assert.deepEqual(novo.print_extruder_variant, [STD]);
   assert.equal(novo.bridge_speed, "50");
@@ -73,13 +73,13 @@ test("opções de processo ficam com a variante do destino, no formato do perfil
 });
 
 test("listas que não são por variante ficam como estão", () => {
-  const novo = ajustarVariantesDeBico(projetoBambu(), CREATOR_5);
+  const novo = adjustNozzleVariants(projetoBambu(), CREATOR_5);
   assert.deepEqual(novo.flush_volumes_vector, ["140", "140", "140", "140", "140", "140"]);
   assert.deepEqual(novo.start_end_points, ["30x-3", "54x245"]);
 });
 
 test("tira o mapa de filamento por bico que o destino não tem", () => {
-  const novo = ajustarVariantesDeBico(projetoBambu(), CREATOR_5);
+  const novo = adjustNozzleVariants(projetoBambu(), CREATOR_5);
   assert.ok(!("filament_nozzle_map" in novo));
   assert.ok(!("filament_volume_map" in novo));
   assert.ok(!("filament_extruder_compatibility" in novo));
@@ -90,7 +90,7 @@ test("sem a variante do destino, fica a primeira de cada filamento", () => {
   const projeto = projetoBambu();
   projeto.filament_extruder_variant = [HF, "Bowden Standard", HF, "Bowden Standard", HF, "Bowden Standard"];
   projeto.print_extruder_variant = [HF, "Bowden Standard"];
-  const novo = ajustarVariantesDeBico(projeto, CREATOR_5);
+  const novo = adjustNozzleVariants(projeto, CREATOR_5);
   assert.deepEqual(novo.filament_max_volumetric_speed, ["21", "22", "23"]);
   assert.deepEqual(novo.filament_extruder_variant, [STD, STD, STD]);
   assert.equal(novo.bridge_speed, "50");
@@ -105,7 +105,7 @@ test("com 2 filamentos e 2 variantes, as opções de filamento não viram proces
   projeto.nozzle_temperature = ["220", "230", "221", "231"];
   projeto.filament_type = ["PLA", "PETG"];
   projeto.hot_plate_temp = ["55", "70"];
-  const novo = ajustarVariantesDeBico(projeto, CREATOR_5);
+  const novo = adjustNozzleVariants(projeto, CREATOR_5);
   assert.deepEqual(novo.filament_type, ["PLA", "PETG"]);
   assert.deepEqual(novo.hot_plate_temp, ["55", "70"]);
   assert.deepEqual(novo.nozzle_temperature, ["220", "221"]);
@@ -122,7 +122,7 @@ test("projeto já nas variantes do destino não muda", () => {
     print_extruder_variant: [STD],
     bridge_speed: ["50"]
   };
-  assert.deepEqual(ajustarVariantesDeBico(projeto, CREATOR_5), projeto);
+  assert.deepEqual(adjustNozzleVariants(projeto, CREATOR_5), projeto);
 });
 
 test("destino com duas variantes recebe um valor por variante", () => {
@@ -132,13 +132,13 @@ test("destino com duas variantes recebe um valor por variante", () => {
     print_extruder_variant: [STD, HF],
     bridge_speed: ["50", "50"]
   };
-  const novo = ajustarVariantesDeBico(projetoBambu(), h2d);
+  const novo = adjustNozzleVariants(projetoBambu(), h2d);
   assert.deepEqual(novo.print_extruder_id, ["1", "2"]);
   assert.deepEqual(novo.bridge_speed, ["50", "60"]);
   assert.deepEqual(novo.filament_self_index, ["1", "1", "2", "2", "3", "3"]);
 });
 
-const { ajustarPurgaPorBico } = window.Wisky3D.ModelParser;
+const { adjustFlushPerNozzle } = window.Wisky3D.ModelParser;
 
 test("uma matriz de purga e um multiplicador por bico do destino", () => {
   const projeto = {
@@ -146,7 +146,7 @@ test("uma matriz de purga e um multiplicador por bico do destino", () => {
     flush_volumes_matrix: ["0", "100", "200", "0"],
     flush_multiplier: ["1.2"]
   };
-  const novo = ajustarPurgaPorBico(projeto, { flush_multiplier: ["1", "1", "1"] });
+  const novo = adjustFlushPerNozzle(projeto, { flush_multiplier: ["1", "1", "1"] });
   assert.deepEqual(novo.flush_volumes_matrix, ["0", "100", "200", "0", "0", "100", "200", "0", "0", "100", "200", "0"]);
   assert.deepEqual(novo.flush_multiplier, ["1.2", "1.2", "1.2"]);
 });
@@ -157,14 +157,14 @@ test("destino de um bico fica com a primeira matriz de purga", () => {
     flush_volumes_matrix: ["0", "100", "200", "0", "0", "300", "400", "0"],
     flush_multiplier: ["1", "1.5"]
   };
-  const novo = ajustarPurgaPorBico(projeto, { flush_multiplier: ["1"] });
+  const novo = adjustFlushPerNozzle(projeto, { flush_multiplier: ["1"] });
   assert.deepEqual(novo.flush_volumes_matrix, ["0", "100", "200", "0"]);
   assert.deepEqual(novo.flush_multiplier, ["1"]);
 });
 
 test("sem quantidade de bicos no perfil, a purga não muda", () => {
   const projeto = { filament_colour: ["#FFFFFF", "#000000"], flush_volumes_matrix: ["0", "100", "200", "0"], flush_multiplier: "1" };
-  assert.deepEqual(ajustarPurgaPorBico(projeto, {}), projeto);
+  assert.deepEqual(adjustFlushPerNozzle(projeto, {}), projeto);
 });
 
 // Perfil de um bico, um filamento e uma variante (o formato mais comum).
@@ -196,18 +196,18 @@ function projeto2Filamentos() {
 }
 
 test("opções por filamento sem prefixo não são cortadas como opção de processo", () => {
-  const novo = ajustarVariantesDeBico(projeto2Filamentos(), UM_BICO);
+  const novo = adjustNozzleVariants(projeto2Filamentos(), UM_BICO);
   assert.deepEqual(novo.hot_plate_temp, ["55", "70"]);
   assert.deepEqual(novo.bridge_speed, ["50"]);
 });
 
 test("opção de processo que o destino não tem também fica com a variante dele", () => {
-  const novo = ajustarVariantesDeBico(projeto2Filamentos(), UM_BICO);
+  const novo = adjustNozzleVariants(projeto2Filamentos(), UM_BICO);
   assert.deepEqual(novo.enable_height_slowdown, ["0"]);
 });
 
 test("listas sem relação com variante não mudam, mesmo com o mesmo tamanho", () => {
-  const novo = ajustarVariantesDeBico(projeto2Filamentos(), UM_BICO);
+  const novo = adjustNozzleVariants(projeto2Filamentos(), UM_BICO);
   assert.deepEqual(novo.printable_area, ["0x0", "256x0", "256x256", "0x256"]);
 });
 
@@ -220,13 +220,13 @@ test("destino com mais variantes não duplica listas sem relação com elas", ()
     compatible_printers: ["X"]
   };
   const h2d = { print_extruder_id: ["1", "2"], print_extruder_variant: [STD, HF] };
-  const novo = ajustarVariantesDeBico(projeto, h2d);
+  const novo = adjustNozzleVariants(projeto, h2d);
   assert.deepEqual(novo.compatible_printers, ["X"]);
   assert.deepEqual(novo.bridge_speed, ["50", "50"]);
 });
 
 test("filament_map para extrusor que o destino não tem vai para o primeiro", () => {
   const projeto = { filament_colour: ["#FFFFFF", "#000000"], filament_map: ["2", "1"] };
-  assert.deepEqual(ajustarVariantesDeBico(projeto, UM_BICO).filament_map, ["1", "1"]);
-  assert.deepEqual(ajustarVariantesDeBico(projeto, { nozzle_diameter: ["0.4", "0.4"] }).filament_map, ["2", "1"]);
+  assert.deepEqual(adjustNozzleVariants(projeto, UM_BICO).filament_map, ["1", "1"]);
+  assert.deepEqual(adjustNozzleVariants(projeto, { nozzle_diameter: ["0.4", "0.4"] }).filament_map, ["2", "1"]);
 });

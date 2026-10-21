@@ -180,7 +180,7 @@ window.Wisky3D = window.Wisky3D || {};
   // cor do próprio slot 1 pela paleta), a cor default não teria nenhum uso
   // real no arquivo final, então ela é omitida e as cores pintadas ocupam
   // os slots a partir do 1.
-  function paletaDeExportacao(baseColors, triCount, corPadrao) {
+  function exportPalette(baseColors, triCount, corPadrao) {
     const cores = [];
     const indiceDaCorGlobal = new Map();
     let temNaoPintado = false;
@@ -207,7 +207,7 @@ window.Wisky3D = window.Wisky3D || {};
 
   // Agrupa a cor de cada triângulo pelo arquivo e objeto do pacote 3MF de
   // onde ele veio: path -> objectId -> [{ localIndex, r, g, b }].
-  function agruparCoresPorArquivo(triangleOrigins, baseColors, triCount) {
+  function groupColorsByFile(triangleOrigins, baseColors, triCount) {
     const porArquivo = new Map();
     for (let t = 0; t < triCount; t++) {
       const origem = triangleOrigins[t];
@@ -232,8 +232,8 @@ window.Wisky3D = window.Wisky3D || {};
     return porArquivo;
   }
 
-  // Formato esperado por ThreeMFWriter.montarModeloDoZero.
-  function triangulosParaExportacao(cornerExportIndex, baseColors, triCount) {
+  // Formato esperado por ThreeMFWriter.buildModelFromScratch.
+  function trianglesForExport(cornerExportIndex, baseColors, triCount) {
     const triangulos = new Array(triCount);
     for (let t = 0; t < triCount; t++) {
       triangulos[t] = {
@@ -246,15 +246,15 @@ window.Wisky3D = window.Wisky3D || {};
     return triangulos;
   }
 
-  window.Wisky3D.ColorirCalculo = {
+  window.Wisky3D.ColorizeCalculations = {
     buildGeometryData,
     computeFaceNormals,
     expandFaceNormalsToCorners,
     buildAdjacencyAndExportIndex,
     floodFillByNormalTolerance,
     hexToRgb,
-    paletaDeExportacao,
-    agruparCoresPorArquivo,
-    triangulosParaExportacao
+    exportPalette,
+    groupColorsByFile,
+    trianglesForExport
   };
 })();

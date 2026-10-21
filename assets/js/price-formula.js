@@ -6,9 +6,9 @@
 
 window.Wisky3D = window.Wisky3D || {};
 
-window.Wisky3D.formatarMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+window.Wisky3D.currencyFormatter = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
-window.Wisky3D.parseNumeroPtBr = function (value) {
+window.Wisky3D.parsePtBrNumber = function (value) {
   var str = String(value).trim();
 
   if (str.indexOf(",") !== -1) {
@@ -33,9 +33,9 @@ window.Wisky3D.parseNumeroPtBr = function (value) {
 
 // Para campos de medida (densidade g/cm³, altura de camada mm, velocidade
 // mm/s): nunca precisam de separador de milhar, então um "." sem vírgula é
-// sempre decimal. Evita o caso ambíguo de parseNumeroPtBr onde um decimal de
+// sempre decimal. Evita o caso ambíguo de parsePtBrNumber onde um decimal de
 // 3 casas (ex.: densidade "1.250") seria lido como milhar (1250).
-window.Wisky3D.parseMedidaPtBr = function (value) {
+window.Wisky3D.parsePtBrMeasure = function (value) {
   var str = String(value).trim();
   if (str.indexOf(",") !== -1) {
     return parseFloat(str.replace(/\./g, "").replace(",", "."));
@@ -44,7 +44,7 @@ window.Wisky3D.parseMedidaPtBr = function (value) {
 };
 
 // pesoG, horas, filamentoKg, potenciaW, tarifaKwh, desgaste (custo fixo de desgaste da impressora)
-window.Wisky3D.calcularSubtotalBase = function (params) {
+window.Wisky3D.calculateBaseSubtotal = function (params) {
   var custoFilamento = (params.pesoG / 1000) * params.filamentoKg;
   var energia = (params.potenciaW * params.horas / 1000) * params.tarifaKwh;
   var desgaste = params.desgaste;

@@ -94,10 +94,10 @@
   var faixasBox = document.getElementById("quote-calc-tiers");
   var faixasCols = document.getElementById("quote-calc-tiers-cols");
   var d = form.dataset;
-  var fmt = window.Wisky3D.formatarMoeda;
-  var parseNum = window.Wisky3D.parseNumeroPtBr;
-  var parseMedida = window.Wisky3D.parseMedidaPtBr;
-  var Calculo = window.Wisky3D.OrcamentoCalculo;
+  var fmt = window.Wisky3D.currencyFormatter;
+  var parseNum = window.Wisky3D.parsePtBrNumber;
+  var parseMedida = window.Wisky3D.parsePtBrMeasure;
+  var Calculo = window.Wisky3D.QuoteCalculations;
 
   var rows = {
     filamento: document.getElementById("quote-calc-b-filament"),
@@ -133,7 +133,7 @@
     var h = horasDe(horas, minutos);
     var qtd = parseInt(quantidade.value, 10);
 
-    return Calculo.calcularItem({
+    return Calculo.calculateItem({
       nome: (nome.value || "").trim(),
       qtd: isFinite(qtd) && qtd >= 1 ? qtd : 1,
       pesoG: parseNum(peso.value),
@@ -148,7 +148,7 @@
       perdaPct: numeroOuPadrao(perdaInput, parseFloat(d.lossPct) || 0),
       potenciaW: numeroOuPadrao(potenciaInput, parseFloat(d.powerW)),
       tarifaKwh: numeroOuPadrao(tarifaInput, parseFloat(d.tariffKwh)),
-      desgaste: Calculo.calcularDesgaste({
+      desgaste: Calculo.calculateWear({
         valorMaquina: parseNum(valorMaquinaInput.value),
         vidaUtilH: parseNum(vidaUtilInput.value),
         desgasteFixo: parseNum(desgasteInput.value),
@@ -216,7 +216,7 @@
     faixasCols.innerHTML = "";
 
     faixas.forEach(function (margemPct, i) {
-      var unit = Calculo.unitTotalComMargem(item.subtotalComPerda, margemPct, item.maoDeObra, item.embalagem, item.frete);
+      var unit = Calculo.unitTotalWithMargin(item.subtotalComPerda, margemPct, item.maoDeObra, item.embalagem, item.frete);
       var col = document.createElement("button");
       col.type = "button";
       col.className = "calc-tier";
@@ -263,7 +263,7 @@
   }
 
   function computeDesconto(subtotal) {
-    return Calculo.calcularDesconto(subtotal, parseNum(descontoValorInput.value), descontoTipoInput.value);
+    return Calculo.calculateDiscount(subtotal, parseNum(descontoValorInput.value), descontoTipoInput.value);
   }
 
   function somaItens() {
@@ -301,7 +301,7 @@
     li.className = "calc-item-row";
 
     var info = criarSpan("calc-item-info", "");
-    info.appendChild(criarSpan("", Calculo.nomeDoItem(item, i) + " × " + item.qtd));
+    info.appendChild(criarSpan("", Calculo.itemName(item, i) + " × " + item.qtd));
     info.appendChild(criarSpan("calc-item-meta", item.pesoG.toFixed(1) + " g · " + formatarTempo(item.tempoH)));
 
     var removeBtn = document.createElement("button");
@@ -342,7 +342,7 @@
 
   function limparModelo() {
     modeloUpload.value = "";
-    if (cargasModelo) cargasModelo.proximo();
+    if (cargasModelo) cargasModelo.next();
     mostrarCarregandoModelo(false);
     lastMeshStats = null;
     perfilDoArquivo = null;
@@ -384,7 +384,7 @@
 
   function criarLinhaImpressao(item, i, cols) {
     var valores = {
-      nome: Calculo.nomeDoItem(item, i),
+      nome: Calculo.itemName(item, i),
       qtd: item.qtd,
       embalagem: fmt.format(item.embalagem),
       frete: fmt.format(item.frete),
@@ -441,8 +441,8 @@
 
   csvBtn.addEventListener("click", function () {
     if (!itens.length) return;
-    var blob = new Blob(["\ufeff" + Calculo.gerarCsv(itens)], { type: "text/csv;charset=utf-8;" });
-    ModelParser.baixarBlob(blob, "orcamento.csv");
+    var blob = new Blob(["\ufeff" + Calculo.generateCsv(itens)], { type: "text/csv;charset=utf-8;" });
+    ModelParser.downloadBlob(blob, "orcamento.csv");
   });
 
   // Safari em modo privado (e storage desabilitado) lança ao acessar
@@ -480,7 +480,7 @@
   ];
 
   // Defaults do _config.yml chegam como float JS (ponto decimal, ex.: "0.8"),
-  // mas os campos são lidos com parseNumeroPtBr (vírgula decimal). Sem essa
+  // mas os campos são lidos com parsePtBrNumber (vírgula decimal). Sem essa
   // conversão o "0.8" seria lido como 8.
   function paraPtBr(valor) {
     return String(valor).replace(".", ",");
@@ -612,7 +612,7 @@
 
   var MODELO_MAX_BYTES = 60 * 1024 * 1024;
   var lastMeshStats = null;
-  var cargasModelo = ToolUtils ? ToolUtils.criarSequenciador() : null;
+  var cargasModelo = ToolUtils ? ToolUtils.createSequencer() : null;
   var perfilDoArquivo = null;
 
   function densidadeAtual() {
@@ -648,7 +648,7 @@
     }
     limparErroModelo();
 
-    var estimativa = Calculo.estimarPesoETempo({
+    var estimativa = Calculo.estimateWeightAndTime({
       volumeMm3: lastMeshStats.volumeMm3,
       areaMm2: lastMeshStats.areaMm2,
       alturaModeloMm: lastMeshStats.bbox.maxZ - lastMeshStats.bbox.minZ,
@@ -690,7 +690,7 @@
       mostrarErroModelo("Não foi possível ler triângulos desse arquivo.");
       return;
     }
-    if (triangleCount > ToolUtils.MAX_TRIANGULOS) {
+    if (triangleCount > ToolUtils.MAX_TRIANGLES) {
       mostrarErroModelo("Modelo muito complexo para calcular no navegador. Tente simplificar a malha ou informe peso/tempo manualmente.");
       return;
     }
@@ -825,19 +825,19 @@
       return;
     }
 
-    var id = cargasModelo.proximo();
+    var id = cargasModelo.next();
     mostrarCarregandoModelo(true);
 
     var leitura = ext === "stl" ? lerStatsSTL(file) : lerStats3MF(file);
     leitura
       .then(function (r) {
-        if (cargasModelo.ehAtual(id)) processarStats(r.stats, file.name, r.perfil);
+        if (cargasModelo.isCurrent(id)) processarStats(r.stats, file.name, r.perfil);
       })
       .catch(function () {
-        if (cargasModelo.ehAtual(id)) mostrarErroModelo("Não foi possível ler esse arquivo " + ext.toUpperCase() + ".");
+        if (cargasModelo.isCurrent(id)) mostrarErroModelo("Não foi possível ler esse arquivo " + ext.toUpperCase() + ".");
       })
       .then(function () {
-        if (cargasModelo.ehAtual(id)) mostrarCarregandoModelo(false);
+        if (cargasModelo.isCurrent(id)) mostrarCarregandoModelo(false);
       });
   }
 
@@ -851,22 +851,22 @@
           volumeMm3: ModelParser.computeMeshVolumeMm3(triangulos),
           areaMm2: ModelParser.computeMeshAreaMm2(triangulos)
         }
-        : { triangleCount: 0, bbox: ModelParser.bboxVazio(), volumeMm3: 0, areaMm2: 0 };
+        : { triangleCount: 0, bbox: ModelParser.emptyBbox(), volumeMm3: 0, areaMm2: 0 };
       return { stats: stats, perfil: null };
     });
   }
 
   function lerStats3MF(file) {
-    return ToolUtils.lerPacote3MF(file).then(function (pacote) {
+    return ToolUtils.read3MFPackage(file).then(function (pacote) {
       if (!pacote.modelText) throw new Error("modelo não encontrado no 3MF");
-      var perfil = pacote.configText ? ModelParser.parse3MFPerfil(pacote.configText) : null;
+      var perfil = pacote.configText ? ModelParser.parse3MFProfile(pacote.configText) : null;
       return ModelParser.parse3MFPackage(pacote.zip, pacote.modelText, pacote.modelSettingsText).then(function (stats) {
         return { stats: stats, perfil: perfil };
       });
     });
   }
 
-  if (ToolUtils) ToolUtils.ligarDropzone(modeloDropzone, modeloUpload, processarArquivoModelo);
+  if (ToolUtils) ToolUtils.bindDropzone(modeloDropzone, modeloUpload, processarArquivoModelo);
 
   materialSelect.addEventListener("change", function () {
     densidadeWrap.hidden = materialSelect.value !== "outro";

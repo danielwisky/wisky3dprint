@@ -9,12 +9,12 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 const root = document.getElementById("colorize3mf");
 const modulos = window.Wisky3D || {};
 
-if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils && modulos.ColorirCalculo)) {
+if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils && modulos.ColorizeCalculations)) {
   const erroEl = document.getElementById("colorize3mf-error");
   erroEl.textContent = "Não foi possível carregar a ferramenta. Recarregue a página e tente novamente.";
   erroEl.hidden = false;
 } else if (root) {
-  const { ModelParser, ThreeMFWriter, ToolUtils, ColorirCalculo } = modulos;
+  const { ModelParser, ThreeMFWriter, ToolUtils, ColorizeCalculations } = modulos;
   const {
     buildGeometryData,
     computeFaceNormals,
@@ -22,7 +22,7 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
     buildAdjacencyAndExportIndex,
     floodFillByNormalTolerance,
     hexToRgb
-  } = ColorirCalculo;
+  } = ColorizeCalculations;
 
   const dropzone = document.getElementById("colorize3mf-dropzone");
   const upload = document.getElementById("colorize3mf-upload");
@@ -66,7 +66,7 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
   // faces realmente distintas (uma quina reta muda a normal bem mais que
   // isso).
   const BALDE_TOLERANCIA_DEG = 8;
-  const cargas = ToolUtils.criarSequenciador();
+  const cargas = ToolUtils.createSequencer();
 
   let currentTool = "balde";
   let renderer = null;
@@ -388,7 +388,7 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
     };
     for (let i = 0; i < triList.length; i++) {
       pintar(triList[i]);
-      if (state.copias) ModelParser.paraCadaCopia(state.copias, triList[i], pintar);
+      if (state.copias) ModelParser.forEachCopy(state.copias, triList[i], pintar);
     }
     refreshColorBuffer();
   }
@@ -749,14 +749,14 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
     return baseColors;
   }
 
-  // mapearTriangulosParaChapas devolve arrays (ordem de varredura); aqui
+  // mapTrianglesToPlates devolve arrays (ordem de varredura); aqui
   // viram Set pra permitir teste O(1) de pertencimento tanto no filtro de
   // visibilidade (aplicarFiltroDeVisibilidade) quanto no BFS de
   // balde/seleção mágica (floodFillByNormalTolerance).
   function triangulosPorChapa(triangleOrigins, chapas) {
     if (!chapas) return null;
     const porChapa = new Map();
-    ModelParser.mapearTriangulosParaChapas(triangleOrigins, chapas).forEach((lista, indice) => {
+    ModelParser.mapTrianglesToPlates(triangleOrigins, chapas).forEach((lista, indice) => {
       porChapa.set(indice, new Set(lista));
     });
     return porChapa;
@@ -814,8 +814,8 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
       triangleOrigins,
       zip: (origem && origem.zip) || null,
       // Cópias de uma mesma malha (o mesmo object em dois <item>) pintam
-      // juntas: no 3MF exportado elas têm uma cor só (ver mapearCopiasDeMalha).
-      copias: triangleOrigins ? ModelParser.mapearCopiasDeMalha(triangleOrigins) : null,
+      // juntas: no 3MF exportado elas têm uma cor só (ver mapMeshCopies).
+      copias: triangleOrigins ? ModelParser.mapMeshCopies(triangleOrigins) : null,
       chapas,
       chapaAtivaIndice: null, // null = "Todos"
       triangulosPorChapa: triangulosPorChapa(triangleOrigins, chapas)
@@ -843,7 +843,7 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
   // Erro de modelo grande demais: a mensagem vai inteira para o usuário (ver
   // processarArquivo), em vez do "não foi possível ler esse arquivo".
   function erroDeLimite(qtd) {
-    const erro = new Error("Modelo muito complexo para pintar no navegador (" + qtd.toLocaleString("pt-BR") + " triângulos, máx. " + (ToolUtils.MAX_TRIANGULOS / 1e6).toLocaleString("pt-BR") + " milhões). Tente simplificar a malha.");
+    const erro = new Error("Modelo muito complexo para pintar no navegador (" + qtd.toLocaleString("pt-BR") + " triângulos, máx. " + (ToolUtils.MAX_TRIANGLES / 1e6).toLocaleString("pt-BR") + " milhões). Tente simplificar a malha.");
     erro.limite = true;
     return erro;
   }
@@ -853,20 +853,20 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
   function extrairTriangulosDoArquivo(file) {
     if (/\.stl$/i.test(file.name)) {
       return file.arrayBuffer().then((buffer) => {
-        const qtd = ModelParser.contarTriangulosSTL(buffer);
-        if (qtd > ToolUtils.MAX_TRIANGULOS) throw erroDeLimite(qtd);
+        const qtd = ModelParser.countTrianglesSTL(buffer);
+        if (qtd > ToolUtils.MAX_TRIANGLES) throw erroDeLimite(qtd);
         return { triangulos: ModelParser.parseSTL(buffer), origins: null, zip: null };
       });
     }
 
-    return ToolUtils.lerPacote3MF(file).then((pacote) => {
+    return ToolUtils.read3MFPackage(file).then((pacote) => {
       if (!pacote.modelText) throw new Error("3dmodel.model não encontrado no pacote 3MF");
       // Com modificadores ou bloqueadores de suporte, a contagem prévia (que
       // inclui as partes que a extração deixa de fora) poderia recusar um
       // modelo que cabe: fica só a checagem depois da extração.
-      if (ModelParser.temPartesNaoSolidas(pacote.modelSettingsText)) return pacote;
-      return ModelParser.contarTriangulos3MF(pacote.zip, pacote.modelText, pacote.modelPath).then((qtd) => {
-        if (qtd > ToolUtils.MAX_TRIANGULOS) throw erroDeLimite(qtd);
+      if (ModelParser.hasNonSolidParts(pacote.modelSettingsText)) return pacote;
+      return ModelParser.countTriangles3MF(pacote.zip, pacote.modelText, pacote.modelPath).then((qtd) => {
+        if (qtd > ToolUtils.MAX_TRIANGLES) throw erroDeLimite(qtd);
         return pacote;
       });
     }).then((pacote) => {
@@ -901,17 +901,17 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
       return;
     }
 
-    const id = cargas.proximo();
+    const id = cargas.next();
     mostrarErro("");
     mostrarCarregando(true);
     painel.hidden = true;
 
     extrairTriangulosDoArquivo(file)
       .then((resultado) => {
-        if (!cargas.ehAtual(id)) return;
+        if (!cargas.isCurrent(id)) return;
         if (!resultado.triangulos.length) throw new Error("nenhuma geometria encontrada no arquivo");
         // A contagem prévia não multiplica objetos usados por dois <item>.
-        if (resultado.triangulos.length > ToolUtils.MAX_TRIANGULOS) throw erroDeLimite(resultado.triangulos.length);
+        if (resultado.triangulos.length > ToolUtils.MAX_TRIANGLES) throw erroDeLimite(resultado.triangulos.length);
         resultado.chapas = detectarChapas(resultado.modelSettingsText);
         buildState(resultado.triangulos, file.name, resultado);
         painel.hidden = false;
@@ -919,7 +919,7 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
         frameCameraToGeometry();
       })
       .catch((err) => {
-        if (!cargas.ehAtual(id)) return;
+        if (!cargas.isCurrent(id)) return;
         if (err && err.limite) {
           mostrarErro(err.message);
           return;
@@ -929,7 +929,7 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
         mostrarErro("Não foi possível ler esse arquivo. Confirme que é um .stl ou .3mf válido." + detalhe);
       })
       .then(() => {
-        if (cargas.ehAtual(id)) mostrarCarregando(false);
+        if (cargas.isCurrent(id)) mostrarCarregando(false);
       });
   }
 
@@ -947,7 +947,7 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
   function gerarEBaixar(zip, nomeSaida) {
     return zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } })
       .then((blob) => {
-        ModelParser.baixarBlob(blob, nomeSaida);
+        ModelParser.downloadBlob(blob, nomeSaida);
         outEl.textContent = "3MF colorido baixado.";
       });
   }
@@ -956,11 +956,11 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
   // número de slots de filamento gravados, ou null se o arquivo não existe
   // ou não pôde ser ajustado.
   function atualizarProjectSettings(zip, paleta) {
-    const configEntry = ModelParser.localizarArquivoUnico(zip, "project_settings.config");
+    const configEntry = ModelParser.findUniqueFile(zip, "project_settings.config");
     if (!configEntry) return Promise.resolve(null);
     return configEntry.async("text").then((texto) => {
       try {
-        const novoCfg = ThreeMFWriter.reconstruirProjectSettings(JSON.parse(texto), paleta);
+        const novoCfg = ThreeMFWriter.rebuildProjectSettings(JSON.parse(texto), paleta);
         if (!novoCfg) return null;
         zip.file(configEntry.name, JSON.stringify(novoCfg, null, 4));
         return novoCfg.filament_colour.length;
@@ -971,10 +971,10 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
   }
 
   function atualizarModelSettings(zip, numSlots) {
-    const entry = ModelParser.localizarArquivoUnico(zip, "model_settings.config");
+    const entry = ModelParser.findUniqueFile(zip, "model_settings.config");
     if (!entry) return Promise.resolve();
     return entry.async("text").then((xmlText) => {
-      zip.file(entry.name, ThreeMFWriter.ajustarFilamentMapsNoModelSettings(xmlText, numSlots || 1));
+      zip.file(entry.name, ThreeMFWriter.adjustFilamentMapsInModelSettings(xmlText, numSlots || 1));
     });
   }
 
@@ -983,7 +983,7 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
       const entry = zip.file(path);
       if (!entry) return Promise.resolve();
       return entry.async("text").then((xmlText) => {
-        zip.file(path, ThreeMFWriter.injetarCoresNoXml(xmlText, porArquivo.get(path), slotPorCor));
+        zip.file(path, ThreeMFWriter.injectColorsIntoXml(xmlText, porArquivo.get(path), slotPorCor));
       });
     }));
   }
@@ -995,8 +995,8 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
   // quando o pacote deixa de parecer um projeto legítimo.
   function exportarModeloPreservandoPacote(nomeSaida) {
     const zip = state.zip;
-    const porArquivo = ColorirCalculo.agruparCoresPorArquivo(state.triangleOrigins, state.baseColors, state.triCount);
-    const { paleta, slotPorCor } = ColorirCalculo.paletaDeExportacao(state.baseColors, state.triCount, DEFAULT_COLOR);
+    const porArquivo = ColorizeCalculations.groupColorsByFile(state.triangleOrigins, state.baseColors, state.triCount);
+    const { paleta, slotPorCor } = ColorizeCalculations.exportPalette(state.baseColors, state.triCount, DEFAULT_COLOR);
 
     return atualizarProjectSettings(zip, paleta)
       .then((numSlots) => Promise.all([
@@ -1009,8 +1009,8 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
   // Caminho usado quando o arquivo de origem é um .stl (não existe pacote
   // 3MF original pra preservar): monta um .3mf novo do zero via JSZip.
   function exportarModeloDoZero(nomeSaida) {
-    const triangulos = ColorirCalculo.triangulosParaExportacao(state.cornerExportIndex, state.baseColors, state.triCount);
-    const { modelXml, contentTypesXml, relsXml } = ThreeMFWriter.montarModeloDoZero([
+    const triangulos = ColorizeCalculations.trianglesForExport(state.cornerExportIndex, state.baseColors, state.triCount);
+    const { modelXml, contentTypesXml, relsXml } = ThreeMFWriter.buildModelFromScratch([
       { objectId: 2, vertices: state.exportVertices, triangulos: triangulos }
     ]);
 
@@ -1034,7 +1034,7 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
   // Eventos de UI
   // -------------------------------------------------------------------------
 
-  ToolUtils.ligarDropzone(dropzone, upload, processarArquivo);
+  ToolUtils.bindDropzone(dropzone, upload, processarArquivo);
 
   toolBaldeBtn.addEventListener("click", () => setTool("balde"));
   toolMagicaBtn.addEventListener("click", () => setTool("magica"));

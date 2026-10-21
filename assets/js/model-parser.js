@@ -121,7 +121,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
 
   // Quantos triângulos o STL tem, sem montar a malha: no binário vem no
   // cabeçalho; no ASCII, um por "endfacet".
-  function contarTriangulosSTL(buffer) {
+  function countTrianglesSTL(buffer) {
     if (detectBinarySTL(buffer)) return new DataView(buffer).getUint32(80, true);
     // Direto nos bytes: decodificar para texto aqui e de novo no parseSTL
     // dobraria a memória de um STL ASCII grande.
@@ -143,7 +143,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // conta uma vez só. Lê um arquivo por vez para não manter todos os textos
   // em memória ao mesmo tempo. `rootXmlText`/`rootPath` (opcionais): o
   // 3dmodel.model raiz já lido, contado sem descompactar de novo.
-  function contarTriangulos3MF(zip, rootXmlText, rootPath) {
+  function countTriangles3MF(zip, rootXmlText, rootPath) {
     function contar(texto) {
       return contarOcorrencias(texto, "<triangle ") + contarOcorrencias(texto, "<triangle/");
     }
@@ -256,7 +256,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     return null;
   }
 
-  function bboxVazio() {
+  function emptyBbox() {
     return { minX: Infinity, minY: Infinity, minZ: Infinity, maxX: -Infinity, maxY: -Infinity, maxZ: -Infinity };
   }
 
@@ -308,7 +308,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
       var verticesEl = directChild(meshEl, "vertices");
       var trianglesEl = directChild(meshEl, "triangles");
       var vertexEls = verticesEl ? directChildren(verticesEl, "vertex") : [];
-      var meshBbox = bboxVazio();
+      var meshBbox = emptyBbox();
       var vertices = vertexEls.map(function (v) {
         var p = applyTransform([
           parseFloat(v.getAttribute("x")),
@@ -369,7 +369,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     var triangleCount = 0;
     var volumeMm3 = 0;
     var areaMm2 = 0;
-    var bbox = bboxVazio();
+    var bbox = emptyBbox();
 
     function onMesh(leafTriangles, localIndices, meshBbox) {
       bbox = mergeBBox(bbox, meshBbox);
@@ -454,7 +454,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
       var ignorados = partesNaoSolidas && !itemPath ? partesNaoSolidas.get(objectId) : undefined;
       if (itemPath) {
         var externo = carregarDocExterno(zip, docCache, itemPath);
-        if (!externo) return Promise.resolve({ triangleCount: 0, volumeMm3: 0, areaMm2: 0, bbox: bboxVazio() });
+        if (!externo) return Promise.resolve({ triangleCount: 0, volumeMm3: 0, areaMm2: 0, bbox: emptyBbox() });
         return externo.docPromise.then(function (extDoc) {
           return resolveObjectGeometry(zip, docCache, extDoc, objectId, transform, ignorados);
         });
@@ -466,7 +466,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
       var triangleCount = 0;
       var volumeMm3 = 0;
       var areaMm2 = 0;
-      var bbox = bboxVazio();
+      var bbox = emptyBbox();
       results.forEach(function (r) {
         triangleCount += r.triangleCount;
         areaMm2 += r.areaMm2;
@@ -488,7 +488,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
         // Usado pra separar por chapa/plate em arquivos multi-plate (ver
         // converter-3mf.js), já que o bbox combinado acima soma objetos que
         // na real impressora nunca ficam juntos na mesma mesa.
-        // `posicao` é a translação do item: a mesma que reposicionarPorMesa
+        // `posicao` é a translação do item: a mesma que repositionByPlate
         // usa para achar a célula da grade.
         itens: results.map(function (r, i) {
           return { objectId: objectIds[i], bbox: escalarBBox(r.bbox), posicao: [translacoes[i][0] * escala, translacoes[i][1] * escala] };
@@ -507,7 +507,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // object-folha (usado na exportação pra reabrir o pacote 3MF original e
   // escrever a cor de volta no <triangle> exato de onde veio); `rootObjectId`
   // é o objectid do build item de nível topo (usado pra casar o triângulo com
-  // a chapa/plate a que pertence, ver mapearTriangulosParaChapas) — os dois
+  // a chapa/plate a que pertence, ver mapTrianglesToPlates) — os dois
   // divergem quando o object de topo é montado via <components> aninhados.
   function resolveObjectTriangles(zip, docCache, doc, objectId, accumTransform, outTriangulos, path, outOrigins, componentesIgnorados) {
     function onMesh(leafTriangles, localIndices, meshBbox, meshPath, meshObjectId, rootObjectId) {
@@ -589,7 +589,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // Acha o 3dmodel.model dentro de um pacote 3MF (JSZip já carregado). Tenta
   // primeiro o caminho padrão (3D/3dmodel.model); alguns pacotes de terceiros
   // usam outro caminho, daí o fallback por nome de arquivo em qualquer pasta.
-  function localizarModeloRaiz(zip) {
+  function findRootModel(zip) {
     var arquivos = zip.file(/(^|\/)3D\/3dmodel\.model$/i);
     if (!arquivos.length) arquivos = zip.file(/3dmodel\.model$/i);
     return arquivos.length ? arquivos[0] : null;
@@ -599,7 +599,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // em qualquer subpasta do pacote. Ancorado no início do nome do arquivo
   // (precedido só por "/" ou início da string) para não casar por engano com
   // um arquivo tipo "meuproject_settings.config".
-  function localizarArquivoUnico(zip, nomeArquivo) {
+  function findUniqueFile(zip, nomeArquivo) {
     var escapado = nomeArquivo.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     var arquivos = zip.file(new RegExp("(^|/)" + escapado + "$", "i"));
     return arquivos.length ? arquivos[0] : null;
@@ -609,7 +609,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // setTimeout (em vez de revogar na hora) evita cortar o download em
   // navegadores que só começam a gravar o arquivo de fato um instante depois
   // do clique sintético.
-  function baixarBlob(blob, nomeArquivo) {
+  function downloadBlob(blob, nomeArquivo) {
     var a = document.createElement("a");
     var url = URL.createObjectURL(blob);
     a.href = url;
@@ -620,7 +620,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
   }
 
-  function parse3MFPerfil(configText) {
+  function parse3MFProfile(configText) {
     var densidadeMatch = configText.match(/"filament_density"\s*:\s*\[\s*"([\d.]+)"/);
     var diametroMatch = configText.match(/"filament_diameter"\s*:\s*\[\s*"([\d.]+)"/);
     var paredesMatch = configText.match(/"wall_loops"\s*:\s*"?(\d+)"?/);
@@ -674,7 +674,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // Junta o bbox dos itens (retornados por parse3MFPackage) de acordo com a
   // lista de object_id de cada chapa, gerando um bbox por chapa em vez de um
   // bbox único pra todo o arquivo.
-  function calcularChapas(itens, plateAssignments) {
+  function calculatePlates(itens, plateAssignments) {
     if (!plateAssignments || !itens) return null;
     var chapas = plateAssignments.map(function (ids, indice) {
       var bbox = null;
@@ -727,7 +727,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
 
   // Célula (coluna, linha) da grade da origem em que está o ponto (x, y) e o
   // deslocamento [dx, dy] que o leva para a mesma célula no destino,
-  // mantendo o afastamento do centro da mesa (ver reposicionarPorMesa).
+  // mantendo o afastamento do centro da mesa (ver repositionByPlate).
   function celulaNoDestino(x, y, a, b) {
     var coluna = Math.round((x - a.cx) / a.passoX);
     var linha = Math.round((y - a.cy) / a.passoY);
@@ -748,7 +748,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // vai para a mesma célula no destino, mantendo o afastamento do centro da
   // mesa; com uma mesa só a peça fica centralizada como estava na origem.
   // Devolve null quando falta a área de uma das mesas.
-  function reposicionarPorMesa(modelText, printableAreaOrigem, printableAreaDestino) {
+  function repositionByPlate(modelText, printableAreaOrigem, printableAreaDestino) {
     var a = gradeDaMesa(printableAreaOrigem);
     var b = gradeDaMesa(printableAreaDestino);
     if (!a || !b) return null;
@@ -768,9 +768,9 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // dele, agrupada por mesa. `itens` são os de parse3MFPackage (bbox global e
   // posição na origem), `mesas` a lista de object_id por mesa de
   // parsePlateAssignments com manterVazias (null: tudo na mesa 1). A pegada
-  // anda o mesmo que reposicionarPorMesa anda o item, e perde a célula da
+  // anda o mesmo que repositionByPlate anda o item, e perde a célula da
   // grade do destino.
-  function pegadasPorMesa(itens, mesas, printableAreaOrigem, printableAreaDestino, qtdMesas) {
+  function footprintsByPlate(itens, mesas, printableAreaOrigem, printableAreaDestino, qtdMesas) {
     var a = gradeDaMesa(printableAreaOrigem);
     var b = gradeDaMesa(printableAreaDestino);
     var porMesa = [];
@@ -903,10 +903,10 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // `configOrigem` é o project_settings.config original (torre do autor, mesa
   // de origem), `configDestino` o já convertido (mesa, áreas e bicos do
   // destino, torre configurada no processo), `baseDestino` o perfil de
-  // destino (torre de fábrica) e `pegadas` o de pegadasPorMesa. Devolve null
+  // destino (torre de fábrica) e `pegadas` o de footprintsByPlate. Devolve null
   // sem torre: desligada ou com um filamento só, não há troca e o fatiador
   // não a imprime.
-  function posicionarTorres(configOrigem, configDestino, baseDestino, pegadas) {
+  function placeTowers(configOrigem, configDestino, baseDestino, pegadas) {
     var ligada = String([].concat(configDestino.enable_prime_tower == null ? "1" : configDestino.enable_prime_tower)[0]) !== "0";
     var filamentos = [].concat(configDestino.filament_colour || []).length;
     if (!ligada || filamentos < 2 || configOrigem.wipe_tower_x == null || configOrigem.wipe_tower_y == null) return null;
@@ -919,8 +919,8 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     if (isNaN(fabrica[0]) || isNaN(fabrica[1])) fabrica = null;
 
     // Sem lugar calculado (região da torre inválida no perfil), a torre só
-    // acompanha as peças, como em reposicionarTorres.
-    var simples = reposicionarTorres(configOrigem, configOrigem.printable_area, configDestino.printable_area);
+    // acompanha as peças, como em repositionTowers.
+    var simples = repositionTowers(configOrigem, configOrigem.printable_area, configDestino.printable_area);
     var simplesX = [].concat(simples.wipe_tower_x), simplesY = [].concat(simples.wipe_tower_y);
     var novosX = [], novosY = [];
     for (var i = 0; i < xs.length; i++) {
@@ -938,9 +938,9 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
 
   // A posição da torre de purga (wipe_tower_x/y, uma por mesa, em
   // coordenadas da própria mesa) acompanha o deslocamento que
-  // reposicionarPorMesa dá às peças, para não cair em cima delas, e é
+  // repositionByPlate dá às peças, para não cair em cima delas, e é
   // limitada à mesa de destino. Devolve null sem torre ou sem área de mesa.
-  function reposicionarTorres(config, printableAreaOrigem, printableAreaDestino) {
+  function repositionTowers(config, printableAreaOrigem, printableAreaDestino) {
     var a = gradeDaMesa(printableAreaOrigem);
     var b = gradeDaMesa(printableAreaDestino);
     if (!a || !b || config.wipe_tower_x == null || config.wipe_tower_y == null) return null;
@@ -1002,7 +1002,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // os valores das variantes do destino (ou o primeiro de cada filamento),
   // como o fatiador faz ao importar o projeto, no formato do perfil de
   // destino. Devolve uma cópia de `config`.
-  function ajustarVariantesDeBico(config, baseDestino) {
+  function adjustNozzleVariants(config, baseDestino) {
     var novo = {};
     Object.keys(config).forEach(function (k) {
       if (MAPAS_DE_BICO.indexOf(k) !== -1 && !Object.prototype.hasOwnProperty.call(baseDestino, k)) return;
@@ -1109,7 +1109,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // O projeto vem com a quantidade de bicos da origem; o perfil de destino diz
   // a dele em flush_multiplier. Bicos a mais repetem a primeira matriz, como
   // o fatiador faz ao importar o projeto. Devolve uma cópia de `config`.
-  function ajustarPurgaPorBico(config, baseDestino) {
+  function adjustFlushPerNozzle(config, baseDestino) {
     var novo = {};
     Object.keys(config).forEach(function (k) { novo[k] = config[k]; });
     if (!Array.isArray(baseDestino.flush_multiplier)) return novo;
@@ -1155,7 +1155,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // ao primeiro match como antes (podia silenciosamente "roubar" triângulos de
   // outra chapa), esses ids ambíguos ficam de fora de toda chapa, igual ao
   // caso de rootObjectId sem match nenhum.
-  function mapearTriangulosParaChapas(triangleOrigins, chapas) {
+  function mapTrianglesToPlates(triangleOrigins, chapas) {
     var porChapa = new Map();
     chapas.forEach(function (chapa) { porChapa.set(chapa.indice, []); });
 
@@ -1189,7 +1189,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // malha inteira de uma vez, com localIndex crescente): o mapa guarda o
   // início de cada trecho e, para trechos repetidos, o início de todas as
   // cópias, em vez de um registro por triângulo. Devolve null sem cópias.
-  function mapearCopiasDeMalha(triangleOrigins) {
+  function mapMeshCopies(triangleOrigins) {
     var inicios = [];
     var chaves = [];
     for (var t = 0; t < triangleOrigins.length; t++) {
@@ -1220,9 +1220,9 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   }
 
   // Chama `fn(indice)` para cada triângulo que é o mesmo triângulo de origem
-  // que `t` nas outras cópias da malha (ver mapearCopiasDeMalha). Sem criar
+  // que `t` nas outras cópias da malha (ver mapMeshCopies). Sem criar
   // arrays: roda para cada triângulo de um balde que pode ter milhões.
-  function paraCadaCopia(mapa, t, fn) {
+  function forEachCopy(mapa, t, fn) {
     if (!mapa) return;
     var baixo = 0;
     var alto = mapa.inicios.length - 1;
@@ -1239,9 +1239,9 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     }
   }
 
-  function copiasDoTriangulo(mapa, t) {
+  function triangleCopies(mapa, t) {
     var indices = [];
-    paraCadaCopia(mapa, t, function (indice) { indices.push(indice); });
+    forEachCopy(mapa, t, function (indice) { indices.push(indice); });
     return indices;
   }
 
@@ -1250,30 +1250,30 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     computeBoundingBox: computeBoundingBox,
     computeMeshVolumeMm3: computeMeshVolumeMm3,
     computeMeshAreaMm2: computeMeshAreaMm2,
-    bboxVazio: bboxVazio,
+    emptyBbox: emptyBbox,
     directChild: directChild,
     directChildren: directChildren,
     findObjectElement: findObjectElement,
-    localizarModeloRaiz: localizarModeloRaiz,
-    localizarArquivoUnico: localizarArquivoUnico,
-    baixarBlob: baixarBlob,
+    findRootModel: findRootModel,
+    findUniqueFile: findUniqueFile,
+    downloadBlob: downloadBlob,
     parse3MFPackage: parse3MFPackage,
     extractTriangles3MF: extractTriangles3MF,
-    parse3MFPerfil: parse3MFPerfil,
+    parse3MFProfile: parse3MFProfile,
     parsePlateAssignments: parsePlateAssignments,
-    calcularChapas: calcularChapas,
-    contarTriangulos3MF: contarTriangulos3MF,
-    contarTriangulosSTL: contarTriangulosSTL,
-    temPartesNaoSolidas: function (modelSettingsText) { return !!parsePartesNaoSolidas(modelSettingsText); },
-    reposicionarPorMesa: reposicionarPorMesa,
-    reposicionarTorres: reposicionarTorres,
-    ajustarVariantesDeBico: ajustarVariantesDeBico,
-    ajustarPurgaPorBico: ajustarPurgaPorBico,
-    pegadasPorMesa: pegadasPorMesa,
-    posicionarTorres: posicionarTorres,
-    mapearCopiasDeMalha: mapearCopiasDeMalha,
-    paraCadaCopia: paraCadaCopia,
-    copiasDoTriangulo: copiasDoTriangulo,
-    mapearTriangulosParaChapas: mapearTriangulosParaChapas
+    calculatePlates: calculatePlates,
+    countTriangles3MF: countTriangles3MF,
+    countTrianglesSTL: countTrianglesSTL,
+    hasNonSolidParts: function (modelSettingsText) { return !!parsePartesNaoSolidas(modelSettingsText); },
+    repositionByPlate: repositionByPlate,
+    repositionTowers: repositionTowers,
+    adjustNozzleVariants: adjustNozzleVariants,
+    adjustFlushPerNozzle: adjustFlushPerNozzle,
+    footprintsByPlate: footprintsByPlate,
+    placeTowers: placeTowers,
+    mapMeshCopies: mapMeshCopies,
+    forEachCopy: forEachCopy,
+    triangleCopies: triangleCopies,
+    mapTrianglesToPlates: mapTrianglesToPlates
   };
 })();

@@ -7,7 +7,7 @@ global.window = global;
 for (const arquivo of ["price-formula.js", "quote-calculations.js"]) {
   new Function(fs.readFileSync(path.join(__dirname, "..", "assets", "js", arquivo), "utf8"))();
 }
-const Calculo = window.Wisky3D.OrcamentoCalculo;
+const Calculo = window.Wisky3D.QuoteCalculations;
 
 function perto(atual, esperado) {
   assert.ok(Math.abs(atual - esperado) < 1e-9, `${atual} != ${esperado}`);
@@ -31,8 +31,8 @@ const ENTRADA = {
   frete: 7
 };
 
-test("calcularItem aplica perda e margem só sobre o subtotal, sem embalagem e frete", () => {
-  const item = Calculo.calcularItem(ENTRADA);
+test("calculateItem aplica perda e margem só sobre o subtotal, sem embalagem e frete", () => {
+  const item = Calculo.calculateItem(ENTRADA);
 
   perto(item.subtotal, 16.48);
   perto(item.perda, 1.648);
@@ -45,7 +45,7 @@ test("calcularItem aplica perda e margem só sobre o subtotal, sem embalagem e f
   assert.equal(item.nome, "Vaso");
 });
 
-test("calcularItem retorna null com entrada inválida", () => {
+test("calculateItem retorna null com entrada inválida", () => {
   const invalidas = [
     { pesoG: NaN },
     { pesoG: 0 },
@@ -57,30 +57,30 @@ test("calcularItem retorna null com entrada inválida", () => {
     { perdaPct: -1 }
   ];
   for (const ajuste of invalidas) {
-    assert.equal(Calculo.calcularItem({ ...ENTRADA, ...ajuste }), null, JSON.stringify(ajuste));
+    assert.equal(Calculo.calculateItem({ ...ENTRADA, ...ajuste }), null, JSON.stringify(ajuste));
   }
 });
 
-test("calcularDesgaste proporcional ao tempo quando há valor da máquina e vida útil", () => {
-  const desgaste = Calculo.calcularDesgaste({
+test("calculateWear proporcional ao tempo quando há valor da máquina e vida útil", () => {
+  const desgaste = Calculo.calculateWear({
     valorMaquina: 5000, vidaUtilH: 5000, desgasteFixo: 3, desgastePadrao: 1, horas: 4
   });
   assert.equal(desgaste, 4);
 });
 
-test("calcularDesgaste cai no valor fixo e depois no padrão", () => {
+test("calculateWear cai no valor fixo e depois no padrão", () => {
   const base = { valorMaquina: NaN, vidaUtilH: 5000, desgastePadrao: 1, horas: 4 };
-  assert.equal(Calculo.calcularDesgaste({ ...base, desgasteFixo: 3 }), 3);
-  assert.equal(Calculo.calcularDesgaste({ ...base, desgasteFixo: NaN }), 1);
-  assert.equal(Calculo.calcularDesgaste({ ...base, valorMaquina: 5000, vidaUtilH: 0, desgasteFixo: 3 }), 3);
+  assert.equal(Calculo.calculateWear({ ...base, desgasteFixo: 3 }), 3);
+  assert.equal(Calculo.calculateWear({ ...base, desgasteFixo: NaN }), 1);
+  assert.equal(Calculo.calculateWear({ ...base, valorMaquina: 5000, vidaUtilH: 0, desgasteFixo: 3 }), 3);
 });
 
-test("calcularDesconto em percentual, em reais e limitado ao subtotal", () => {
-  assert.equal(Calculo.calcularDesconto(200, 10, "pct"), 20);
-  assert.equal(Calculo.calcularDesconto(200, 15, "valor"), 15);
-  assert.equal(Calculo.calcularDesconto(200, 500, "valor"), 200);
-  assert.equal(Calculo.calcularDesconto(200, 0, "pct"), 0);
-  assert.equal(Calculo.calcularDesconto(200, NaN, "pct"), 0);
+test("calculateDiscount em percentual, em reais e limitado ao subtotal", () => {
+  assert.equal(Calculo.calculateDiscount(200, 10, "pct"), 20);
+  assert.equal(Calculo.calculateDiscount(200, 15, "valor"), 15);
+  assert.equal(Calculo.calculateDiscount(200, 500, "valor"), 200);
+  assert.equal(Calculo.calculateDiscount(200, 0, "pct"), 0);
+  assert.equal(Calculo.calculateDiscount(200, NaN, "pct"), 0);
 });
 
 const MALHA = {
@@ -96,33 +96,33 @@ const MALHA = {
   overheadPorCamada: 2
 };
 
-test("estimarPesoETempo soma casca sólida e miolo com infill", () => {
+test("estimateWeightAndTime soma casca sólida e miolo com infill", () => {
   // casca 2000 × 0,8 = 1600 mm³; miolo 8400 × 20% = 1680 mm³; total 3280 mm³
   // tempo: 3280 / (50 × 0,2 × 0,4) = 820 s + 100 camadas × 2 s = 1020 s = 17 min
-  const r = Calculo.estimarPesoETempo(MALHA);
+  const r = Calculo.estimateWeightAndTime(MALHA);
   perto(r.pesoG, 3.28 * 1.24);
   assert.equal(r.horas, 0);
   assert.equal(r.minutos, 17);
 });
 
-test("estimarPesoETempo limita a casca ao volume da peça", () => {
-  const r = Calculo.estimarPesoETempo({ ...MALHA, areaMm2: 1e6 });
+test("estimateWeightAndTime limita a casca ao volume da peça", () => {
+  const r = Calculo.estimateWeightAndTime({ ...MALHA, areaMm2: 1e6 });
   perto(r.pesoG, 10 * 1.24);
 });
 
-test("estimarPesoETempo arredonda o total antes de separar horas e minutos", () => {
+test("estimateWeightAndTime arredonda o total antes de separar horas e minutos", () => {
   // 43104 mm³ / 4 mm³/s = 10776 s = 179,6 min → 3h 0min, nunca 2h 60min
-  const r = Calculo.estimarPesoETempo({
+  const r = Calculo.estimateWeightAndTime({
     ...MALHA, volumeMm3: 43104, areaMm2: 0, infillPct: 100, alturaModeloMm: 0
   });
   assert.equal(r.horas, 3);
   assert.equal(r.minutos, 0);
 });
 
-test("gerarCsv tem cabeçalho, uma linha por item com vírgula decimal e total geral", () => {
-  const item = Calculo.calcularItem(ENTRADA);
-  const semNome = Calculo.calcularItem({ ...ENTRADA, nome: "", qtd: 1 });
-  const linhas = Calculo.gerarCsv([item, semNome]).split("\r\n");
+test("generateCsv tem cabeçalho, uma linha por item com vírgula decimal e total geral", () => {
+  const item = Calculo.calculateItem(ENTRADA);
+  const semNome = Calculo.calculateItem({ ...ENTRADA, nome: "", qtd: 1 });
+  const linhas = Calculo.generateCsv([item, semNome]).split("\r\n");
 
   assert.equal(linhas.length, 4);
   assert.ok(linhas[0].startsWith("Peça;Quantidade;Filamento;"));
@@ -133,8 +133,8 @@ test("gerarCsv tem cabeçalho, uma linha por item com vírgula decimal e total g
   assert.ok(linhas[3].endsWith(";" + (item.itemTotal + semNome.itemTotal).toFixed(2).replace(".", ",")));
 });
 
-test("gerarCsv escapa campos com ponto e vírgula ou aspas", () => {
-  const item = Calculo.calcularItem({ ...ENTRADA, nome: 'Peça "A"; v2' });
-  const linha = Calculo.gerarCsv([item]).split("\r\n")[1];
+test("generateCsv escapa campos com ponto e vírgula ou aspas", () => {
+  const item = Calculo.calculateItem({ ...ENTRADA, nome: 'Peça "A"; v2' });
+  const linha = Calculo.generateCsv([item]).split("\r\n")[1];
   assert.ok(linha.startsWith('"Peça ""A""; v2";2;'));
 });

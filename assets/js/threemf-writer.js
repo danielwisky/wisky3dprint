@@ -17,7 +17,7 @@ window.Wisky3D = window.Wisky3D || {};
 
   // Cor default (cinza) usada pela ferramenta de colorir pra área ainda não
   // pintada. Exportada como ThreeMFWriter.DEFAULT_COLOR (fonte única) porque
-  // injetarCoresNoXml usa esse valor pra decidir se um triângulo foi "pintado
+  // injectColorsIntoXml usa esse valor pra decidir se um triângulo foi "pintado
   // de verdade" (recebe paint_color) ou ficou com a cor default do objeto
   // (não recebe, herda o extrusor/filamento padrão) — colorize-3mf.js reusa a
   // mesma constante em vez de declarar seu próprio literal.
@@ -44,7 +44,7 @@ window.Wisky3D = window.Wisky3D || {};
   // um "escape" 11 seguido de nibbles de extensão, cada 0xF valendo +15 até o
   // nibble final somar o resto), tudo em uma string hex com os nibbles em
   // ordem invertida (o último caractere é o primeiro nibble do fluxo).
-  function filamentIndexParaPaintColor(indice1Based) {
+  function filamentIndexToPaintColor(indice1Based) {
     var nibbles = [];
     if (indice1Based < 3) {
       nibbles.push(indice1Based << 2);
@@ -68,7 +68,7 @@ window.Wisky3D = window.Wisky3D || {};
   // distinta (r,g,b) um índice sequencial na ordem de primeira aparição,
   // usada tanto para montar o <m:colorgroup> ao remendar um .3mf existente
   // quanto ao gerar um pacote novo do zero a partir de um STL.
-  function criarIndexadorDeCores() {
+  function createColorIndexer() {
     var colorToIndex = new Map();
     var cores = [];
     return {
@@ -105,7 +105,7 @@ window.Wisky3D = window.Wisky3D || {};
   // quando o pacote tem slots de filamento configurados, também paint_color,
   // sem o qual Bambu Studio/OrcaSlicer não mostram a cor). Tudo mais no XML
   // (metadados, outros objects, extensões desconhecidas) permanece intacto.
-  function injetarCoresNoXml(xmlText, porObjeto, slotPorCor) {
+  function injectColorsIntoXml(xmlText, porObjeto, slotPorCor) {
     var doc = new DOMParser().parseFromString(xmlText, "application/xml");
     var modelEl = doc.documentElement;
 
@@ -131,7 +131,7 @@ window.Wisky3D = window.Wisky3D || {};
     var colorGroupId = 900001;
     while (idsUsados.has(String(colorGroupId))) colorGroupId++;
 
-    var indexador = criarIndexadorDeCores();
+    var indexador = createColorIndexer();
     var cores = indexador.cores;
     var indiceDaCor = indexador.indiceDaCor;
 
@@ -156,7 +156,7 @@ window.Wisky3D = window.Wisky3D || {};
         var foiPintado = item.r !== DEFAULT_COLOR[0] || item.g !== DEFAULT_COLOR[1] || item.b !== DEFAULT_COLOR[2];
         if (slotPorCor && foiPintado) {
           var slot = slotPorCor.get(item.r + "," + item.g + "," + item.b);
-          if (slot) triEl.setAttribute("paint_color", filamentIndexParaPaintColor(slot));
+          if (slot) triEl.setAttribute("paint_color", filamentIndexToPaintColor(slot));
         }
       });
     });
@@ -246,7 +246,7 @@ window.Wisky3D = window.Wisky3D || {};
     });
   }
 
-  function reconstruirProjectSettings(cfgOriginal, paleta) {
+  function rebuildProjectSettings(cfgOriginal, paleta) {
     var nAntigo = Array.isArray(cfgOriginal.filament_colour) ? cfgOriginal.filament_colour.length : 0;
     if (!nAntigo) return null;
 
@@ -275,7 +275,7 @@ window.Wisky3D = window.Wisky3D || {};
   // object para o slot 1 (o cinza). O slot original podia apontar para um
   // índice que deixou de existir (ou que agora é outra cor) depois da
   // reconstrução da paleta.
-  function ajustarFilamentMapsNoModelSettings(xmlText, n) {
+  function adjustFilamentMapsInModelSettings(xmlText, n) {
     var mapaFilamentos = new Array(n).fill("1").join(" ");
     var mapaVolumes = new Array(n).fill("0").join(" ");
     return xmlText
@@ -292,8 +292,8 @@ window.Wisky3D = window.Wisky3D || {};
   // `objetos`: [{ objectId, vertices: [[x,y,z],...],
   // triangulos: [{v1, v2, v3, color: [r,g,b]}, ...] }, ...].
   // contentTypesXml/relsXml não dependem de quantos objects existem.
-  function montarModeloDoZero(objetos) {
-    var indexador = criarIndexadorDeCores();
+  function buildModelFromScratch(objetos) {
+    var indexador = createColorIndexer();
     var cores = indexador.cores;
     var indiceDaCor = indexador.indiceDaCor;
 
@@ -358,11 +358,11 @@ window.Wisky3D = window.Wisky3D || {};
   window.Wisky3D.ThreeMFWriter = {
     DEFAULT_COLOR: DEFAULT_COLOR,
     toHexByte: toHexByte,
-    filamentIndexParaPaintColor: filamentIndexParaPaintColor,
-    criarIndexadorDeCores: criarIndexadorDeCores,
-    injetarCoresNoXml: injetarCoresNoXml,
-    reconstruirProjectSettings: reconstruirProjectSettings,
-    ajustarFilamentMapsNoModelSettings: ajustarFilamentMapsNoModelSettings,
-    montarModeloDoZero: montarModeloDoZero
+    filamentIndexToPaintColor: filamentIndexToPaintColor,
+    createColorIndexer: createColorIndexer,
+    injectColorsIntoXml: injectColorsIntoXml,
+    rebuildProjectSettings: rebuildProjectSettings,
+    adjustFilamentMapsInModelSettings: adjustFilamentMapsInModelSettings,
+    buildModelFromScratch: buildModelFromScratch
   };
 })();

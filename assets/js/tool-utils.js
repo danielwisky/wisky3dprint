@@ -10,7 +10,7 @@
   // Liga o <input type="file"> e a área de arrastar a um único callback. O
   // input é limpo a cada escolha: sem isso, escolher de novo o mesmo arquivo
   // (ex.: depois de um erro) não dispara "change".
-  function ligarDropzone(dropzone, input, aoEscolher) {
+  function bindDropzone(dropzone, input, aoEscolher) {
     input.addEventListener("change", function () {
       var file = input.files && input.files[0];
       input.value = "";
@@ -37,17 +37,17 @@
   // Cada carregamento novo invalida os anteriores: se o usuário solta um
   // segundo arquivo antes do primeiro terminar, o resultado atrasado do
   // primeiro é descartado em vez de sobrescrever o do segundo.
-  function criarSequenciador() {
+  function createSequencer() {
     var atual = 0;
     return {
-      proximo: function () { return ++atual; },
-      ehAtual: function (id) { return id === atual; }
+      next: function () { return ++atual; },
+      isCurrent: function (id) { return id === atual; }
     };
   }
 
   // Abre um .3mf e lê como texto os arquivos que as ferramentas usam. Qualquer
   // um deles pode faltar (null); cada ferramenta decide o que é obrigatório.
-  function lerPacote3MF(file) {
+  function read3MFPackage(file) {
     if (typeof JSZip === "undefined") {
       return Promise.reject(new Error("não foi possível carregar o leitor de 3MF, verifique sua conexão"));
     }
@@ -58,10 +58,10 @@
     }
 
     return JSZip.loadAsync(file).then(function (zip) {
-      var modelFile = ModelParser.localizarModeloRaiz(zip);
-      var configFile = ModelParser.localizarArquivoUnico(zip, "project_settings.config");
-      var modelSettingsFile = ModelParser.localizarArquivoUnico(zip, "model_settings.config");
-      var sliceInfoFile = ModelParser.localizarArquivoUnico(zip, "slice_info.config");
+      var modelFile = ModelParser.findRootModel(zip);
+      var configFile = ModelParser.findUniqueFile(zip, "project_settings.config");
+      var modelSettingsFile = ModelParser.findUniqueFile(zip, "model_settings.config");
+      var sliceInfoFile = ModelParser.findUniqueFile(zip, "slice_info.config");
 
       return Promise.all([texto(modelFile), texto(configFile), texto(modelSettingsFile), texto(sliceInfoFile)]).then(function (r) {
         return {
@@ -82,12 +82,12 @@
   // Acima disso o navegador corre risco de travar a aba: cada triângulo custa
   // uns 290 bytes no Colorir (3,7 milhões ocupam ~1 GB). Vale para o
   // Orçamento e o Colorir.
-  var MAX_TRIANGULOS = 6000000;
+  var MAX_TRIANGLES = 6000000;
 
   window.Wisky3D.ToolUtils = {
-    MAX_TRIANGULOS: MAX_TRIANGULOS,
-    ligarDropzone: ligarDropzone,
-    criarSequenciador: criarSequenciador,
-    lerPacote3MF: lerPacote3MF
+    MAX_TRIANGLES: MAX_TRIANGLES,
+    bindDropzone: bindDropzone,
+    createSequencer: createSequencer,
+    read3MFPackage: read3MFPackage
   };
 })();
