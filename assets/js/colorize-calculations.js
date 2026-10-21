@@ -8,9 +8,10 @@ window.Wisky3D = window.Wisky3D || {};
 
 (function () {
   // -------------------------------------------------------------------------
-  // Geometria: STL bruto -> BufferGeometry não indexada (cor sólida por
-  // triângulo) + adjacência de triângulos + lista de vértices únicos pra
-  // exportação (independente da geometria não-indexada usada no viewer).
+  // Geometria: triângulos brutos -> posições não indexadas (base da
+  // BufferGeometry do viewer, com cor sólida por triângulo) + adjacência de
+  // triângulos + lista de vértices únicos pra exportação (independente da
+  // geometria não indexada usada no viewer).
   // -------------------------------------------------------------------------
 
   function buildGeometryData(triangles) {
@@ -198,6 +199,10 @@ window.Wisky3D = window.Wisky3D || {};
     }
     return result;
   }
+
+  // -------------------------------------------------------------------------
+  // Cores: conversão e preparação da paleta/cores por triângulo pra exportação
+  // -------------------------------------------------------------------------
 
   function hexToRgb(hex) {
     const v = parseInt(hex.slice(1), 16);

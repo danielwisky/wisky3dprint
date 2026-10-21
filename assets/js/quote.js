@@ -119,6 +119,7 @@
 
   let items = [];
   let current = null;
+  // Modelo 3D carregado no modal (ver processStats); null sem modelo.
   let lastMeshStats = null;
   let fileProfile = null;
   const modelLoads = ToolUtils ? ToolUtils.createSequencer() : null;

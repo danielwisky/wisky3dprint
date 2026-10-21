@@ -1376,7 +1376,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // triângulo, compara o `rootObjectId` da origem (o objectid do build item
   // de nível topo, não o do object-folha que contém a mesh) contra o
   // `objectIds` (Set) de cada chapa em `plates` (formato `{index,
-  // objectIds}`, ver detectarChapas em colorize-3mf.js) e empilha o índice do
+  // objectIds}`, ver detectPlates em colorize-3mf.js) e empilha o índice do
   // triângulo na chapa correspondente. Usar rootObjectId em vez de objectId é
   // necessário porque model_settings.config referencia o build item de topo,
   // enquanto peças montadas via <components> aninhados têm um objectId de

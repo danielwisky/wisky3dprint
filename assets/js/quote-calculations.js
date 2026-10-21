@@ -9,7 +9,8 @@ window.Wisky3D = window.Wisky3D || {};
 (function () {
   // Se valor da máquina + vida útil forem informados, o desgaste é
   // proporcional ao tempo de impressão (valor/vida útil × horas); senão
-  // cai no valor fixo por impressão.
+  // cai no desgaste fixo por impressão informado ou, sem ele, no padrão do
+  // _config.yml.
   function calculateWear(p) {
     if (isFinite(p.machineValue) && p.machineValue > 0 && isFinite(p.lifespanH) && p.lifespanH > 0) {
       return (p.machineValue / p.lifespanH) * p.hours;

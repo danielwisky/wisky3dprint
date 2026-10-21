@@ -25,7 +25,7 @@ DOMParser.prototype.parseFromString = function (text, type) {
 
 const ModelParser = window.Wisky3D.ModelParser;
 
-// Fake mínimo de JSZip: só o necessário pra resolveObjectRecursivo (zip.file(path).async("text")).
+// Fake mínimo de JSZip: só o necessário pra resolveObjectRecursive (zip.file(path).async("text")).
 function fakeZip(files) {
   return {
     file: function (p) {

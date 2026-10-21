@@ -76,11 +76,8 @@ if (root && !(modules.ModelParser && modules.ThreeMFWriter && modules.ToolUtils 
   let mesh = null;
   let needsRender = true;
   let modelRadius = 1; // raio da esfera envolvente do modelo, fixo desde o carregamento
-  let state = null;
-  // Exportação em andamento: as duas exportações gravariam no mesmo zip
-  // (state.zip) ao mesmo tempo.
-  let exporting = false;
   /*
+   * Campos principais (o formato completo é montado em buildState):
    * state = {
    *   fileName, triCount,
    *   faceNormals: Float32Array(triCount*3),
@@ -91,6 +88,10 @@ if (root && !(modules.ModelParser && modules.ThreeMFWriter && modules.ToolUtils 
    *   exportVertices: Array<[x,y,z]>, undoStack: Uint8ClampedArray[]
    * }
    */
+  let state = null;
+  // Exportação em andamento: as duas exportações gravariam no mesmo zip
+  // (state.zip) ao mesmo tempo.
+  let exporting = false;
 
   function showError(msg) {
     errorEl.textContent = msg;
@@ -718,7 +719,7 @@ if (root && !(modules.ModelParser && modules.ThreeMFWriter && modules.ToolUtils 
   }
 
   // -------------------------------------------------------------------------
-  // Carregar STL e montar o estado/viewer
+  // Carregar STL/3MF e montar o estado/viewer
   // -------------------------------------------------------------------------
 
   function createGeometry(positions, faceNormals, triCount) {
@@ -1064,8 +1065,9 @@ if (root && !(modules.ModelParser && modules.ThreeMFWriter && modules.ToolUtils 
 
   function exportModel() {
     outEl.textContent = "Gerando arquivo 3MF...";
-    // Lido agora: se outro arquivo for carregado durante a exportação, state
-    // passa a ser o dele.
+    // Tudo que vem de state é lido de forma síncrona (aqui e no início das
+    // funções de exportação): se outro arquivo for carregado durante a
+    // exportação, state passa a ser o dele.
     const outputName = outputFileName(state.fileName);
     if (state.zip && state.triangleOrigins) return exportModelPreservingPackage(outputName);
     return exportModelFromScratch(outputName);
