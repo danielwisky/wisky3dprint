@@ -688,7 +688,6 @@
       })
       .catch(function (err) {
         if (!cargas.ehAtual(id)) return;
-        // eslint-disable-next-line no-console
         if (window.console && console.error) console.error("Conversor 3MF:", err);
         var detalhe = err && err.message ? " (" + err.message + ")" : "";
         mostrarErro("Não foi possível ler esse arquivo 3MF. Confirme que é um projeto exportado do Bambu Studio ou Orca Slicer." + detalhe);
