@@ -53,10 +53,10 @@
 
     buttons.forEach(function (btn) {
       btn.addEventListener("click", function () {
-        var nome = btn.getAttribute("data-piece");
-        if (!nome) return;
-        var prontaEntrega = btn.getAttribute("data-in-stock") === "true";
-        var msg = "Oi! Tenho interesse na peça " + nome + (prontaEntrega ? " (pronta entrega)." : ".");
+        var name = btn.getAttribute("data-piece");
+        if (!name) return;
+        var inStock = btn.getAttribute("data-in-stock") === "true";
+        var msg = "Oi! Tenho interesse na peça " + name + (inStock ? " (pronta entrega)." : ".");
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(msg).catch(function () {});
         }
@@ -84,11 +84,11 @@
     var clearBtn = controls.querySelector("[data-stock-clear]");
     var countMsg = document.querySelector("[data-stock-count]");
 
-    var filtrosAtivos = [];
-    var termoBusca = "";
+    var activeFilters = [];
+    var searchTerm = "";
 
     // Remove acentos e caixa pra busca "tolerante" (ex.: "poke" acha "Pokémon").
-    function normalizar(txt) {
+    function normalize(txt) {
       return (txt || "")
         .normalize("NFD")
         .replace(/\p{Diacritic}/gu, "")
@@ -97,44 +97,44 @@
     }
 
     // Pré-computa categorias e nome normalizado de cada card (uma vez só).
-    var itens = cards.map(function (card) {
+    var items = cards.map(function (card) {
       return {
         el: card,
         cats: (card.getAttribute("data-categories") || "")
           .split("§")
           .filter(function (c) { return c !== ""; }),
-        nome: normalizar(card.getAttribute("data-name"))
+        name: normalize(card.getAttribute("data-name"))
       };
     });
 
     // Uma peça combina quando tem TODAS as categorias marcadas (interseção) e o
-    // nome contém o termo buscado. combina(_, [], "") === true (mostra tudo).
-    function combina(item, filtros, termo) {
-      var temCategorias = filtros.every(function (f) {
+    // nome contém o termo buscado. matches(_, [], "") === true (mostra tudo).
+    function matches(item, filters, term) {
+      var hasCategories = filters.every(function (f) {
         return item.cats.indexOf(f) !== -1;
       });
-      return temCategorias && (termo === "" || item.nome.indexOf(termo) !== -1);
+      return hasCategories && (term === "" || item.name.indexOf(term) !== -1);
     }
 
-    function contar(filtros, termo) {
+    function count(filters, term) {
       var n = 0;
-      itens.forEach(function (item) { if (combina(item, filtros, termo)) n++; });
+      items.forEach(function (item) { if (matches(item, filters, term)) n++; });
       return n;
     }
 
-    function plural(n) {
+    function pluralize(n) {
       return n + (n === 1 ? " peça" : " peças");
     }
 
-    function atualizarContagem(visiveis) {
+    function updateCount(visibleCount) {
       if (!countMsg) return;
-      countMsg.textContent = visiveis > 0
-        ? "Mostrando " + plural(visiveis)
+      countMsg.textContent = visibleCount > 0
+        ? "Mostrando " + pluralize(visibleCount)
         : "Nenhuma peça com esse filtro por enquanto.";
     }
 
     // Re-dispara um fade-in suave nos cards visíveis (um reflow só).
-    function reproduzirFade() {
+    function replayFade() {
       cards.forEach(function (card) { card.classList.remove("stock-card--in"); });
       void grid.offsetWidth;
       cards.forEach(function (card) {
@@ -144,28 +144,28 @@
       });
     }
 
-    function aplicarFiltro(comFade) {
-      var visiveis = 0;
-      itens.forEach(function (item) {
-        var mostra = combina(item, filtrosAtivos, termoBusca);
-        item.el.classList.toggle("stock-card--hidden", !mostra);
-        if (mostra) visiveis++;
+    function applyFilter(withFade) {
+      var visibleCount = 0;
+      items.forEach(function (item) {
+        var show = matches(item, activeFilters, searchTerm);
+        item.el.classList.toggle("stock-card--hidden", !show);
+        if (show) visibleCount++;
       });
-      atualizarContagem(visiveis);
-      atualizarChips();
-      atualizarFiltrosAtivos();
-      if (comFade) reproduzirFade();
+      updateCount(visibleCount);
+      updateChips();
+      updateActiveFilters();
+      if (withFade) replayFade();
     }
 
-    function ordenar(modo) {
-      var ordenados = cards.slice();
-      ordenados.sort(function (a, b) {
-        if (modo === "preco-asc" || modo === "preco-desc") {
+    function sort(mode) {
+      var sorted = cards.slice();
+      sorted.sort(function (a, b) {
+        if (mode === "preco-asc" || mode === "preco-desc") {
           var pa = parseFloat(a.getAttribute("data-price")) || 0;
           var pb = parseFloat(b.getAttribute("data-price")) || 0;
-          return modo === "preco-asc" ? pa - pb : pb - pa;
+          return mode === "preco-asc" ? pa - pb : pb - pa;
         }
-        if (modo === "nome-asc") {
+        if (mode === "nome-asc") {
           return (a.getAttribute("data-name") || "").localeCompare(
             b.getAttribute("data-name") || "",
             "pt-BR",
@@ -173,18 +173,18 @@
           );
         }
         // padrão: pronta entrega primeiro, depois oferta, depois ordem original do YAML
-        function grupo(el) {
+        function group(el) {
           if (el.getAttribute("data-sale") === "true") return 0;
           if (el.getAttribute("data-in-stock") === "true") return 1;
           return 2;
         }
-        var ga = grupo(a);
-        var gb = grupo(b);
+        var ga = group(a);
+        var gb = group(b);
         if (ga !== gb) return ga - gb;
         return (parseInt(a.getAttribute("data-order"), 10) || 0) -
           (parseInt(b.getAttribute("data-order"), 10) || 0);
       });
-      ordenados.forEach(function (card) {
+      sorted.forEach(function (card) {
         grid.appendChild(card);
       });
     }
@@ -192,29 +192,29 @@
     // Atualiza cada chip: estado ativo, contagem CONTEXTUAL (quantas peças
     // sobram se ele for somado à seleção atual) e desabilita quem daria zero.
     // "Todos" e chips já ativos nunca desabilitam (precisa poder remover).
-    function atualizarChips() {
+    function updateChips() {
       chips.forEach(function (chip) {
-        var filtro = chip.getAttribute("data-filter") || "todos";
-        var ativo = filtro === "todos"
-          ? filtrosAtivos.length === 0
-          : filtrosAtivos.indexOf(filtro) !== -1;
+        var filter = chip.getAttribute("data-filter") || "todos";
+        var active = filter === "todos"
+          ? activeFilters.length === 0
+          : activeFilters.indexOf(filter) !== -1;
 
         var n;
-        if (filtro === "todos") n = contar([], termoBusca);
-        else if (ativo) n = contar(filtrosAtivos, termoBusca);
-        else n = contar(filtrosAtivos.concat([filtro]), termoBusca);
+        if (filter === "todos") n = count([], searchTerm);
+        else if (active) n = count(activeFilters, searchTerm);
+        else n = count(activeFilters.concat([filter]), searchTerm);
 
         var countEl = chip.querySelector(".stock-chip-count");
         if (countEl) countEl.textContent = n;
 
-        chip.classList.toggle("is-active", ativo);
-        chip.setAttribute("aria-pressed", ativo ? "true" : "false");
+        chip.classList.toggle("is-active", active);
+        chip.setAttribute("aria-pressed", active ? "true" : "false");
 
-        var desabilita = filtro !== "todos" && !ativo && n === 0;
-        chip.classList.toggle("is-disabled", desabilita);
-        chip.disabled = desabilita;
-        if (desabilita) {
-          chip.setAttribute("aria-label", filtro + ", indisponível com os filtros atuais");
+        var disabled = filter !== "todos" && !active && n === 0;
+        chip.classList.toggle("is-disabled", disabled);
+        chip.disabled = disabled;
+        if (disabled) {
+          chip.setAttribute("aria-label", filter + ", indisponível com os filtros atuais");
         } else {
           chip.removeAttribute("aria-label");
         }
@@ -223,59 +223,59 @@
 
     // Monta as etiquetas de filtros ativos, cada uma com × pra remover.
     // A barra some quando não há nada marcado.
-    function atualizarFiltrosAtivos() {
+    function updateActiveFilters() {
       if (!activeBar || !activePills) return;
       activePills.innerHTML = "";
-      filtrosAtivos.forEach(function (cat) {
+      activeFilters.forEach(function (cat) {
         var pill = document.createElement("button");
         pill.type = "button";
         pill.className = "stock-active-pill";
         pill.setAttribute("data-remove", cat);
         pill.setAttribute("aria-label", "Remover filtro " + cat);
-        var rotulo = document.createElement("span");
-        rotulo.textContent = cat;
+        var label = document.createElement("span");
+        label.textContent = cat;
         var x = document.createElement("span");
         x.className = "stock-active-x";
         x.setAttribute("aria-hidden", "true");
         x.textContent = "×";
-        pill.appendChild(rotulo);
+        pill.appendChild(label);
         pill.appendChild(x);
         activePills.appendChild(pill);
       });
       var activeLabel = activeBar.querySelector(".stock-active-label");
-      if (activeLabel) activeLabel.hidden = filtrosAtivos.length === 0;
-      activeBar.hidden = filtrosAtivos.length === 0 && termoBusca === "";
+      if (activeLabel) activeLabel.hidden = activeFilters.length === 0;
+      activeBar.hidden = activeFilters.length === 0 && searchTerm === "";
     }
 
     // Reflete filtro + ordenação na URL (?categoria=&ordem=), sem poluir o histórico.
-    function atualizarURL() {
+    function updateURL() {
       if (!window.history || !window.history.replaceState) return;
       var params = new URLSearchParams(window.location.search);
-      if (filtrosAtivos.length > 0) params.set("categoria", filtrosAtivos.join(","));
+      if (activeFilters.length > 0) params.set("categoria", activeFilters.join(","));
       else params.delete("categoria");
-      if (termoBusca) params.set("busca", termoBusca);
+      if (searchTerm) params.set("busca", searchTerm);
       else params.delete("busca");
-      var ordem = sortSelect ? sortSelect.value : "padrao";
-      if (ordem && ordem !== "padrao") params.set("ordem", ordem);
+      var order = sortSelect ? sortSelect.value : "padrao";
+      if (order && order !== "padrao") params.set("ordem", order);
       else params.delete("ordem");
       var qs = params.toString();
       window.history.replaceState(null, "", window.location.pathname + (qs ? "?" + qs : ""));
     }
 
-    function alternarCategoria(cat) {
-      var i = filtrosAtivos.indexOf(cat);
-      if (i === -1) filtrosAtivos.push(cat);
-      else filtrosAtivos.splice(i, 1);
+    function toggleCategory(cat) {
+      var i = activeFilters.indexOf(cat);
+      if (i === -1) activeFilters.push(cat);
+      else activeFilters.splice(i, 1);
     }
 
     chips.forEach(function (chip) {
       chip.addEventListener("click", function () {
         if (chip.disabled) return;
-        var filtro = chip.getAttribute("data-filter") || "todos";
-        if (filtro === "todos") filtrosAtivos = [];
-        else alternarCategoria(filtro);
-        aplicarFiltro(true);
-        atualizarURL();
+        var filter = chip.getAttribute("data-filter") || "todos";
+        if (filter === "todos") activeFilters = [];
+        else toggleCategory(filter);
+        applyFilter(true);
+        updateURL();
       });
     });
 
@@ -284,27 +284,27 @@
       activePills.addEventListener("click", function (e) {
         var pill = e.target.closest(".stock-active-pill");
         if (!pill) return;
-        alternarCategoria(pill.getAttribute("data-remove"));
-        aplicarFiltro(true);
-        atualizarURL();
+        toggleCategory(pill.getAttribute("data-remove"));
+        applyFilter(true);
+        updateURL();
       });
     }
 
     if (clearBtn) {
       clearBtn.addEventListener("click", function () {
-        filtrosAtivos = [];
-        termoBusca = "";
+        activeFilters = [];
+        searchTerm = "";
         if (searchInput) searchInput.value = "";
-        aplicarFiltro(true);
-        atualizarURL();
+        applyFilter(true);
+        updateURL();
       });
     }
 
     if (searchInput) {
       searchInput.addEventListener("input", function () {
-        termoBusca = normalizar(searchInput.value);
-        aplicarFiltro(true);
-        atualizarURL();
+        searchTerm = normalize(searchInput.value);
+        applyFilter(true);
+        updateURL();
       });
     }
 
@@ -314,16 +314,16 @@
     var toggleBtn = controls.querySelector("[data-stock-toggle]");
     if (toggleBtn) {
       toggleBtn.addEventListener("click", function () {
-        var aberto = toggleBtn.getAttribute("aria-expanded") !== "true";
-        toggleBtn.setAttribute("aria-expanded", aberto ? "true" : "false");
-        controls.classList.toggle("is-collapsed", !aberto);
+        var expanded = toggleBtn.getAttribute("aria-expanded") !== "true";
+        toggleBtn.setAttribute("aria-expanded", expanded ? "true" : "false");
+        controls.classList.toggle("is-collapsed", !expanded);
       });
     }
 
     if (sortSelect) {
       sortSelect.addEventListener("change", function () {
-        ordenar(sortSelect.value);
-        atualizarURL();
+        sort(sortSelect.value);
+        updateURL();
       });
     }
 
@@ -331,26 +331,26 @@
     (function initFromURL() {
       var params = new URLSearchParams(window.location.search);
       var cat = params.get("categoria");
-      var busca = params.get("busca");
-      var ordem = params.get("ordem");
+      var search = params.get("busca");
+      var order = params.get("ordem");
 
       if (cat) {
-        var validas = chips.map(function (c) { return c.getAttribute("data-filter"); });
-        filtrosAtivos = cat.split(",").filter(function (p) {
-          return p !== "todos" && validas.indexOf(p) !== -1;
+        var validFilters = chips.map(function (c) { return c.getAttribute("data-filter"); });
+        activeFilters = cat.split(",").filter(function (p) {
+          return p !== "todos" && validFilters.indexOf(p) !== -1;
         });
       }
-      if (busca && searchInput) {
-        searchInput.value = busca;
-        termoBusca = normalizar(busca);
+      if (search && searchInput) {
+        searchInput.value = search;
+        searchTerm = normalize(search);
       }
-      if (ordem && sortSelect) {
-        var existe = Array.prototype.some.call(sortSelect.options, function (o) {
-          return o.value === ordem;
+      if (order && sortSelect) {
+        var exists = Array.prototype.some.call(sortSelect.options, function (o) {
+          return o.value === order;
         });
-        if (existe) sortSelect.value = ordem;
+        if (exists) sortSelect.value = order;
       }
-      ordenar(sortSelect ? sortSelect.value : "padrao");
-      aplicarFiltro(false); // sem fade no load (evita conflito com o reveal-stagger)
+      sort(sortSelect ? sortSelect.value : "padrao");
+      applyFilter(false); // sem fade no load (evita conflito com o reveal-stagger)
     })();
   })();

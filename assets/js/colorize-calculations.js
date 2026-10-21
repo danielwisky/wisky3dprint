@@ -13,11 +13,11 @@ window.Wisky3D = window.Wisky3D || {};
   // exportação (independente da geometria não-indexada usada no viewer).
   // -------------------------------------------------------------------------
 
-  function buildGeometryData(triangulos) {
-    const triCount = triangulos.length;
+  function buildGeometryData(triangles) {
+    const triCount = triangles.length;
     const positions = new Float32Array(triCount * 9);
     for (let t = 0; t < triCount; t++) {
-      const tri = triangulos[t];
+      const tri = triangles[t];
       for (let c = 0; c < 3; c++) {
         const base = t * 9 + c * 3;
         positions[base] = tri[c][0];
@@ -67,7 +67,7 @@ window.Wisky3D = window.Wisky3D || {};
   // "soldados" por posição quantizada pra achar arestas compartilhadas, já
   // que a geometria do viewer não compartilha vértices entre triângulos.
   function buildAdjacencyAndExportIndex(positions, triCount) {
-    const FATOR_QUANTIZACAO = 1e4; // ~0.0001mm de tolerância pra "mesmo ponto"
+    const QUANTIZATION_FACTOR = 1e4; // ~0.0001mm de tolerância pra "mesmo ponto"
     const keyToIndex = new Map();
     const exportVertices = [];
     const cornerExportIndex = new Int32Array(triCount * 3);
@@ -75,12 +75,12 @@ window.Wisky3D = window.Wisky3D || {};
     for (let i = 0; i < triCount * 3; i++) {
       const base = i * 3;
       const x = positions[base], y = positions[base + 1], z = positions[base + 2];
-      const chave = Math.round(x * FATOR_QUANTIZACAO) + "," + Math.round(y * FATOR_QUANTIZACAO) + "," + Math.round(z * FATOR_QUANTIZACAO);
-      let idx = keyToIndex.get(chave);
+      const key = Math.round(x * QUANTIZATION_FACTOR) + "," + Math.round(y * QUANTIZATION_FACTOR) + "," + Math.round(z * QUANTIZATION_FACTOR);
+      let idx = keyToIndex.get(key);
       if (idx === undefined) {
         idx = exportVertices.length;
         exportVertices.push([x, y, z]);
-        keyToIndex.set(chave, idx);
+        keyToIndex.set(key, idx);
       }
       cornerExportIndex[i] = idx;
     }
@@ -97,20 +97,20 @@ window.Wisky3D = window.Wisky3D || {};
       const i0 = cornerExportIndex[t * 3];
       const i1 = cornerExportIndex[t * 3 + 1];
       const i2 = cornerExportIndex[t * 3 + 2];
-      const arestas = [[i0, i1], [i1, i2], [i2, i0]];
-      for (let e = 0; e < arestas.length; e++) {
-        const chave = edgeKey(arestas[e][0], arestas[e][1]);
-        let lista = edgeMap.get(chave);
-        if (!lista) {
-          lista = [];
-          edgeMap.set(chave, lista);
+      const edges = [[i0, i1], [i1, i2], [i2, i0]];
+      for (let e = 0; e < edges.length; e++) {
+        const key = edgeKey(edges[e][0], edges[e][1]);
+        let list = edgeMap.get(key);
+        if (!list) {
+          list = [];
+          edgeMap.set(key, list);
         }
-        for (let j = 0; j < lista.length; j++) {
-          const outro = lista[j];
-          adjacencySets[t].add(outro);
-          adjacencySets[outro].add(t);
+        for (let j = 0; j < list.length; j++) {
+          const other = list[j];
+          adjacencySets[t].add(other);
+          adjacencySets[other].add(t);
         }
-        lista.push(t);
+        list.push(t);
       }
     }
 
@@ -119,7 +119,7 @@ window.Wisky3D = window.Wisky3D || {};
   }
 
   // Compartilhada por balde e seleção mágica: BFS a partir do triângulo
-  // clicado. `compararComOrigem` decide contra qual normal cada vizinho é
+  // clicado. `compareWithOrigin` decide contra qual normal cada vizinho é
   // comparado:
   //  - false (seleção mágica): compara com o vizinho imediato que o
   //    descobriu, não com a origem. Segue curvaturas suaves ao longo de
@@ -128,7 +128,7 @@ window.Wisky3D = window.Wisky3D || {};
   //    região fica presa a uma vizinhança realmente próxima do clique, sem a
   //    deriva acumulada de passo a passo que faria a mesma tolerância
   //    "vazar" por uma superfície curva inteira.
-  function floodFillByNormalTolerance(startTri, toleranceDeg, adjacency, faceNormals, triCount, compararComOrigem, filtroVisivel) {
+  function floodFillByNormalTolerance(startTri, toleranceDeg, adjacency, faceNormals, triCount, compareWithOrigin, visibleFilter) {
     // Pequena margem: normais de triângulos coplanares raramente são
     // bit-idênticas (erro de ponto flutuante do produto vetorial), então com
     // tolerância 0° o "dot >= 1" exato quase nunca passava mesmo entre
@@ -142,14 +142,14 @@ window.Wisky3D = window.Wisky3D || {};
 
     while (stack.length) {
       const cur = stack.pop();
-      const cx = compararComOrigem ? origX : faceNormals[cur * 3];
-      const cy = compararComOrigem ? origY : faceNormals[cur * 3 + 1];
-      const cz = compararComOrigem ? origZ : faceNormals[cur * 3 + 2];
-      const vizinhos = adjacency[cur];
-      for (let i = 0; i < vizinhos.length; i++) {
-        const n = vizinhos[i];
+      const cx = compareWithOrigin ? origX : faceNormals[cur * 3];
+      const cy = compareWithOrigin ? origY : faceNormals[cur * 3 + 1];
+      const cz = compareWithOrigin ? origZ : faceNormals[cur * 3 + 2];
+      const neighbors = adjacency[cur];
+      for (let i = 0; i < neighbors.length; i++) {
+        const n = neighbors[i];
         if (visited[n]) continue;
-        if (filtroVisivel && !filtroVisivel.has(n)) continue;
+        if (visibleFilter && !visibleFilter.has(n)) continue;
         const nx = faceNormals[n * 3], ny = faceNormals[n * 3 + 1], nz = faceNormals[n * 3 + 2];
         const dot = cx * nx + cy * ny + cz * nz;
         if (dot >= toleranceCos) {
@@ -167,7 +167,7 @@ window.Wisky3D = window.Wisky3D || {};
     return [(v >> 16) & 255, (v >> 8) & 255, v & 255];
   }
 
-  function chaveRgb(r, g, b) {
+  function rgbKey(r, g, b) {
     return r + "," + g + "," + b;
   }
 
@@ -180,70 +180,70 @@ window.Wisky3D = window.Wisky3D || {};
   // cor do próprio slot 1 pela paleta), a cor default não teria nenhum uso
   // real no arquivo final, então ela é omitida e as cores pintadas ocupam
   // os slots a partir do 1.
-  function exportPalette(baseColors, triCount, corPadrao) {
-    const cores = [];
-    const indiceDaCorGlobal = new Map();
-    let temNaoPintado = false;
+  function exportPalette(baseColors, triCount, defaultColor) {
+    const colors = [];
+    const globalColorIndex = new Map();
+    let hasUnpainted = false;
     for (let t = 0; t < triCount; t++) {
       const r = baseColors[t * 3], g = baseColors[t * 3 + 1], b = baseColors[t * 3 + 2];
-      if (r === corPadrao[0] && g === corPadrao[1] && b === corPadrao[2]) {
-        temNaoPintado = true;
+      if (r === defaultColor[0] && g === defaultColor[1] && b === defaultColor[2]) {
+        hasUnpainted = true;
         continue;
       }
-      const chave = chaveRgb(r, g, b);
-      if (!indiceDaCorGlobal.has(chave)) {
-        indiceDaCorGlobal.set(chave, cores.length);
-        cores.push([r, g, b]);
+      const key = rgbKey(r, g, b);
+      if (!globalColorIndex.has(key)) {
+        globalColorIndex.set(key, colors.length);
+        colors.push([r, g, b]);
       }
     }
 
-    const paleta = temNaoPintado ? [corPadrao, ...cores] : cores.length ? cores : [corPadrao];
-    const offset = temNaoPintado ? 2 : 1;
-    const slotPorCor = new Map();
-    cores.forEach((c, i) => slotPorCor.set(chaveRgb(c[0], c[1], c[2]), i + offset));
+    const palette = hasUnpainted ? [defaultColor, ...colors] : colors.length ? colors : [defaultColor];
+    const offset = hasUnpainted ? 2 : 1;
+    const slotByColor = new Map();
+    colors.forEach((c, i) => slotByColor.set(rgbKey(c[0], c[1], c[2]), i + offset));
 
-    return { paleta, slotPorCor };
+    return { palette, slotByColor };
   }
 
   // Agrupa a cor de cada triângulo pelo arquivo e objeto do pacote 3MF de
   // onde ele veio: path -> objectId -> [{ localIndex, r, g, b }].
   function groupColorsByFile(triangleOrigins, baseColors, triCount) {
-    const porArquivo = new Map();
+    const byFile = new Map();
     for (let t = 0; t < triCount; t++) {
-      const origem = triangleOrigins[t];
-      if (!origem) continue;
-      let porObjeto = porArquivo.get(origem.path);
-      if (!porObjeto) {
-        porObjeto = new Map();
-        porArquivo.set(origem.path, porObjeto);
+      const origin = triangleOrigins[t];
+      if (!origin) continue;
+      let byObject = byFile.get(origin.path);
+      if (!byObject) {
+        byObject = new Map();
+        byFile.set(origin.path, byObject);
       }
-      let lista = porObjeto.get(origem.objectId);
-      if (!lista) {
-        lista = [];
-        porObjeto.set(origem.objectId, lista);
+      let list = byObject.get(origin.objectId);
+      if (!list) {
+        list = [];
+        byObject.set(origin.objectId, list);
       }
-      lista.push({
-        localIndex: origem.localIndex,
+      list.push({
+        localIndex: origin.localIndex,
         r: baseColors[t * 3],
         g: baseColors[t * 3 + 1],
         b: baseColors[t * 3 + 2]
       });
     }
-    return porArquivo;
+    return byFile;
   }
 
   // Formato esperado por ThreeMFWriter.buildModelFromScratch.
   function trianglesForExport(cornerExportIndex, baseColors, triCount) {
-    const triangulos = new Array(triCount);
+    const triangles = new Array(triCount);
     for (let t = 0; t < triCount; t++) {
-      triangulos[t] = {
+      triangles[t] = {
         v1: cornerExportIndex[t * 3],
         v2: cornerExportIndex[t * 3 + 1],
         v3: cornerExportIndex[t * 3 + 2],
         color: [baseColors[t * 3], baseColors[t * 3 + 1], baseColors[t * 3 + 2]]
       };
     }
-    return triangulos;
+    return triangles;
   }
 
   window.Wisky3D.ColorizeCalculations = {

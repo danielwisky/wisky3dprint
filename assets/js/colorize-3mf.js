@@ -7,14 +7,14 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 const root = document.getElementById("colorize3mf");
-const modulos = window.Wisky3D || {};
+const modules = window.Wisky3D || {};
 
-if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils && modulos.ColorizeCalculations)) {
-  const erroEl = document.getElementById("colorize3mf-error");
-  erroEl.textContent = "Não foi possível carregar a ferramenta. Recarregue a página e tente novamente.";
-  erroEl.hidden = false;
+if (root && !(modules.ModelParser && modules.ThreeMFWriter && modules.ToolUtils && modules.ColorizeCalculations)) {
+  const errorEl = document.getElementById("colorize3mf-error");
+  errorEl.textContent = "Não foi possível carregar a ferramenta. Recarregue a página e tente novamente.";
+  errorEl.hidden = false;
 } else if (root) {
-  const { ModelParser, ThreeMFWriter, ToolUtils, ColorizeCalculations } = modulos;
+  const { ModelParser, ThreeMFWriter, ToolUtils, ColorizeCalculations } = modules;
   const {
     buildGeometryData,
     computeFaceNormals,
@@ -27,36 +27,36 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
   const dropzone = document.getElementById("colorize3mf-dropzone");
   const upload = document.getElementById("colorize3mf-upload");
   const loadingEl = document.getElementById("colorize3mf-loading");
-  const erroEl = document.getElementById("colorize3mf-error");
-  const painel = document.getElementById("colorize3mf-panel");
+  const errorEl = document.getElementById("colorize3mf-error");
+  const panel = document.getElementById("colorize3mf-panel");
   const canvasEl = document.getElementById("colorize3mf-canvas");
-  const avisoGrandeEl = document.getElementById("colorize3mf-large-warning");
-  const avisoGrandeTextoEl = document.getElementById("colorize3mf-large-warning-text");
-  const avisoGrandeFecharBtn = document.getElementById("colorize3mf-large-warning-close");
-  const toolBaldeBtn = document.getElementById("colorize3mf-tool-bucket");
-  const toolMagicaBtn = document.getElementById("colorize3mf-tool-magic");
-  const toleranciaCampoEl = document.getElementById("colorize3mf-tolerance-field");
-  const toleranciaInput = document.getElementById("colorize3mf-tolerance");
-  const toleranciaValorEl = document.getElementById("colorize3mf-tolerance-value");
-  const paletaListaEl = document.getElementById("colorize3mf-palette-list");
-  const paletaAddBtn = document.getElementById("colorize3mf-palette-add");
-  const paletaNovaCorInput = document.getElementById("colorize3mf-palette-new-color");
-  const acoesSelecaoEl = document.getElementById("colorize3mf-selection-actions");
-  const selecaoContagemEl = document.getElementById("colorize3mf-selection-count");
-  const aplicarSelecaoBtn = document.getElementById("colorize3mf-apply-selection");
-  const limparSelecaoBtn = document.getElementById("colorize3mf-clear-selection");
-  const desfazerBtn = document.getElementById("colorize3mf-undo");
-  const resetarBtn = document.getElementById("colorize3mf-reset");
+  const largeWarningEl = document.getElementById("colorize3mf-large-warning");
+  const largeWarningTextEl = document.getElementById("colorize3mf-large-warning-text");
+  const largeWarningCloseBtn = document.getElementById("colorize3mf-large-warning-close");
+  const toolBucketBtn = document.getElementById("colorize3mf-tool-bucket");
+  const toolMagicBtn = document.getElementById("colorize3mf-tool-magic");
+  const toleranceFieldEl = document.getElementById("colorize3mf-tolerance-field");
+  const toleranceInput = document.getElementById("colorize3mf-tolerance");
+  const toleranceValueEl = document.getElementById("colorize3mf-tolerance-value");
+  const paletteListEl = document.getElementById("colorize3mf-palette-list");
+  const paletteAddBtn = document.getElementById("colorize3mf-palette-add");
+  const paletteNewColorInput = document.getElementById("colorize3mf-palette-new-color");
+  const selectionActionsEl = document.getElementById("colorize3mf-selection-actions");
+  const selectionCountEl = document.getElementById("colorize3mf-selection-count");
+  const applySelectionBtn = document.getElementById("colorize3mf-apply-selection");
+  const clearSelectionBtn = document.getElementById("colorize3mf-clear-selection");
+  const undoBtn = document.getElementById("colorize3mf-undo");
+  const resetBtn = document.getElementById("colorize3mf-reset");
   const exportBtn = document.getElementById("colorize3mf-export");
   const outEl = document.getElementById("colorize3mf-out");
-  const recentralizarBtn = document.getElementById("colorize3mf-recenter");
-  const abasEl = document.getElementById("colorize3mf-tabs");
+  const recenterBtn = document.getElementById("colorize3mf-recenter");
+  const tabsEl = document.getElementById("colorize3mf-tabs");
 
   const DEFAULT_COLOR = ThreeMFWriter.DEFAULT_COLOR;
   const HIGHLIGHT_COLOR = [255, 214, 51];
-  const AVISO_TRIANGULOS_GRANDE = 150000;
+  const LARGE_TRIANGLE_WARNING = 150000;
   const MAX_UNDO = 20;
-  const PALETA_PRESETS = ["#3fb6e8", "#ff6b4a", "#8b7cf6", "#5cd65c", "#ffd633", "#ff4fa3", "#4dd0e1", "#ffa726"];
+  const PALETTE_PRESETS = ["#3fb6e8", "#ff6b4a", "#8b7cf6", "#5cd65c", "#ffd633", "#ff4fa3", "#4dd0e1", "#ffa726"];
 
   const DEFAULT_COLOR_HEX = "#" + DEFAULT_COLOR.map(ThreeMFWriter.toHexByte).join("");
   // Tolerância fixa do balde: 0° exato só pega o triângulo clicado em malhas
@@ -65,10 +65,10 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
   // pintar nada". Um valor pequeno cobre essa variação natural sem invadir
   // faces realmente distintas (uma quina reta muda a normal bem mais que
   // isso).
-  const BALDE_TOLERANCIA_DEG = 8;
-  const cargas = ToolUtils.createSequencer();
+  const BUCKET_TOLERANCE_DEG = 8;
+  const loads = ToolUtils.createSequencer();
 
-  let currentTool = "balde";
+  let currentTool = "bucket";
   let renderer = null;
   let scene = null;
   let camera = null;
@@ -79,7 +79,7 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
   let state = null;
   // Exportação em andamento: as duas exportações gravariam no mesmo zip
   // (state.zip) ao mesmo tempo.
-  let exportando = false;
+  let exporting = false;
   /*
    * state = {
    *   fileName, triCount,
@@ -92,13 +92,13 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
    * }
    */
 
-  function mostrarErro(msg) {
-    erroEl.textContent = msg;
-    erroEl.hidden = !msg;
+  function showError(msg) {
+    errorEl.textContent = msg;
+    errorEl.hidden = !msg;
   }
 
-  function mostrarCarregando(ativo) {
-    loadingEl.hidden = !ativo;
+  function showLoading(active) {
+    loadingEl.hidden = !active;
   }
 
   // -------------------------------------------------------------------------
@@ -162,8 +162,8 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
     // Trackpads às vezes mandam deltaY muito grande num só evento; sem limite
     // por evento a câmera podia pular quase até (ou pra dentro) do modelo
     // numa scrollada só, o que "bugava" a visualização.
-    const passoZoom = THREE.MathUtils.clamp(e.deltaY * 0.0015 * zoomSpeed, -0.6, 0.6);
-    const factor = Math.exp(passoZoom);
+    const zoomStep = THREE.MathUtils.clamp(e.deltaY * 0.0015 * zoomSpeed, -0.6, 0.6);
+    const factor = Math.exp(zoomStep);
 
     // Câmera e alvo escalam juntos em torno do pivô pelo mesmo fator: a
     // distância câmera-alvo muda exatamente por "factor", sem depender da
@@ -179,11 +179,11 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
     // câmera sempre reorienta pro alvo, então o erro se acumulava até o
     // modelo sumir da tela.
     if (meshPivotWorld) {
-      const maxDistAlvoPivo = modelRadius * 1.5;
-      const alvoOffset = controls.target.clone().sub(meshPivotWorld);
-      const distAlvoPivo = alvoOffset.length();
-      if (distAlvoPivo > maxDistAlvoPivo) {
-        controls.target.copy(meshPivotWorld).addScaledVector(alvoOffset, maxDistAlvoPivo / distAlvoPivo);
+      const maxTargetPivotDist = modelRadius * 1.5;
+      const targetOffset = controls.target.clone().sub(meshPivotWorld);
+      const targetPivotDist = targetOffset.length();
+      if (targetPivotDist > maxTargetPivotDist) {
+        controls.target.copy(meshPivotWorld).addScaledVector(targetOffset, maxTargetPivotDist / targetPivotDist);
       }
     }
 
@@ -207,11 +207,11 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
 
   function resizeRenderer() {
     const wrap = canvasEl.parentElement;
-    const largura = wrap.clientWidth || 320;
-    const altura = Math.max(420, Math.round(largura * 0.72));
+    const width = wrap.clientWidth || 320;
+    const height = Math.max(420, Math.round(width * 0.72));
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.setSize(largura, altura, false);
-    camera.aspect = largura / altura;
+    renderer.setSize(width, height, false);
+    camera.aspect = width / height;
     camera.updateProjectionMatrix();
     needsRender = true;
   }
@@ -240,14 +240,14 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
     // circunscrita), evita a câmera atravessar a malha ao dar zoom demais.
     controls.minDistance = radius * 1.05;
     controls.maxDistance = radius * 8;
-    recentralizarVista();
+    recenterView();
   }
 
   // Reposiciona a câmera no enquadramento padrão, sem mexer no giro que o
   // usuário já deu no modelo, útil pra "se achar" de novo depois de perder o
   // objeto de vista com muito zoom/pan. meshPivotWorld é fixo desde a carga
   // do arquivo, então serve de referência estável mesmo com o objeto girado.
-  function recentralizarVista() {
+  function recenterView() {
     if (!mesh || !meshPivotWorld) return;
     const radius = modelRadius;
     camera.position.set(
@@ -295,34 +295,34 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
   // color picker nativo embutido pra editar a própria cor do slot.
   // -------------------------------------------------------------------------
 
-  function corAtivaHex() {
-    if (!state || !state.paleta.length) return PALETA_PRESETS[0];
-    return state.paleta[state.paletaAtivaIndex].hex;
+  function activeColorHex() {
+    if (!state || !state.palette.length) return PALETTE_PRESETS[0];
+    return state.palette[state.activePaletteIndex].hex;
   }
 
-  function renderPaleta() {
+  function renderPalette() {
     if (!state) return;
-    paletaListaEl.innerHTML = "";
-    state.paleta.forEach((cor, i) => {
+    paletteListEl.innerHTML = "";
+    state.palette.forEach((color, i) => {
       const slot = document.createElement("div");
-      slot.className = "colorize3mf-slot" + (i === state.paletaAtivaIndex ? " is-active" : "");
+      slot.className = "colorize3mf-slot" + (i === state.activePaletteIndex ? " is-active" : "");
 
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "colorize3mf-slot-btn";
-      btn.style.background = cor.hex;
+      btn.style.background = color.hex;
       btn.textContent = String(i + 1);
       btn.setAttribute("aria-label", "Usar cor " + (i + 1));
-      btn.setAttribute("aria-pressed", i === state.paletaAtivaIndex ? "true" : "false");
+      btn.setAttribute("aria-pressed", i === state.activePaletteIndex ? "true" : "false");
       btn.addEventListener("click", () => {
-        state.paletaAtivaIndex = i;
-        renderPaleta();
+        state.activePaletteIndex = i;
+        renderPalette();
       });
 
       const edit = document.createElement("input");
       edit.type = "color";
       edit.className = "colorize3mf-slot-edit";
-      edit.value = cor.hex;
+      edit.value = color.hex;
       edit.setAttribute("aria-label", "Editar cor " + (i + 1));
       edit.addEventListener("click", (e) => e.stopPropagation());
       // "input" dispara a cada movimento do seletor de cor, só atualiza a
@@ -334,19 +334,19 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
         btn.style.background = edit.value;
       });
       edit.addEventListener("change", () => {
-        const hexAntigo = cor.hex;
-        const hexNovo = edit.value;
-        cor.hex = hexNovo;
-        if (hexAntigo.toLowerCase() !== hexNovo.toLowerCase()) {
-          recolorirCor(hexToRgb(hexAntigo), hexToRgb(hexNovo));
+        const oldHex = color.hex;
+        const newHex = edit.value;
+        color.hex = newHex;
+        if (oldHex.toLowerCase() !== newHex.toLowerCase()) {
+          recolorColor(hexToRgb(oldHex), hexToRgb(newHex));
         }
-        renderPaleta();
+        renderPalette();
       });
 
       slot.appendChild(btn);
       slot.appendChild(edit);
 
-      if (state.paleta.length > 1) {
+      if (state.palette.length > 1) {
         const del = document.createElement("button");
         del.type = "button";
         del.className = "colorize3mf-slot-del";
@@ -354,61 +354,61 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
         del.setAttribute("aria-label", "Remover cor " + (i + 1));
         del.addEventListener("click", (e) => {
           e.stopPropagation();
-          recolorirCor(hexToRgb(cor.hex), DEFAULT_COLOR);
-          state.paleta.splice(i, 1);
-          if (state.paletaAtivaIndex >= state.paleta.length) state.paletaAtivaIndex = state.paleta.length - 1;
-          renderPaleta();
+          recolorColor(hexToRgb(color.hex), DEFAULT_COLOR);
+          state.palette.splice(i, 1);
+          if (state.activePaletteIndex >= state.palette.length) state.activePaletteIndex = state.palette.length - 1;
+          renderPalette();
         });
         slot.appendChild(del);
       }
 
-      paletaListaEl.appendChild(slot);
+      paletteListEl.appendChild(slot);
     });
   }
 
   function pushUndo() {
     state.undoStack.push(state.baseColors.slice());
     if (state.undoStack.length > MAX_UNDO) state.undoStack.shift();
-    desfazerBtn.disabled = false;
+    undoBtn.disabled = false;
   }
 
   function undo() {
     if (!state || !state.undoStack.length) return;
     state.baseColors = state.undoStack.pop();
     refreshColorBuffer();
-    desfazerBtn.disabled = state.undoStack.length === 0;
+    undoBtn.disabled = state.undoStack.length === 0;
   }
 
   function paintTriangles(triList, rgb) {
     pushUndo();
-    const pintar = (t) => {
+    const paint = (t) => {
       state.baseColors[t * 3] = rgb[0];
       state.baseColors[t * 3 + 1] = rgb[1];
       state.baseColors[t * 3 + 2] = rgb[2];
     };
     for (let i = 0; i < triList.length; i++) {
-      pintar(triList[i]);
-      if (state.copias) ModelParser.forEachCopy(state.copias, triList[i], pintar);
+      paint(triList[i]);
+      if (state.copies) ModelParser.forEachCopy(state.copies, triList[i], paint);
     }
     refreshColorBuffer();
   }
 
-  // Troca em lote: acha todo triângulo já pintado com "de" e repinta com
-  // "para". Usado ao editar a cor de um slot da paleta, pra que a mudança
+  // Troca em lote: acha todo triângulo já pintado com "from" e repinta com
+  // "to". Usado ao editar a cor de um slot da paleta, pra que a mudança
   // valha pras áreas já pintadas com a cor antiga, não só pras próximas.
-  function recolorirCor(de, para) {
+  function recolorColor(from, to) {
     if (!state) return;
-    const alvo = [];
+    const targets = [];
     for (let t = 0; t < state.triCount; t++) {
       if (
-        state.baseColors[t * 3] === de[0] &&
-        state.baseColors[t * 3 + 1] === de[1] &&
-        state.baseColors[t * 3 + 2] === de[2]
+        state.baseColors[t * 3] === from[0] &&
+        state.baseColors[t * 3 + 1] === from[1] &&
+        state.baseColors[t * 3 + 2] === from[2]
       ) {
-        alvo.push(t);
+        targets.push(t);
       }
     }
-    if (alvo.length) paintTriangles(alvo, para);
+    if (targets.length) paintTriangles(targets, to);
   }
 
   // -------------------------------------------------------------------------
@@ -417,14 +417,14 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
 
   function setTool(tool) {
     currentTool = tool;
-    toolBaldeBtn.classList.toggle("is-active", tool === "balde");
-    toolBaldeBtn.setAttribute("aria-checked", tool === "balde" ? "true" : "false");
-    toolMagicaBtn.classList.toggle("is-active", tool === "magica");
-    toolMagicaBtn.setAttribute("aria-checked", tool === "magica" ? "true" : "false");
-    acoesSelecaoEl.hidden = tool !== "magica";
+    toolBucketBtn.classList.toggle("is-active", tool === "bucket");
+    toolBucketBtn.setAttribute("aria-checked", tool === "bucket" ? "true" : "false");
+    toolMagicBtn.classList.toggle("is-active", tool === "magic");
+    toolMagicBtn.setAttribute("aria-checked", tool === "magic" ? "true" : "false");
+    selectionActionsEl.hidden = tool !== "magic";
     // Tolerância só faz sentido pra seleção mágica (agrupar curvas em vários
     // cliques); o balde sempre pinta só a face plana clicada (tolerância 0).
-    toleranciaCampoEl.hidden = tool !== "magica";
+    toleranceFieldEl.hidden = tool !== "magic";
     if (state && state.selection.size) {
       state.selection.clear();
       refreshColorBuffer();
@@ -435,46 +435,46 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
   function updateSelectionUI() {
     if (!state) return;
     const n = state.selection.size;
-    selecaoContagemEl.textContent = n
+    selectionCountEl.textContent = n
       ? n + (n === 1 ? " triângulo selecionado" : " triângulos selecionados")
       : "Nenhuma seleção ainda";
-    aplicarSelecaoBtn.disabled = n === 0;
-    limparSelecaoBtn.disabled = n === 0;
+    applySelectionBtn.disabled = n === 0;
+    clearSelectionBtn.disabled = n === 0;
   }
 
   // -------------------------------------------------------------------------
   // Abas de chapa (3MF multi-plate): barra "Todos" + uma aba por chapa. Fica
-  // oculta quando o arquivo não tem metadado de chapa (state.chapas === null,
+  // oculta quando o arquivo não tem metadado de chapa (state.plates === null,
   // o caso mais comum hoje: STL ou 3MF de uma chapa só), preservando o
   // comportamento anterior à risca.
   // -------------------------------------------------------------------------
 
-  function renderAbasChapa() {
-    if (!state || !state.chapas) {
-      abasEl.hidden = true;
-      abasEl.innerHTML = "";
+  function renderPlateTabs() {
+    if (!state || !state.plates) {
+      tabsEl.hidden = true;
+      tabsEl.innerHTML = "";
       return;
     }
 
-    abasEl.innerHTML = "";
-    abasEl.hidden = false;
+    tabsEl.innerHTML = "";
+    tabsEl.hidden = false;
 
-    function criarAba(indice, rotulo) {
-      const ativa = state.chapaAtivaIndice === indice;
+    function createTab(index, label) {
+      const active = state.activePlateIndex === index;
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "colorize3mf-tab" + (ativa ? " is-active" : "");
+      btn.className = "colorize3mf-tab" + (active ? " is-active" : "");
       btn.setAttribute("role", "tab");
-      btn.setAttribute("aria-selected", ativa ? "true" : "false");
-      btn.dataset.chapa = indice === null ? "" : String(indice);
-      btn.textContent = rotulo;
-      btn.addEventListener("click", () => setChapaAtiva(indice));
+      btn.setAttribute("aria-selected", active ? "true" : "false");
+      btn.dataset.plate = index === null ? "" : String(index);
+      btn.textContent = label;
+      btn.addEventListener("click", () => setActivePlate(index));
       return btn;
     }
 
-    abasEl.appendChild(criarAba(null, "Todos"));
-    state.chapas.forEach((chapa) => {
-      abasEl.appendChild(criarAba(chapa.index, "Modelo " + chapa.index));
+    tabsEl.appendChild(createTab(null, "Todos"));
+    state.plates.forEach((plate) => {
+      tabsEl.appendChild(createTab(plate.index, "Modelo " + plate.index));
     });
   }
 
@@ -483,21 +483,21 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
   // zero -> invisível e não raycastável de forma útil). Não mexe em
   // baseColors/cor nem na câmera: trocar de aba não perde pintura já feita
   // nem reseta o enquadramento que o usuário escolheu.
-  function aplicarFiltroDeVisibilidade() {
+  function applyVisibilityFilter() {
     if (!state) return;
     const posArr = state.geometry.attributes.position.array;
 
-    if (state.chapaAtivaIndice === null || !state.chapas) {
-      posArr.set(state.positionsOriginais);
+    if (state.activePlateIndex === null || !state.plates) {
+      posArr.set(state.originalPositions);
     } else {
-      const visiveis = state.triangulosPorChapa && state.triangulosPorChapa.get(state.chapaAtivaIndice);
+      const visible = state.trianglesByPlate && state.trianglesByPlate.get(state.activePlateIndex);
       const pivotX = meshPivotLocal ? meshPivotLocal.x : 0;
       const pivotY = meshPivotLocal ? meshPivotLocal.y : 0;
       const pivotZ = meshPivotLocal ? meshPivotLocal.z : 0;
       for (let t = 0; t < state.triCount; t++) {
         const base = t * 9;
-        if (visiveis && visiveis.has(t)) {
-          for (let i = 0; i < 9; i++) posArr[base + i] = state.positionsOriginais[base + i];
+        if (visible && visible.has(t)) {
+          for (let i = 0; i < 9; i++) posArr[base + i] = state.originalPositions[base + i];
         } else {
           for (let c = 0; c < 3; c++) {
             posArr[base + c * 3] = pivotX;
@@ -513,19 +513,19 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
     needsRender = true;
   }
 
-  // Bbox (em espaço local, a partir das posições reais em positionsOriginais)
-  // dos triângulos da chapa `indice`, usado só pra enquadrar a câmera nela.
-  function computeChapaPivotERaio(indice) {
-    const visiveis = state.triangulosPorChapa && state.triangulosPorChapa.get(indice);
-    if (!visiveis || !visiveis.size) return null;
+  // Bbox (em espaço local, a partir das posições reais em originalPositions)
+  // dos triângulos da chapa `index`, usado só pra enquadrar a câmera nela.
+  function computePlatePivotAndRadius(index) {
+    const visible = state.trianglesByPlate && state.trianglesByPlate.get(index);
+    if (!visible || !visible.size) return null;
     let minX = Infinity, minY = Infinity, minZ = Infinity;
     let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
-    visiveis.forEach((t) => {
+    visible.forEach((t) => {
       const base = t * 9;
       for (let c = 0; c < 3; c++) {
-        const x = state.positionsOriginais[base + c * 3];
-        const y = state.positionsOriginais[base + c * 3 + 1];
-        const z = state.positionsOriginais[base + c * 3 + 2];
+        const x = state.originalPositions[base + c * 3];
+        const y = state.originalPositions[base + c * 3 + 1];
+        const z = state.originalPositions[base + c * 3 + 2];
         if (x < minX) minX = x;
         if (x > maxX) maxX = x;
         if (y < minY) minY = y;
@@ -539,43 +539,43 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
     return { pivotLocal, radius };
   }
 
-  // Reenquadra a câmera na chapa ativa (ou no modelo inteiro, se `indice` for
+  // Reenquadra a câmera na chapa ativa (ou no modelo inteiro, se `index` for
   // null), reaproveitando o mesmo esquema de near/far/min/maxDistance de
   // frameCameraToGeometry. Também move o pivô do trackball (meshPivotLocal/
   // meshPivotWorld) pra chapa em foco, senão o clamp de deriva do zoom (que
   // usa meshPivotWorld como referência) prenderia a câmera perto do centro do
   // modelo inteiro mesmo com uma chapa distante em foco.
-  function atualizarFocoDaChapa(indice) {
+  function updatePlateFocus(index) {
     mesh.updateMatrixWorld(true);
-    let pivotLocalNovo = state.pivotLocalTodos;
-    let raioNovo = state.radiusTodos;
-    if (indice !== null) {
-      const foco = computeChapaPivotERaio(indice);
-      if (foco) {
-        pivotLocalNovo = foco.pivotLocal;
-        raioNovo = foco.radius;
+    let newPivotLocal = state.pivotLocalAll;
+    let newRadius = state.radiusAll;
+    if (index !== null) {
+      const focus = computePlatePivotAndRadius(index);
+      if (focus) {
+        newPivotLocal = focus.pivotLocal;
+        newRadius = focus.radius;
       }
     }
-    meshPivotLocal = pivotLocalNovo.clone();
-    meshPivotWorld = mesh.localToWorld(pivotLocalNovo.clone());
-    modelRadius = raioNovo;
+    meshPivotLocal = newPivotLocal.clone();
+    meshPivotWorld = mesh.localToWorld(newPivotLocal.clone());
+    modelRadius = newRadius;
     camera.near = Math.max(modelRadius / 100, 0.01);
     camera.far = modelRadius * 20;
     camera.updateProjectionMatrix();
     controls.minDistance = modelRadius * 1.05;
     controls.maxDistance = modelRadius * 8;
-    recentralizarVista();
+    recenterView();
   }
 
-  function setChapaAtiva(indice) {
+  function setActivePlate(index) {
     if (!state) return;
-    state.chapaAtivaIndice = indice;
+    state.activePlateIndex = index;
     if (state.selection.size) {
       state.selection.clear();
     }
-    aplicarFiltroDeVisibilidade();
-    atualizarFocoDaChapa(indice);
-    renderAbasChapa();
+    applyVisibilityFilter();
+    updatePlateFocus(index);
+    renderPlateTabs();
     refreshColorBuffer();
     updateSelectionUI();
   }
@@ -682,21 +682,21 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
     if (!hits.length) return;
 
     const triIndex = hits[0].faceIndex;
-    const isBalde = currentTool === "balde";
+    const isBucket = currentTool === "bucket";
     // Balde usa uma tolerância pequena fixa (não o slider, que é só da seleção
     // mágica) comparada sempre contra a normal do triângulo clicado. Cobre a
     // face plana clicada (e a granularidade fina de malhas orgânicas) sem
     // vazar pras faces vizinhas nem depender de deriva acumulada.
-    const toleranceDeg = isBalde ? BALDE_TOLERANCIA_DEG : Number(toleranciaInput.value);
-    const filtroVisivel = state.chapaAtivaIndice !== null && state.triangulosPorChapa
-      ? state.triangulosPorChapa.get(state.chapaAtivaIndice)
+    const toleranceDeg = isBucket ? BUCKET_TOLERANCE_DEG : Number(toleranceInput.value);
+    const visibleFilter = state.activePlateIndex !== null && state.trianglesByPlate
+      ? state.trianglesByPlate.get(state.activePlateIndex)
       : null;
-    const regiao = floodFillByNormalTolerance(triIndex, toleranceDeg, state.adjacency, state.faceNormals, state.triCount, isBalde, filtroVisivel);
+    const region = floodFillByNormalTolerance(triIndex, toleranceDeg, state.adjacency, state.faceNormals, state.triCount, isBucket, visibleFilter);
 
-    if (currentTool === "balde") {
-      paintTriangles(regiao, hexToRgb(corAtivaHex()));
+    if (currentTool === "bucket") {
+      paintTriangles(region, hexToRgb(activeColorHex()));
     } else {
-      regiao.forEach((t) => state.selection.add(t));
+      region.forEach((t) => state.selection.add(t));
       refreshColorBuffer();
       updateSelectionUI();
     }
@@ -706,7 +706,7 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
   // Carregar STL e montar o estado/viewer
   // -------------------------------------------------------------------------
 
-  function criarGeometria(positions, faceNormals, triCount) {
+  function createGeometry(positions, faceNormals, triCount) {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
     geometry.setAttribute("normal", new THREE.BufferAttribute(expandFaceNormalsToCorners(faceNormals, triCount), 3));
@@ -714,7 +714,7 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
     return geometry;
   }
 
-  function trocarMesh(geometry) {
+  function replaceMesh(geometry) {
     const material = new THREE.MeshStandardMaterial({
       vertexColors: true,
       roughness: 0.65,
@@ -739,7 +739,7 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
     updateMeshPivotPosition();
   }
 
-  function coresIniciais(triCount) {
+  function initialColors(triCount) {
     const baseColors = new Uint8ClampedArray(triCount * 3);
     for (let i = 0; i < triCount; i++) {
       baseColors[i * 3] = DEFAULT_COLOR[0];
@@ -751,130 +751,130 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
 
   // mapTrianglesToPlates devolve arrays (ordem de varredura); aqui
   // viram Set pra permitir teste O(1) de pertencimento tanto no filtro de
-  // visibilidade (aplicarFiltroDeVisibilidade) quanto no BFS de
+  // visibilidade (applyVisibilityFilter) quanto no BFS de
   // balde/seleção mágica (floodFillByNormalTolerance).
-  function triangulosPorChapa(triangleOrigins, chapas) {
-    if (!chapas) return null;
-    const porChapa = new Map();
-    ModelParser.mapTrianglesToPlates(triangleOrigins, chapas).forEach((lista, indice) => {
-      porChapa.set(indice, new Set(lista));
+  function trianglesByPlate(triangleOrigins, plates) {
+    if (!plates) return null;
+    const byPlate = new Map();
+    ModelParser.mapTrianglesToPlates(triangleOrigins, plates).forEach((list, index) => {
+      byPlate.set(index, new Set(list));
     });
-    return porChapa;
+    return byPlate;
   }
 
-  function atualizarAvisoModeloGrande(triCount) {
-    const grande = triCount >= AVISO_TRIANGULOS_GRANDE;
-    avisoGrandeEl.hidden = !grande;
-    if (grande) {
-      avisoGrandeTextoEl.textContent = "Modelo com " + triCount.toLocaleString("pt-BR") + " triângulos, pintar regiões grandes pode ficar um pouco mais lento.";
+  function updateLargeModelWarning(triCount) {
+    const large = triCount >= LARGE_TRIANGLE_WARNING;
+    largeWarningEl.hidden = !large;
+    if (large) {
+      largeWarningTextEl.textContent = "Modelo com " + triCount.toLocaleString("pt-BR") + " triângulos, pintar regiões grandes pode ficar um pouco mais lento.";
     }
   }
 
-  function buildState(triangulos, fileName, origem) {
+  function buildState(triangles, fileName, origin) {
     initSceneOnce();
 
-    const { triCount, positions } = buildGeometryData(triangulos);
+    const { triCount, positions } = buildGeometryData(triangles);
     // Cópia imutável das posições reais, capturada antes de qualquer filtro de
-    // visibilidade por chapa (ver aplicarFiltroDeVisibilidade): é a fonte de
+    // visibilidade por chapa (ver applyVisibilityFilter): é a fonte de
     // verdade usada tanto para restaurar "Todos" quanto para reescrever, na
     // troca de aba, os 9 floats de cada triângulo visível.
-    const positionsOriginais = positions.slice();
+    const originalPositions = positions.slice();
     const faceNormals = computeFaceNormals(positions, triCount);
     const { adjacency, exportVertices, cornerExportIndex } = buildAdjacencyAndExportIndex(positions, triCount);
-    const geometry = criarGeometria(positions, faceNormals, triCount);
-    trocarMesh(geometry);
+    const geometry = createGeometry(positions, faceNormals, triCount);
+    replaceMesh(geometry);
 
-    const triangleOrigins = (origem && origem.origins) || null;
-    // Chapas (plates) detectadas num 3MF multi-plate (ver detectarChapas em
-    // processarArquivo); null quando o arquivo não tem esse metadado (STL,
+    const triangleOrigins = (origin && origin.origins) || null;
+    // Chapas (plates) detectadas num 3MF multi-plate (ver detectPlates em
+    // processFile); null quando o arquivo não tem esse metadado (STL,
     // 3MF single-plate).
-    const chapas = (origem && origem.chapas) || null;
+    const plates = (origin && origin.plates) || null;
 
     state = {
       fileName,
       triCount,
       faceNormals,
       adjacency,
-      baseColors: coresIniciais(triCount),
+      baseColors: initialColors(triCount),
       selection: new Set(),
       geometry,
       cornerExportIndex,
       exportVertices,
       undoStack: [],
-      positionsOriginais,
+      originalPositions,
       // O slot 1 começa com a mesma cor cinza do "não pintado" (DEFAULT_COLOR).
       // Assim dá pra recolorir de uma vez toda a área ainda não pintada só
       // trocando a cor desse slot (mesmo mecanismo de replace do editor de
       // paleta), sem precisar pintar triângulo por triângulo.
-      paleta: [{ hex: DEFAULT_COLOR_HEX }],
-      paletaAtivaIndex: 0,
+      palette: [{ hex: DEFAULT_COLOR_HEX }],
+      activePaletteIndex: 0,
       // Presentes só quando o arquivo original é um .3mf: permitem, na
       // exportação, remendar o pacote original (preservando Metadata/,
       // thumbnails etc.) em vez de reconstruir tudo do zero.
       triangleOrigins,
-      zip: (origem && origem.zip) || null,
+      zip: (origin && origin.zip) || null,
       // Cópias de uma mesma malha (o mesmo object em dois <item>) pintam
       // juntas: no 3MF exportado elas têm uma cor só (ver mapMeshCopies).
-      copias: triangleOrigins ? ModelParser.mapMeshCopies(triangleOrigins) : null,
-      chapas,
-      chapaAtivaIndice: null, // null = "Todos"
-      triangulosPorChapa: triangulosPorChapa(triangleOrigins, chapas)
+      copies: triangleOrigins ? ModelParser.mapMeshCopies(triangleOrigins) : null,
+      plates,
+      activePlateIndex: null, // null = "Todos"
+      trianglesByPlate: trianglesByPlate(triangleOrigins, plates)
     };
 
-    renderPaleta();
+    renderPalette();
     refreshColorBuffer();
     frameCameraToGeometry();
     // Snapshot do pivô/raio de "Todos" (modelo inteiro), capturado logo após
     // frameCameraToGeometry (que os calculou a partir da geometria ainda sem
-    // filtro nenhum aplicado) — usado por atualizarFocoDaChapa pra voltar a
+    // filtro nenhum aplicado) — usado por updatePlateFocus pra voltar a
     // esse enquadramento sempre que o usuário volta pra aba "Todos".
-    state.pivotLocalTodos = meshPivotLocal.clone();
-    state.radiusTodos = modelRadius;
-    renderAbasChapa();
-    atualizarAvisoModeloGrande(triCount);
+    state.pivotLocalAll = meshPivotLocal.clone();
+    state.radiusAll = modelRadius;
+    renderPlateTabs();
+    updateLargeModelWarning(triCount);
 
-    exportBtn.disabled = exportando;
-    resetarBtn.disabled = false;
-    desfazerBtn.disabled = true;
-    setTool("balde");
+    exportBtn.disabled = exporting;
+    resetBtn.disabled = false;
+    undoBtn.disabled = true;
+    setTool("bucket");
     outEl.textContent = "";
   }
 
   // Erro de modelo grande demais: a mensagem vai inteira para o usuário (ver
-  // processarArquivo), em vez do "não foi possível ler esse arquivo".
-  function erroDeLimite(qtd) {
-    const erro = new Error("Modelo muito complexo para pintar no navegador (" + qtd.toLocaleString("pt-BR") + " triângulos, máx. " + (ToolUtils.MAX_TRIANGLES / 1e6).toLocaleString("pt-BR") + " milhões). Tente simplificar a malha.");
-    erro.limite = true;
-    return erro;
+  // processFile), em vez do "não foi possível ler esse arquivo".
+  function limitError(count) {
+    const error = new Error("Modelo muito complexo para pintar no navegador (" + count.toLocaleString("pt-BR") + " triângulos, máx. " + (ToolUtils.MAX_TRIANGLES / 1e6).toLocaleString("pt-BR") + " milhões). Tente simplificar a malha.");
+    error.limit = true;
+    return error;
   }
 
   // Conta os triângulos antes de montar a malha: estourar o limite depois de
   // alocar milhões de arrays já poderia travar a aba.
-  function extrairTriangulosDoArquivo(file) {
+  function extractTrianglesFromFile(file) {
     if (/\.stl$/i.test(file.name)) {
       return file.arrayBuffer().then((buffer) => {
-        const qtd = ModelParser.countTrianglesSTL(buffer);
-        if (qtd > ToolUtils.MAX_TRIANGLES) throw erroDeLimite(qtd);
-        return { triangulos: ModelParser.parseSTL(buffer), origins: null, zip: null };
+        const count = ModelParser.countTrianglesSTL(buffer);
+        if (count > ToolUtils.MAX_TRIANGLES) throw limitError(count);
+        return { triangles: ModelParser.parseSTL(buffer), origins: null, zip: null };
       });
     }
 
-    return ToolUtils.read3MFPackage(file).then((pacote) => {
-      if (!pacote.modelText) throw new Error("3dmodel.model não encontrado no pacote 3MF");
+    return ToolUtils.read3MFPackage(file).then((pkg) => {
+      if (!pkg.modelText) throw new Error("3dmodel.model não encontrado no pacote 3MF");
       // Com modificadores ou bloqueadores de suporte, a contagem prévia (que
       // inclui as partes que a extração deixa de fora) poderia recusar um
       // modelo que cabe: fica só a checagem depois da extração.
-      if (ModelParser.hasNonSolidParts(pacote.modelSettingsText)) return pacote;
-      return ModelParser.countTriangles3MF(pacote.zip, pacote.modelText, pacote.modelPath).then((qtd) => {
-        if (qtd > ToolUtils.MAX_TRIANGLES) throw erroDeLimite(qtd);
-        return pacote;
+      if (ModelParser.hasNonSolidParts(pkg.modelSettingsText)) return pkg;
+      return ModelParser.countTriangles3MF(pkg.zip, pkg.modelText, pkg.modelPath).then((count) => {
+        if (count > ToolUtils.MAX_TRIANGLES) throw limitError(count);
+        return pkg;
       });
-    }).then((pacote) => {
-      return ModelParser.extractTriangles3MF(pacote.zip, pacote.modelText, pacote.modelPath, pacote.modelSettingsText).then((resultado) => ({
-        triangulos: resultado.triangles,
-        origins: resultado.origins,
-        zip: pacote.zip,
-        modelSettingsText: pacote.modelSettingsText
+    }).then((pkg) => {
+      return ModelParser.extractTriangles3MF(pkg.zip, pkg.modelText, pkg.modelPath, pkg.modelSettingsText).then((result) => ({
+        triangles: result.triangles,
+        origins: result.origins,
+        zip: pkg.zip,
+        modelSettingsText: pkg.modelSettingsText
       }));
     });
   }
@@ -884,52 +884,52 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
   // chapa a que pertence. Retorna null quando o arquivo não tem metadados de
   // chapa (STL, 3MF single-plate ou 3MF sem esse metadado), caso em que a
   // ferramenta continua se comportando como hoje (uma "chapa" implícita só).
-  function detectarChapas(modelSettingsText) {
+  function detectPlates(modelSettingsText) {
     if (!modelSettingsText) return null;
     const plateAssignments = ModelParser.parsePlateAssignments(modelSettingsText);
     if (!plateAssignments) return null;
-    return plateAssignments.map((objectIds, indice) => ({
-      index: indice + 1,
+    return plateAssignments.map((objectIds, index) => ({
+      index: index + 1,
       objectIds: new Set(objectIds)
     }));
   }
 
-  function processarArquivo(file) {
+  function processFile(file) {
     if (!file) return;
     if (!/\.(stl|3mf)$/i.test(file.name)) {
-      mostrarErro("Formato não suportado. Envie um arquivo .stl ou .3mf.");
+      showError("Formato não suportado. Envie um arquivo .stl ou .3mf.");
       return;
     }
 
-    const id = cargas.next();
-    mostrarErro("");
-    mostrarCarregando(true);
-    painel.hidden = true;
+    const id = loads.next();
+    showError("");
+    showLoading(true);
+    panel.hidden = true;
 
-    extrairTriangulosDoArquivo(file)
-      .then((resultado) => {
-        if (!cargas.isCurrent(id)) return;
-        if (!resultado.triangulos.length) throw new Error("nenhuma geometria encontrada no arquivo");
+    extractTrianglesFromFile(file)
+      .then((result) => {
+        if (!loads.isCurrent(id)) return;
+        if (!result.triangles.length) throw new Error("nenhuma geometria encontrada no arquivo");
         // A contagem prévia não multiplica objetos usados por dois <item>.
-        if (resultado.triangulos.length > ToolUtils.MAX_TRIANGLES) throw erroDeLimite(resultado.triangulos.length);
-        resultado.chapas = detectarChapas(resultado.modelSettingsText);
-        buildState(resultado.triangulos, file.name, resultado);
-        painel.hidden = false;
+        if (result.triangles.length > ToolUtils.MAX_TRIANGLES) throw limitError(result.triangles.length);
+        result.plates = detectPlates(result.modelSettingsText);
+        buildState(result.triangles, file.name, result);
+        panel.hidden = false;
         resizeRenderer();
         frameCameraToGeometry();
       })
       .catch((err) => {
-        if (!cargas.isCurrent(id)) return;
-        if (err && err.limite) {
-          mostrarErro(err.message);
+        if (!loads.isCurrent(id)) return;
+        if (err && err.limit) {
+          showError(err.message);
           return;
         }
         if (window.console && console.error) console.error("Colorir 3MF:", err);
-        const detalhe = err && err.message ? " (" + err.message + ")" : "";
-        mostrarErro("Não foi possível ler esse arquivo. Confirme que é um .stl ou .3mf válido." + detalhe);
+        const detail = err && err.message ? " (" + err.message + ")" : "";
+        showError("Não foi possível ler esse arquivo. Confirme que é um .stl ou .3mf válido." + detail);
       })
       .then(() => {
-        if (cargas.isCurrent(id)) mostrarCarregando(false);
+        if (loads.isCurrent(id)) showLoading(false);
       });
   }
 
@@ -940,14 +940,14 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
   // monta um pacote novo do zero.
   // -------------------------------------------------------------------------
 
-  function nomeArquivoSaida(nomeOriginal) {
-    return nomeOriginal.replace(/\.(stl|3mf)$/i, "") + "-colorido.3mf";
+  function outputFileName(originalName) {
+    return originalName.replace(/\.(stl|3mf)$/i, "") + "-colorido.3mf";
   }
 
-  function gerarEBaixar(zip, nomeSaida) {
+  function generateAndDownload(zip, outputName) {
     return zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } })
       .then((blob) => {
-        ModelParser.downloadBlob(blob, nomeSaida);
+        ModelParser.downloadBlob(blob, outputName);
         outEl.textContent = "3MF colorido baixado.";
       });
   }
@@ -955,22 +955,22 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
   // Reescreve project_settings.config com a paleta final. Resolve com o
   // número de slots de filamento gravados, ou null se o arquivo não existe
   // ou não pôde ser ajustado.
-  function atualizarProjectSettings(zip, paleta) {
+  function updateProjectSettings(zip, palette) {
     const configEntry = ModelParser.findUniqueFile(zip, "project_settings.config");
     if (!configEntry) return Promise.resolve(null);
-    return configEntry.async("text").then((texto) => {
+    return configEntry.async("text").then((text) => {
       try {
-        const novoCfg = ThreeMFWriter.rebuildProjectSettings(JSON.parse(texto), paleta);
-        if (!novoCfg) return null;
-        zip.file(configEntry.name, JSON.stringify(novoCfg, null, 4));
-        return novoCfg.filament_colour.length;
+        const newCfg = ThreeMFWriter.rebuildProjectSettings(JSON.parse(text), palette);
+        if (!newCfg) return null;
+        zip.file(configEntry.name, JSON.stringify(newCfg, null, 4));
+        return newCfg.filament_colour.length;
       } catch (e) {
         return null;
       }
     });
   }
 
-  function atualizarModelSettings(zip, numSlots) {
+  function updateModelSettings(zip, numSlots) {
     const entry = ModelParser.findUniqueFile(zip, "model_settings.config");
     if (!entry) return Promise.resolve();
     return entry.async("text").then((xmlText) => {
@@ -978,12 +978,12 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
     });
   }
 
-  function injetarCoresNosModelos(zip, porArquivo, slotPorCor) {
-    return Promise.all(Array.from(porArquivo.keys()).map((path) => {
+  function injectColorsIntoModels(zip, byFile, slotByColor) {
+    return Promise.all(Array.from(byFile.keys()).map((path) => {
       const entry = zip.file(path);
       if (!entry) return Promise.resolve();
       return entry.async("text").then((xmlText) => {
-        zip.file(path, ThreeMFWriter.injectColorsIntoXml(xmlText, porArquivo.get(path), slotPorCor));
+        zip.file(path, ThreeMFWriter.injectColorsIntoXml(xmlText, byFile.get(path), slotByColor));
       });
     }));
   }
@@ -993,93 +993,93 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
   // sem tocar em Metadata/, thumbnails ou qualquer outro arquivo do pacote,
   // evita o aviso de "configuração inválida" do Bambu Studio, que aparece
   // quando o pacote deixa de parecer um projeto legítimo.
-  function exportarModeloPreservandoPacote(nomeSaida) {
+  function exportModelPreservingPackage(outputName) {
     const zip = state.zip;
-    const porArquivo = ColorizeCalculations.groupColorsByFile(state.triangleOrigins, state.baseColors, state.triCount);
-    const { paleta, slotPorCor } = ColorizeCalculations.exportPalette(state.baseColors, state.triCount, DEFAULT_COLOR);
+    const byFile = ColorizeCalculations.groupColorsByFile(state.triangleOrigins, state.baseColors, state.triCount);
+    const { palette, slotByColor } = ColorizeCalculations.exportPalette(state.baseColors, state.triCount, DEFAULT_COLOR);
 
-    return atualizarProjectSettings(zip, paleta)
+    return updateProjectSettings(zip, palette)
       .then((numSlots) => Promise.all([
-        atualizarModelSettings(zip, numSlots),
-        injetarCoresNosModelos(zip, porArquivo, numSlots ? slotPorCor : null)
+        updateModelSettings(zip, numSlots),
+        injectColorsIntoModels(zip, byFile, numSlots ? slotByColor : null)
       ]))
-      .then(() => gerarEBaixar(zip, nomeSaida));
+      .then(() => generateAndDownload(zip, outputName));
   }
 
   // Caminho usado quando o arquivo de origem é um .stl (não existe pacote
   // 3MF original pra preservar): monta um .3mf novo do zero via JSZip.
-  function exportarModeloDoZero(nomeSaida) {
-    const triangulos = ColorizeCalculations.trianglesForExport(state.cornerExportIndex, state.baseColors, state.triCount);
+  function exportModelFromScratch(outputName) {
+    const triangles = ColorizeCalculations.trianglesForExport(state.cornerExportIndex, state.baseColors, state.triCount);
     const { modelXml, contentTypesXml, relsXml } = ThreeMFWriter.buildModelFromScratch([
-      { objectId: 2, vertices: state.exportVertices, triangles: triangulos }
+      { objectId: 2, vertices: state.exportVertices, triangles: triangles }
     ]);
 
     const zip = new JSZip();
     zip.file("[Content_Types].xml", contentTypesXml);
     zip.file("_rels/.rels", relsXml);
     zip.file("3D/3dmodel.model", modelXml);
-    return gerarEBaixar(zip, nomeSaida);
+    return generateAndDownload(zip, outputName);
   }
 
-  function exportarModelo() {
+  function exportModel() {
     outEl.textContent = "Gerando arquivo 3MF...";
     // Lido agora: se outro arquivo for carregado durante a exportação, state
     // passa a ser o dele.
-    const nomeSaida = nomeArquivoSaida(state.fileName);
-    if (state.zip && state.triangleOrigins) return exportarModeloPreservandoPacote(nomeSaida);
-    return exportarModeloDoZero(nomeSaida);
+    const outputName = outputFileName(state.fileName);
+    if (state.zip && state.triangleOrigins) return exportModelPreservingPackage(outputName);
+    return exportModelFromScratch(outputName);
   }
 
   // -------------------------------------------------------------------------
   // Eventos de UI
   // -------------------------------------------------------------------------
 
-  ToolUtils.bindDropzone(dropzone, upload, processarArquivo);
+  ToolUtils.bindDropzone(dropzone, upload, processFile);
 
-  toolBaldeBtn.addEventListener("click", () => setTool("balde"));
-  toolMagicaBtn.addEventListener("click", () => setTool("magica"));
+  toolBucketBtn.addEventListener("click", () => setTool("bucket"));
+  toolMagicBtn.addEventListener("click", () => setTool("magic"));
 
-  toleranciaInput.addEventListener("input", () => {
-    toleranciaValorEl.textContent = toleranciaInput.value + "°";
+  toleranceInput.addEventListener("input", () => {
+    toleranceValueEl.textContent = toleranceInput.value + "°";
   });
 
-  aplicarSelecaoBtn.addEventListener("click", () => {
+  applySelectionBtn.addEventListener("click", () => {
     if (!state || !state.selection.size) return;
-    const rgb = hexToRgb(corAtivaHex());
+    const rgb = hexToRgb(activeColorHex());
     const triList = Array.from(state.selection);
     state.selection.clear();
     paintTriangles(triList, rgb);
     updateSelectionUI();
   });
 
-  paletaAddBtn.addEventListener("click", () => {
+  paletteAddBtn.addEventListener("click", () => {
     if (!state) return;
     // O slot 1 (índice 0) é o cinza default, não um preset. Os presets
     // começam a valer a partir do primeiro slot adicionado.
-    paletaNovaCorInput.value = PALETA_PRESETS[(state.paleta.length - 1) % PALETA_PRESETS.length];
-    paletaNovaCorInput.click();
+    paletteNewColorInput.value = PALETTE_PRESETS[(state.palette.length - 1) % PALETTE_PRESETS.length];
+    paletteNewColorInput.click();
   });
 
-  paletaNovaCorInput.addEventListener("change", () => {
+  paletteNewColorInput.addEventListener("change", () => {
     if (!state) return;
-    state.paleta.push({ hex: paletaNovaCorInput.value });
-    state.paletaAtivaIndex = state.paleta.length - 1;
-    renderPaleta();
+    state.palette.push({ hex: paletteNewColorInput.value });
+    state.activePaletteIndex = state.palette.length - 1;
+    renderPalette();
   });
 
-  limparSelecaoBtn.addEventListener("click", () => {
+  clearSelectionBtn.addEventListener("click", () => {
     if (!state) return;
     state.selection.clear();
     refreshColorBuffer();
     updateSelectionUI();
   });
 
-  recentralizarBtn.addEventListener("click", () => recentralizarVista());
-  avisoGrandeFecharBtn.addEventListener("click", () => { avisoGrandeEl.hidden = true; });
+  recenterBtn.addEventListener("click", () => recenterView());
+  largeWarningCloseBtn.addEventListener("click", () => { largeWarningEl.hidden = true; });
 
-  desfazerBtn.addEventListener("click", () => undo());
+  undoBtn.addEventListener("click", () => undo());
 
-  resetarBtn.addEventListener("click", () => {
+  resetBtn.addEventListener("click", () => {
     if (!state) return;
     pushUndo();
     for (let i = 0; i < state.baseColors.length; i += 3) {
@@ -1093,24 +1093,24 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
   });
 
   exportBtn.addEventListener("click", () => {
-    if (!state || exportando) return;
+    if (!state || exporting) return;
     if (typeof JSZip === "undefined") {
       outEl.textContent = "Não foi possível carregar o gerador de 3MF. Verifique sua conexão e tente novamente.";
       return;
     }
-    exportando = true;
+    exporting = true;
     exportBtn.disabled = true;
     // Promise.resolve().then: um erro síncrono na montagem do arquivo (ex.:
     // string grande demais) também cai no catch, em vez de deixar o botão
     // desabilitado para sempre.
     Promise.resolve()
-      .then(exportarModelo)
+      .then(exportModel)
       .catch((err) => {
         if (window.console && console.error) console.error("Colorir 3MF:", err);
         outEl.textContent = "Não foi possível gerar o arquivo 3MF.";
       })
       .then(() => {
-        exportando = false;
+        exporting = false;
         exportBtn.disabled = !state;
       });
   });

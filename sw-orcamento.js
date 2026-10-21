@@ -13,7 +13,7 @@ permalink: /sw-orcamento.js
 // mesmo cache.
 {%- assign scripts = "price-formula,quote-calculations,model-parser,tool-utils,threemf-writer,colorize-calculations,quote,converter-3mf,colorize-3mf,pwa" | split: "," %}
 var CACHE_NAME = "orcamento-app{% for s in scripts %}-{{ '/assets/js/' | append: s | append: '.js' | asset_hash }}{% endfor %}-{{ '/assets/css/style.scss' | asset_hash }}-{{ '/assets/data/printer-profiles.json' | asset_hash }}";
-var TIMEOUT_REDE_MS = 3000;
+var NETWORK_TIMEOUT_MS = 3000;
 var URLS_TO_CACHE = [
   "{{ '/orcamento/' | relative_url }}",
   "{{ '/conversor-3mf/' | relative_url }}",
@@ -41,20 +41,20 @@ var CDN_URLS = [
 // Só o que está no precache, JS/CSS/dados do site e as libs de CDN entram no cache em tempo de
 // execução. Fotos (galeria, loja) e scripts de terceiros (Analytics) não
 // são necessários offline e encheriam o cache sem limite.
-var PREFIXOS_CACHEAVEIS = [
+var CACHEABLE_PREFIXES = [
   self.location.origin + "{{ '/assets/js/' | relative_url }}",
   self.location.origin + "{{ '/assets/css/' | relative_url }}",
   self.location.origin + "{{ '/assets/data/' | relative_url }}"
 ];
 
-var URLS_PRECACHE_SEM_QUERY = URLS_TO_CACHE.map(function (url) {
+var PRECACHE_URLS_WITHOUT_QUERY = URLS_TO_CACHE.map(function (url) {
   return self.location.origin + url.split("?")[0];
 });
 
-function ehCacheavel(url) {
-  if (CDN_URLS.indexOf(url) !== -1 || URLS_PRECACHE_SEM_QUERY.indexOf(url) !== -1) return true;
-  return PREFIXOS_CACHEAVEIS.some(function (prefixo) {
-    return url.indexOf(prefixo) === 0;
+function isCacheable(url) {
+  if (CDN_URLS.indexOf(url) !== -1 || PRECACHE_URLS_WITHOUT_QUERY.indexOf(url) !== -1) return true;
+  return CACHEABLE_PREFIXES.some(function (prefix) {
+    return url.indexOf(prefix) === 0;
   });
 }
 
@@ -104,42 +104,42 @@ self.addEventListener("fetch", function (event) {
     // ?fbclid etc. não acumulam cópias) e /orcamento/?acesso-vip acha a
     // /orcamento/ precacheada.
     var url = new URL(event.request.url);
-    var chave = url.origin + url.pathname;
-    var copia = null;
-    var rede = fetch(event.request).then(function (response) {
-      if (response && response.ok) copia = response.clone();
+    var cacheKey = url.origin + url.pathname;
+    var responseCopy = null;
+    var networkPromise = fetch(event.request).then(function (response) {
+      if (response && response.ok) responseCopy = response.clone();
       return response;
     });
 
     // Termina de gravar no cache mesmo se o timeout já respondeu com a cópia.
-    event.waitUntil(rede.then(function () {
-      if (!copia) return;
+    event.waitUntil(networkPromise.then(function () {
+      if (!responseCopy) return;
       return caches.open(CACHE_NAME).then(function (cache) {
-        return cache.put(chave, copia);
+        return cache.put(cacheKey, responseCopy);
       });
     }).catch(function () {}));
 
     event.respondWith(
       caches.open(CACHE_NAME).then(function (cache) {
-        function doCache() {
-          return cache.match(chave);
+        function fromCache() {
+          return cache.match(cacheKey);
         }
 
         var timeout = new Promise(function (resolve) {
           setTimeout(function () {
-            doCache().then(function (cached) {
+            fromCache().then(function (cached) {
               if (cached) resolve(cached);
             });
-          }, TIMEOUT_REDE_MS);
+          }, NETWORK_TIMEOUT_MS);
         });
 
-        return Promise.race([rede.catch(doCache), timeout]);
+        return Promise.race([networkPromise.catch(fromCache), timeout]);
       })
     );
     return;
   }
 
-  if (!ehCacheavel(event.request.url.split("?")[0])) return;
+  if (!isCacheable(event.request.url.split("?")[0])) return;
 
   event.respondWith(
     caches.open(CACHE_NAME).then(function (cache) {

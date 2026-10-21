@@ -6,21 +6,21 @@
     var form = document.getElementById("price-calc");
     if (!form) return;
 
-    var peso = document.getElementById("calc-weight");
-    var tempo = document.getElementById("calc-time");
+    var weightInput = document.getElementById("calc-weight");
+    var timeInput = document.getElementById("calc-time");
     var out = document.getElementById("calc-result");
-    var energiaInfo = document.getElementById("calc-result-energy");
-    var energiaValorOut = document.getElementById("calc-result-energy-value");
+    var energyInfo = document.getElementById("calc-result-energy");
+    var energyValueOut = document.getElementById("calc-result-energy-value");
     var d = form.dataset;
     var fmt = window.Wisky3D.currencyFormatter;
 
     function calc() {
-      var g = window.Wisky3D.parsePtBrNumber(peso.value);
-      var h = window.Wisky3D.parsePtBrNumber(tempo.value);
+      var g = window.Wisky3D.parsePtBrNumber(weightInput.value);
+      var h = window.Wisky3D.parsePtBrNumber(timeInput.value);
       if (!isFinite(g) || !isFinite(h) || g <= 0 || h <= 0) {
         out.textContent = "Preencha os campos";
         out.classList.remove("has-value");
-        energiaInfo.hidden = true;
+        energyInfo.hidden = true;
         return;
       }
       var base = window.Wisky3D.calculateBaseSubtotal({
@@ -34,8 +34,8 @@
       var total = base.subtotal * (1 + parseFloat(d.marginPct) / 100) + parseFloat(d.assembly);
       out.textContent = fmt.format(total);
       out.classList.add("has-value");
-      energiaValorOut.textContent = fmt.format(base.energy);
-      energiaInfo.hidden = false;
+      energyValueOut.textContent = fmt.format(base.energy);
+      energyInfo.hidden = false;
     }
 
     form.addEventListener("input", calc);
@@ -90,8 +90,8 @@
     allTriggers.forEach(function (trigger) {
       trigger.addEventListener("click", function () {
         // Só as fotos já reveladas (ver "carregar mais", abaixo) entram na navegação.
-        var visiveis = allTriggers.filter(isVisible);
-        var items = visiveis.map(function (t) {
+        var visibleTriggers = allTriggers.filter(isVisible);
+        var items = visibleTriggers.map(function (t) {
           return {
             src: t.dataset.galleryImage,
             alt: t.querySelector("img").alt,
@@ -100,7 +100,7 @@
             trigger: t
           };
         });
-        var startIndex = visiveis.indexOf(trigger);
+        var startIndex = visibleTriggers.indexOf(trigger);
         lightbox.open(items, startIndex < 0 ? 0 : startIndex, trigger);
       });
     });

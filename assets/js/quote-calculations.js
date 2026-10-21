@@ -11,14 +11,14 @@ window.Wisky3D = window.Wisky3D || {};
   // proporcional ao tempo de impressão (valor/vida útil × horas); senão
   // cai no valor fixo por impressão.
   function calculateWear(p) {
-    if (isFinite(p.valorMaquina) && p.valorMaquina > 0 && isFinite(p.vidaUtilH) && p.vidaUtilH > 0) {
-      return (p.valorMaquina / p.vidaUtilH) * p.horas;
+    if (isFinite(p.machineValue) && p.machineValue > 0 && isFinite(p.lifespanH) && p.lifespanH > 0) {
+      return (p.machineValue / p.lifespanH) * p.hours;
     }
-    return isFinite(p.desgasteFixo) ? p.desgasteFixo : p.desgastePadrao;
+    return isFinite(p.fixedWear) ? p.fixedWear : p.defaultWear;
   }
 
-  function unitTotalWithMargin(subtotalComPerda, margemPct, maoDeObra, embalagem, frete) {
-    return subtotalComPerda + subtotalComPerda * (margemPct / 100) + maoDeObra + embalagem + frete;
+  function unitTotalWithMargin(subtotalWithLoss, marginPct, labor, packaging, shipping) {
+    return subtotalWithLoss + subtotalWithLoss * (marginPct / 100) + labor + packaging + shipping;
   }
 
   // A perda/retrabalho é aplicada sobre o subtotal (filamento + energia +
@@ -26,56 +26,56 @@ window.Wisky3D = window.Wisky3D || {};
   // item. Embalagem e frete são valores de repasse: entram só no total
   // final, sem incidência de perda nem de margem de lucro.
   function calculateItem(e) {
-    var maoDeObra = e.horasManuais * e.valorHora;
+    var labor = e.manualHours * e.hourlyRate;
 
-    if (!isFinite(e.pesoG) || e.pesoG <= 0 || e.horas <= 0 || !isFinite(e.filamentoKg) || e.filamentoKg <= 0 || maoDeObra < 0 || e.margemPct < 0 || e.perdaPct < 0) {
+    if (!isFinite(e.weightG) || e.weightG <= 0 || e.hours <= 0 || !isFinite(e.filamentPricePerKg) || e.filamentPricePerKg <= 0 || labor < 0 || e.marginPct < 0 || e.lossPct < 0) {
       return null;
     }
 
     var base = window.Wisky3D.calculateBaseSubtotal({
-      weightG: e.pesoG,
-      hours: e.horas,
-      filamentPricePerKg: e.filamentoKg,
-      powerW: e.potenciaW,
-      kwhRate: e.tarifaKwh,
-      wear: e.desgaste
+      weightG: e.weightG,
+      hours: e.hours,
+      filamentPricePerKg: e.filamentPricePerKg,
+      powerW: e.powerW,
+      kwhRate: e.kwhRate,
+      wear: e.wear
     });
     var subtotal = base.subtotal + e.hardware;
-    var perda = subtotal * (e.perdaPct / 100);
-    var subtotalComPerda = subtotal + perda;
-    var unitTotal = unitTotalWithMargin(subtotalComPerda, e.margemPct, maoDeObra, e.embalagem, e.frete);
+    var loss = subtotal * (e.lossPct / 100);
+    var subtotalWithLoss = subtotal + loss;
+    var unitTotal = unitTotalWithMargin(subtotalWithLoss, e.marginPct, labor, e.packaging, e.shipping);
 
     return {
-      nome: e.nome,
-      qtd: e.qtd,
-      pesoG: e.pesoG,
-      tempoH: e.horas,
-      custoFilamento: base.filamentCost,
-      energia: base.energy,
-      desgaste: base.wear,
+      name: e.name,
+      quantity: e.quantity,
+      weightG: e.weightG,
+      timeH: e.hours,
+      filamentCost: base.filamentCost,
+      energy: base.energy,
+      wear: base.wear,
       hardware: e.hardware,
-      embalagem: e.embalagem,
-      frete: e.frete,
+      packaging: e.packaging,
+      shipping: e.shipping,
       subtotal: subtotal,
-      perda: perda,
-      perdaPct: e.perdaPct,
-      margem: subtotalComPerda * (e.margemPct / 100),
-      margemPct: e.margemPct,
-      horasManuais: e.horasManuais,
-      valorHora: e.valorHora,
-      maoDeObra: maoDeObra,
-      subtotalComPerda: subtotalComPerda,
+      loss: loss,
+      lossPct: e.lossPct,
+      margin: subtotalWithLoss * (e.marginPct / 100),
+      marginPct: e.marginPct,
+      manualHours: e.manualHours,
+      hourlyRate: e.hourlyRate,
+      labor: labor,
+      subtotalWithLoss: subtotalWithLoss,
       unitTotal: unitTotal,
-      itemTotal: unitTotal * e.qtd
+      itemTotal: unitTotal * e.quantity
     };
   }
 
-  // tipo "pct" aplica percentual; qualquer outro valor é desconto em reais.
+  // type "pct" aplica percentual; qualquer outro valor é desconto em reais.
   // Nunca passa do subtotal.
-  function calculateDiscount(subtotal, valor, tipo) {
-    if (!isFinite(valor) || valor <= 0) return 0;
-    var desconto = tipo === "pct" ? subtotal * (valor / 100) : valor;
-    return Math.min(desconto, subtotal);
+  function calculateDiscount(subtotal, value, type) {
+    if (!isFinite(value) || value <= 0) return 0;
+    var discount = type === "pct" ? subtotal * (value / 100) : value;
+    return Math.min(discount, subtotal);
   }
 
   // Volume "real" de material: a peça não é só infill uniforme, as paredes
@@ -83,31 +83,31 @@ window.Wisky3D = window.Wisky3D || {};
   // peças pequenas/finas, costumam pesar mais que o miolo. Aproxima a casca
   // como área de superfície × espessura de parede (nº de paredes × largura
   // de extrusão) e trata só o volume restante (o "miolo") como preenchido
-  // a infill_pct.
+  // a infillPct.
   function estimateWeightAndTime(p) {
-    var espessuraParede = p.paredes * p.larguraExtrusao;
-    var volumeCascaMm3 = Math.min(p.areaMm2 * espessuraParede, p.volumeMm3);
-    var volumeMioloMm3 = p.volumeMm3 - volumeCascaMm3;
-    var volumeMaterialMm3 = volumeCascaMm3 + volumeMioloMm3 * (p.infillPct / 100);
+    var wallThickness = p.walls * p.extrusionWidth;
+    var shellVolumeMm3 = Math.min(p.areaMm2 * wallThickness, p.volumeMm3);
+    var coreVolumeMm3 = p.volumeMm3 - shellVolumeMm3;
+    var materialVolumeMm3 = shellVolumeMm3 + coreVolumeMm3 * (p.infillPct / 100);
 
-    var nCamadas = Math.ceil(p.alturaModeloMm / p.alturaCamada);
-    var vazaoMm3S = p.velocidade * p.alturaCamada * p.larguraExtrusao;
-    var tempoTotalMin = vazaoMm3S > 0
-      ? (volumeMaterialMm3 / vazaoMm3S + nCamadas * p.overheadPorCamada) / 60
+    var layerCount = Math.ceil(p.modelHeightMm / p.layerHeight);
+    var flowMm3S = p.speed * p.layerHeight * p.extrusionWidth;
+    var totalMin = flowMm3S > 0
+      ? (materialVolumeMm3 / flowMm3S + layerCount * p.overheadPerLayer) / 60
       : 0;
 
     // Arredonda o total antes de separar em horas/minutos. Arredondar cada
     // parte isoladamente pode gerar "60min" (ex.: 179.6min viraria 2h 60min).
-    var tempoTotalMinArred = Math.round(tempoTotalMin);
+    var roundedTotalMin = Math.round(totalMin);
     return {
-      pesoG: (volumeMaterialMm3 / 1000) * p.densidade,
-      horas: Math.floor(tempoTotalMinArred / 60),
-      minutos: tempoTotalMinArred % 60
+      weightG: (materialVolumeMm3 / 1000) * p.density,
+      hours: Math.floor(roundedTotalMin / 60),
+      minutes: roundedTotalMin % 60
     };
   }
 
   function itemName(item, i) {
-    return item.nome || "Peça " + (i + 1);
+    return item.name || "Peça " + (i + 1);
   }
 
   function csvNum(n) {
@@ -119,34 +119,34 @@ window.Wisky3D = window.Wisky3D || {};
     return /[";\n]/.test(str) ? '"' + str.replace(/"/g, '""') + '"' : str;
   }
 
-  var CSV_CABECALHO = [
+  var CSV_HEADER = [
     "Peça", "Quantidade", "Filamento", "Energia", "Desgaste da máquina",
     "Peças e insumos", "Subtotal", "Perda (%)", "Perda",
     "Margem (%)", "Margem", "Horas manuais", "Valor da hora", "Mão de obra",
     "Embalagem", "Frete", "Valor unitário", "Valor total"
   ];
 
-  function generateCsv(itens) {
+  function generateCsv(items) {
     var total = 0;
-    var linhas = [CSV_CABECALHO];
+    var lines = [CSV_HEADER];
 
-    itens.forEach(function (item, i) {
+    items.forEach(function (item, i) {
       total += item.itemTotal;
-      linhas.push([itemName(item, i), item.qtd].concat([
-        item.custoFilamento, item.energia, item.desgaste, item.hardware,
-        item.subtotal, item.perdaPct, item.perda, item.margemPct, item.margem,
-        item.horasManuais, item.valorHora, item.maoDeObra, item.embalagem,
-        item.frete, item.unitTotal, item.itemTotal
+      lines.push([itemName(item, i), item.quantity].concat([
+        item.filamentCost, item.energy, item.wear, item.hardware,
+        item.subtotal, item.lossPct, item.loss, item.marginPct, item.margin,
+        item.manualHours, item.hourlyRate, item.labor, item.packaging,
+        item.shipping, item.unitTotal, item.itemTotal
       ].map(csvNum)));
     });
 
-    var linhaTotal = CSV_CABECALHO.map(function () { return ""; });
-    linhaTotal[0] = "Total geral";
-    linhaTotal[linhaTotal.length - 1] = csvNum(total);
-    linhas.push(linhaTotal);
+    var totalLine = CSV_HEADER.map(function () { return ""; });
+    totalLine[0] = "Total geral";
+    totalLine[totalLine.length - 1] = csvNum(total);
+    lines.push(totalLine);
 
-    return linhas.map(function (linha) {
-      return linha.map(csvField).join(";");
+    return lines.map(function (line) {
+      return line.map(csvField).join(";");
     }).join("\r\n");
   }
 

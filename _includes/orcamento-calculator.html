@@ -201,7 +201,7 @@
         <input type="text" id="quote-calc-discount-value" name="descontoValor" inputmode="decimal" autocomplete="off" placeholder="0">
         <select id="quote-calc-discount-type" name="descontoTipo">
           <option value="pct">%</option>
-          <option value="valor">R$</option>
+          <option value="amount">R$</option>
         </select>
         <input type="text" id="quote-calc-discount-text" name="descontoTexto" autocomplete="off" placeholder="Texto (opcional)">
       </div>
@@ -267,7 +267,7 @@
             {% for m in site.calculadora.densidades_g_cm3 %}
             <option value="{{ m[0] }}" data-density="{{ m[1] }}">{{ m[0] | upcase }}</option>
             {% endfor %}
-            <option value="outro" data-density="">Outro (informar densidade)</option>
+            <option value="other" data-density="">Outro (informar densidade)</option>
           </select>
         </div>
         <div class="calc-field" id="quote-calc-density-wrap" hidden>

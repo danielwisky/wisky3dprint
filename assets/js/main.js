@@ -51,27 +51,27 @@
 
     var btn = item.querySelector(".nav-link-dropdown");
 
-    function fechar() {
+    function close() {
       item.classList.remove("is-open");
       btn.setAttribute("aria-expanded", "false");
     }
 
-    function abrir() {
+    function open() {
       item.classList.add("is-open");
       btn.setAttribute("aria-expanded", "true");
     }
 
     btn.addEventListener("click", function (event) {
       event.stopPropagation();
-      if (item.classList.contains("is-open")) fechar(); else abrir();
+      if (item.classList.contains("is-open")) close(); else open();
     });
 
     document.addEventListener("click", function (event) {
-      if (!item.contains(event.target)) fechar();
+      if (!item.contains(event.target)) close();
     });
 
     document.addEventListener("keydown", function (event) {
-      if (event.key === "Escape") fechar();
+      if (event.key === "Escape") close();
     });
   })();
 
@@ -184,8 +184,8 @@
       config.onShow(items[idx], idx, items.length);
     }
 
-    function open(novosItens, startIndex, trigger) {
-      items = novosItens;
+    function open(newItems, startIndex, trigger) {
+      items = newItems;
       lastTrigger = trigger || null;
       showAt(startIndex || 0);
       box.hidden = false;
