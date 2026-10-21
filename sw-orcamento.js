@@ -11,7 +11,7 @@ permalink: /sw-orcamento.js
 // cache muda de nome e a limpeza no "activate" descarta a versão anterior
 // — sem isso, entradas com ?v=hash antigo ficariam acumuladas pra sempre no
 // mesmo cache.
-{%- assign scripts = "price-formula,orcamento-calculo,model-parser,tool-utils,threemf-writer,orcamento,conversor-3mf,colorir-3mf,pwa" | split: "," %}
+{%- assign scripts = "price-formula,orcamento-calculo,model-parser,tool-utils,threemf-writer,colorir-calculo,orcamento,conversor-3mf,colorir-3mf,pwa" | split: "," %}
 var CACHE_NAME = "orcamento-app{% for s in scripts %}-{{ '/assets/js/' | append: s | append: '.js' | asset_hash }}{% endfor %}-{{ '/assets/css/style.scss' | asset_hash }}-{{ '/assets/data/printer-profiles.json' | asset_hash }}";
 var TIMEOUT_REDE_MS = 3000;
 var URLS_TO_CACHE = [

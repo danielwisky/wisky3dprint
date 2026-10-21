@@ -9,12 +9,20 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 const root = document.getElementById("cor3mf");
 const modulos = window.Wisky3D || {};
 
-if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils)) {
+if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils && modulos.ColorirCalculo)) {
   const erroEl = document.getElementById("cor3mf-erro");
   erroEl.textContent = "Não foi possível carregar a ferramenta. Recarregue a página e tente novamente.";
   erroEl.hidden = false;
 } else if (root) {
-  const { ModelParser, ThreeMFWriter, ToolUtils } = modulos;
+  const { ModelParser, ThreeMFWriter, ToolUtils, ColorirCalculo } = modulos;
+  const {
+    buildGeometryData,
+    computeFaceNormals,
+    expandFaceNormalsToCorners,
+    buildAdjacencyAndExportIndex,
+    floodFillByNormalTolerance,
+    hexToRgb
+  } = ColorirCalculo;
 
   const dropzone = document.getElementById("cor3mf-dropzone");
   const upload = document.getElementById("cor3mf-upload");
@@ -253,161 +261,6 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils)
   }
 
   // -------------------------------------------------------------------------
-  // Geometria: STL bruto -> BufferGeometry não indexada (cor sólida por
-  // triângulo) + adjacência de triângulos + lista de vértices únicos pra
-  // exportação (independente da geometria não-indexada usada no viewer).
-  // -------------------------------------------------------------------------
-
-  function buildGeometryData(triangulos) {
-    const triCount = triangulos.length;
-    const positions = new Float32Array(triCount * 9);
-    for (let t = 0; t < triCount; t++) {
-      const tri = triangulos[t];
-      for (let c = 0; c < 3; c++) {
-        const base = t * 9 + c * 3;
-        positions[base] = tri[c][0];
-        positions[base + 1] = tri[c][1];
-        positions[base + 2] = tri[c][2];
-      }
-    }
-    return { triCount, positions };
-  }
-
-  function computeFaceNormals(positions, triCount) {
-    const normals = new Float32Array(triCount * 3);
-    for (let t = 0; t < triCount; t++) {
-      const b = t * 9;
-      const p0x = positions[b], p0y = positions[b + 1], p0z = positions[b + 2];
-      const p1x = positions[b + 3], p1y = positions[b + 4], p1z = positions[b + 5];
-      const p2x = positions[b + 6], p2y = positions[b + 7], p2z = positions[b + 8];
-      const ux = p1x - p0x, uy = p1y - p0y, uz = p1z - p0z;
-      const vx = p2x - p0x, vy = p2y - p0y, vz = p2z - p0z;
-      let nx = uy * vz - uz * vy;
-      let ny = uz * vx - ux * vz;
-      let nz = ux * vy - uy * vx;
-      const len = Math.hypot(nx, ny, nz) || 1;
-      nx /= len; ny /= len; nz /= len;
-      normals[t * 3] = nx;
-      normals[t * 3 + 1] = ny;
-      normals[t * 3 + 2] = nz;
-    }
-    return normals;
-  }
-
-  function expandFaceNormalsToCorners(faceNormals, triCount) {
-    const out = new Float32Array(triCount * 9);
-    for (let t = 0; t < triCount; t++) {
-      const nx = faceNormals[t * 3], ny = faceNormals[t * 3 + 1], nz = faceNormals[t * 3 + 2];
-      for (let c = 0; c < 3; c++) {
-        const base = t * 9 + c * 3;
-        out[base] = nx;
-        out[base + 1] = ny;
-        out[base + 2] = nz;
-      }
-    }
-    return out;
-  }
-
-  // Dá pra ter até 3 vizinhos por triângulo (um por aresta). Vértices são
-  // "soldados" por posição quantizada pra achar arestas compartilhadas, já
-  // que a geometria do viewer não compartilha vértices entre triângulos.
-  function buildAdjacencyAndExportIndex(positions, triCount) {
-    const FATOR_QUANTIZACAO = 1e4; // ~0.0001mm de tolerância pra "mesmo ponto"
-    const keyToIndex = new Map();
-    const exportVertices = [];
-    const cornerExportIndex = new Int32Array(triCount * 3);
-
-    for (let i = 0; i < triCount * 3; i++) {
-      const base = i * 3;
-      const x = positions[base], y = positions[base + 1], z = positions[base + 2];
-      const chave = Math.round(x * FATOR_QUANTIZACAO) + "," + Math.round(y * FATOR_QUANTIZACAO) + "," + Math.round(z * FATOR_QUANTIZACAO);
-      let idx = keyToIndex.get(chave);
-      if (idx === undefined) {
-        idx = exportVertices.length;
-        exportVertices.push([x, y, z]);
-        keyToIndex.set(chave, idx);
-      }
-      cornerExportIndex[i] = idx;
-    }
-
-    const adjacencySets = new Array(triCount);
-    for (let t = 0; t < triCount; t++) adjacencySets[t] = new Set();
-
-    const edgeMap = new Map();
-    function edgeKey(a, b) {
-      return a < b ? a + "_" + b : b + "_" + a;
-    }
-
-    for (let t = 0; t < triCount; t++) {
-      const i0 = cornerExportIndex[t * 3];
-      const i1 = cornerExportIndex[t * 3 + 1];
-      const i2 = cornerExportIndex[t * 3 + 2];
-      const arestas = [[i0, i1], [i1, i2], [i2, i0]];
-      for (let e = 0; e < arestas.length; e++) {
-        const chave = edgeKey(arestas[e][0], arestas[e][1]);
-        let lista = edgeMap.get(chave);
-        if (!lista) {
-          lista = [];
-          edgeMap.set(chave, lista);
-        }
-        for (let j = 0; j < lista.length; j++) {
-          const outro = lista[j];
-          adjacencySets[t].add(outro);
-          adjacencySets[outro].add(t);
-        }
-        lista.push(t);
-      }
-    }
-
-    const adjacency = adjacencySets.map((s) => Array.from(s));
-    return { adjacency, exportVertices, cornerExportIndex };
-  }
-
-  // Compartilhada por balde e seleção mágica: BFS a partir do triângulo
-  // clicado. `compararComOrigem` decide contra qual normal cada vizinho é
-  // comparado:
-  //  - false (seleção mágica): compara com o vizinho imediato que o
-  //    descobriu, não com a origem. Segue curvaturas suaves ao longo de
-  //    vários cliques, mesmo que a normal final esteja bem longe da do clique.
-  //  - true (balde): compara sempre com a normal do triângulo clicado. A
-  //    região fica presa a uma vizinhança realmente próxima do clique, sem a
-  //    deriva acumulada de passo a passo que faria a mesma tolerância
-  //    "vazar" por uma superfície curva inteira.
-  function floodFillByNormalTolerance(startTri, toleranceDeg, adjacency, faceNormals, triCount, compararComOrigem, filtroVisivel) {
-    // Pequena margem: normais de triângulos coplanares raramente são
-    // bit-idênticas (erro de ponto flutuante do produto vetorial), então com
-    // tolerância 0° o "dot >= 1" exato quase nunca passava mesmo entre
-    // triângulos da mesma face plana.
-    const toleranceCos = Math.cos((toleranceDeg * Math.PI) / 180) - 1e-6;
-    const visited = new Uint8Array(triCount);
-    visited[startTri] = 1;
-    const stack = [startTri];
-    const result = [startTri];
-    const origX = faceNormals[startTri * 3], origY = faceNormals[startTri * 3 + 1], origZ = faceNormals[startTri * 3 + 2];
-
-    while (stack.length) {
-      const cur = stack.pop();
-      const cx = compararComOrigem ? origX : faceNormals[cur * 3];
-      const cy = compararComOrigem ? origY : faceNormals[cur * 3 + 1];
-      const cz = compararComOrigem ? origZ : faceNormals[cur * 3 + 2];
-      const vizinhos = adjacency[cur];
-      for (let i = 0; i < vizinhos.length; i++) {
-        const n = vizinhos[i];
-        if (visited[n]) continue;
-        if (filtroVisivel && !filtroVisivel.has(n)) continue;
-        const nx = faceNormals[n * 3], ny = faceNormals[n * 3 + 1], nz = faceNormals[n * 3 + 2];
-        const dot = cx * nx + cy * ny + cz * nz;
-        if (dot >= toleranceCos) {
-          visited[n] = 1;
-          result.push(n);
-          stack.push(n);
-        }
-      }
-    }
-    return result;
-  }
-
-  // -------------------------------------------------------------------------
   // Cor: baseColors é a fonte de verdade; o atributo "color" da geometria
   // reflete baseColors misturado com o destaque de seleção (só visual).
   // -------------------------------------------------------------------------
@@ -434,11 +287,6 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils)
     }
     colorAttr.needsUpdate = true;
     needsRender = true;
-  }
-
-  function hexToRgb(hex) {
-    const v = parseInt(hex.slice(1), 16);
-    return [(v >> 16) & 255, (v >> 8) & 255, v & 255];
   }
 
   // -------------------------------------------------------------------------
@@ -858,23 +706,15 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils)
   // Carregar STL e montar o estado/viewer
   // -------------------------------------------------------------------------
 
-  function buildState(triangulos, fileName, origem) {
-    initSceneOnce();
-
-    const { triCount, positions } = buildGeometryData(triangulos);
-    // Cópia imutável das posições reais, capturada antes de qualquer filtro de
-    // visibilidade por chapa (ver aplicarFiltroDeVisibilidade): é a fonte de
-    // verdade usada tanto para restaurar "Todos" quanto para reescrever, na
-    // troca de aba, os 9 floats de cada triângulo visível.
-    const positionsOriginais = positions.slice();
-    const faceNormals = computeFaceNormals(positions, triCount);
-    const { adjacency, exportVertices, cornerExportIndex } = buildAdjacencyAndExportIndex(positions, triCount);
-
+  function criarGeometria(positions, faceNormals, triCount) {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
     geometry.setAttribute("normal", new THREE.BufferAttribute(expandFaceNormalsToCorners(faceNormals, triCount), 3));
     geometry.setAttribute("color", new THREE.BufferAttribute(new Float32Array(triCount * 9), 3));
+    return geometry;
+  }
 
+  function trocarMesh(geometry) {
     const material = new THREE.MeshStandardMaterial({
       vertexColors: true,
       roughness: 0.65,
@@ -897,20 +737,65 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils)
     meshPivotLocal = geometry.boundingSphere.center.clone();
     meshPivotWorld = meshPivotLocal.clone();
     updateMeshPivotPosition();
+  }
 
+  function coresIniciais(triCount) {
     const baseColors = new Uint8ClampedArray(triCount * 3);
     for (let i = 0; i < triCount; i++) {
       baseColors[i * 3] = DEFAULT_COLOR[0];
       baseColors[i * 3 + 1] = DEFAULT_COLOR[1];
       baseColors[i * 3 + 2] = DEFAULT_COLOR[2];
     }
+    return baseColors;
+  }
+
+  // mapearTriangulosParaChapas devolve arrays (ordem de varredura); aqui
+  // viram Set pra permitir teste O(1) de pertencimento tanto no filtro de
+  // visibilidade (aplicarFiltroDeVisibilidade) quanto no BFS de
+  // balde/seleção mágica (floodFillByNormalTolerance).
+  function triangulosPorChapa(triangleOrigins, chapas) {
+    if (!chapas) return null;
+    const porChapa = new Map();
+    ModelParser.mapearTriangulosParaChapas(triangleOrigins, chapas).forEach((lista, indice) => {
+      porChapa.set(indice, new Set(lista));
+    });
+    return porChapa;
+  }
+
+  function atualizarAvisoModeloGrande(triCount) {
+    const grande = triCount >= AVISO_TRIANGULOS_GRANDE;
+    avisoGrandeEl.hidden = !grande;
+    if (grande) {
+      avisoGrandeTextoEl.textContent = "Modelo com " + triCount.toLocaleString("pt-BR") + " triângulos, pintar regiões grandes pode ficar um pouco mais lento.";
+    }
+  }
+
+  function buildState(triangulos, fileName, origem) {
+    initSceneOnce();
+
+    const { triCount, positions } = buildGeometryData(triangulos);
+    // Cópia imutável das posições reais, capturada antes de qualquer filtro de
+    // visibilidade por chapa (ver aplicarFiltroDeVisibilidade): é a fonte de
+    // verdade usada tanto para restaurar "Todos" quanto para reescrever, na
+    // troca de aba, os 9 floats de cada triângulo visível.
+    const positionsOriginais = positions.slice();
+    const faceNormals = computeFaceNormals(positions, triCount);
+    const { adjacency, exportVertices, cornerExportIndex } = buildAdjacencyAndExportIndex(positions, triCount);
+    const geometry = criarGeometria(positions, faceNormals, triCount);
+    trocarMesh(geometry);
+
+    const triangleOrigins = (origem && origem.origins) || null;
+    // Chapas (plates) detectadas num 3MF multi-plate (ver detectarChapas em
+    // processarArquivo); null quando o arquivo não tem esse metadado (STL,
+    // 3MF single-plate).
+    const chapas = (origem && origem.chapas) || null;
 
     state = {
       fileName,
       triCount,
       faceNormals,
       adjacency,
-      baseColors,
+      baseColors: coresIniciais(triCount),
       selection: new Set(),
       geometry,
       cornerExportIndex,
@@ -926,32 +811,15 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils)
       // Presentes só quando o arquivo original é um .3mf: permitem, na
       // exportação, remendar o pacote original (preservando Metadata/,
       // thumbnails etc.) em vez de reconstruir tudo do zero.
-      triangleOrigins: (origem && origem.origins) || null,
+      triangleOrigins,
       zip: (origem && origem.zip) || null,
       // Cópias de uma mesma malha (o mesmo object em dois <item>) pintam
       // juntas: no 3MF exportado elas têm uma cor só (ver mapearCopiasDeMalha).
-      copias: origem && origem.origins ? ModelParser.mapearCopiasDeMalha(origem.origins) : null
+      copias: triangleOrigins ? ModelParser.mapearCopiasDeMalha(triangleOrigins) : null,
+      chapas,
+      chapaAtivaIndice: null, // null = "Todos"
+      triangulosPorChapa: triangulosPorChapa(triangleOrigins, chapas)
     };
-
-    // Chapas (plates) detectadas num 3MF multi-plate (ver detectarChapas em
-    // processarArquivo): guardado no estado pra uso futuro (seletor de chapa
-    // na UI, ainda não implementado), null quando o arquivo não tem esse
-    // metadado (STL, 3MF single-plate). triangulosPorChapa é derivado uma
-    // única vez aqui, não recalculado a cada clique.
-    state.chapas = (origem && origem.chapas) || null;
-    state.chapaAtivaIndice = null; // null = "Todos"
-    // mapearTriangulosParaChapas devolve arrays (ordem de varredura); aqui
-    // viram Set pra permitir teste O(1) de pertencimento tanto no filtro de
-    // visibilidade (aplicarFiltroDeVisibilidade) quanto no BFS de
-    // balde/seleção mágica (floodFillByNormalTolerance).
-    if (state.chapas) {
-      state.triangulosPorChapa = new Map();
-      ModelParser.mapearTriangulosParaChapas(state.triangleOrigins, state.chapas).forEach((lista, indice) => {
-        state.triangulosPorChapa.set(indice, new Set(lista));
-      });
-    } else {
-      state.triangulosPorChapa = null;
-    }
 
     renderPaleta();
     refreshColorBuffer();
@@ -963,12 +831,7 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils)
     state.pivotLocalTodos = meshPivotLocal.clone();
     state.radiusTodos = modelRadius;
     renderAbasChapa();
-
-    const grande = triCount >= AVISO_TRIANGULOS_GRANDE;
-    avisoGrandeEl.hidden = !grande;
-    if (grande) {
-      avisoGrandeTextoEl.textContent = "Modelo com " + triCount.toLocaleString("pt-BR") + " triângulos, pintar regiões grandes pode ficar um pouco mais lento.";
-    }
+    atualizarAvisoModeloGrande(triCount);
 
     exportBtn.disabled = exportando;
     resetarBtn.disabled = false;
@@ -1081,40 +944,48 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils)
     return nomeOriginal.replace(/\.(stl|3mf)$/i, "") + "-colorido.3mf";
   }
 
-  const baixarBlob = ModelParser.baixarBlob;
+  function gerarEBaixar(zip, nomeSaida) {
+    return zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } })
+      .then((blob) => {
+        ModelParser.baixarBlob(blob, nomeSaida);
+        outEl.textContent = "3MF colorido baixado.";
+      });
+  }
 
-  // Monta a paleta final de filamentos. Se sobrar alguma área ainda não
-  // pintada (triângulo com a cor cinza default), o slot 1 fica reservado pra
-  // ela: é nele que caem os triângulos sem paint_color, que usam o
-  // extrusor/filamento padrão do objeto, e as cores pintadas ocupam os
-  // slots seguintes. Mas se o modelo inteiro já foi pintado (nenhum
-  // triângulo com a cor default sobrando, por exemplo depois de trocar a
-  // cor do próprio slot 1 pela paleta), o cinza não teria nenhum uso real no
-  // arquivo final, então ele é omitido e as cores pintadas ocupam os slots a
-  // partir do 1.
-  function coresPintadasGlobal() {
-    const cores = [];
-    const indiceDaCorGlobal = new Map();
-    let temNaoPintado = false;
-    for (let t = 0; t < state.triCount; t++) {
-      const r = state.baseColors[t * 3], g = state.baseColors[t * 3 + 1], b = state.baseColors[t * 3 + 2];
-      if (r === DEFAULT_COLOR[0] && g === DEFAULT_COLOR[1] && b === DEFAULT_COLOR[2]) {
-        temNaoPintado = true;
-        continue;
+  // Reescreve project_settings.config com a paleta final. Resolve com o
+  // número de slots de filamento gravados, ou null se o arquivo não existe
+  // ou não pôde ser ajustado.
+  function atualizarProjectSettings(zip, paleta) {
+    const configEntry = ModelParser.localizarArquivoUnico(zip, "project_settings.config");
+    if (!configEntry) return Promise.resolve(null);
+    return configEntry.async("text").then((texto) => {
+      try {
+        const novoCfg = ThreeMFWriter.reconstruirProjectSettings(JSON.parse(texto), paleta);
+        if (!novoCfg) return null;
+        zip.file(configEntry.name, JSON.stringify(novoCfg, null, 4));
+        return novoCfg.filament_colour.length;
+      } catch (e) {
+        return null;
       }
-      const chave = r + "," + g + "," + b;
-      if (!indiceDaCorGlobal.has(chave)) {
-        indiceDaCorGlobal.set(chave, cores.length);
-        cores.push([r, g, b]);
-      }
-    }
+    });
+  }
 
-    const paleta = temNaoPintado ? [DEFAULT_COLOR, ...cores] : cores.length ? cores : [DEFAULT_COLOR];
-    const offset = temNaoPintado ? 2 : 1;
-    const slotPorCor = new Map();
-    cores.forEach((c, i) => slotPorCor.set(c[0] + "," + c[1] + "," + c[2], i + offset));
+  function atualizarModelSettings(zip, numSlots) {
+    const entry = ModelParser.localizarArquivoUnico(zip, "model_settings.config");
+    if (!entry) return Promise.resolve();
+    return entry.async("text").then((xmlText) => {
+      zip.file(entry.name, ThreeMFWriter.ajustarFilamentMapsNoModelSettings(xmlText, numSlots || 1));
+    });
+  }
 
-    return { paleta, slotPorCor };
+  function injetarCoresNosModelos(zip, porArquivo, slotPorCor) {
+    return Promise.all(Array.from(porArquivo.keys()).map((path) => {
+      const entry = zip.file(path);
+      if (!entry) return Promise.resolve();
+      return entry.async("text").then((xmlText) => {
+        zip.file(path, ThreeMFWriter.injetarCoresNoXml(xmlText, porArquivo.get(path), slotPorCor));
+      });
+    }));
   }
 
   // Caminho usado quando o arquivo de origem é um .3mf: reabre o zip
@@ -1122,111 +993,23 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils)
   // sem tocar em Metadata/, thumbnails ou qualquer outro arquivo do pacote,
   // evita o aviso de "configuração inválida" do Bambu Studio, que aparece
   // quando o pacote deixa de parecer um projeto legítimo.
-  function exportarModeloPreservandoPacote() {
-    outEl.textContent = "Gerando arquivo 3MF...";
-    // Lido agora: se outro arquivo for carregado durante a exportação, state
-    // passa a ser o dele.
-    const nomeSaida = nomeArquivoSaida(state.fileName);
-
-    const porArquivo = new Map();
-    for (let t = 0; t < state.triCount; t++) {
-      const origem = state.triangleOrigins[t];
-      if (!origem) continue;
-      let porObjeto = porArquivo.get(origem.path);
-      if (!porObjeto) {
-        porObjeto = new Map();
-        porArquivo.set(origem.path, porObjeto);
-      }
-      let lista = porObjeto.get(origem.objectId);
-      if (!lista) {
-        lista = [];
-        porObjeto.set(origem.objectId, lista);
-      }
-      lista.push({
-        localIndex: origem.localIndex,
-        r: state.baseColors[t * 3],
-        g: state.baseColors[t * 3 + 1],
-        b: state.baseColors[t * 3 + 2]
-      });
-    }
-
+  function exportarModeloPreservandoPacote(nomeSaida) {
     const zip = state.zip;
-    const { paleta, slotPorCor } = coresPintadasGlobal();
+    const porArquivo = ColorirCalculo.agruparCoresPorArquivo(state.triangleOrigins, state.baseColors, state.triCount);
+    const { paleta, slotPorCor } = ColorirCalculo.paletaDeExportacao(state.baseColors, state.triCount, DEFAULT_COLOR);
 
-    const configEntry = ModelParser.localizarArquivoUnico(zip, "project_settings.config");
-    const configPromise = configEntry
-      ? configEntry.async("text").then((texto) => {
-          try {
-            const cfgOriginal = JSON.parse(texto);
-            const novoCfg = ThreeMFWriter.reconstruirProjectSettings(cfgOriginal, paleta);
-            if (novoCfg) {
-              zip.file(configEntry.name, JSON.stringify(novoCfg, null, 4));
-              return novoCfg.filament_colour.length;
-            }
-            return null;
-          } catch (e) {
-            return null;
-          }
-        })
-      : Promise.resolve(null);
-
-    const modelSettingsEntry = ModelParser.localizarArquivoUnico(zip, "model_settings.config");
-
-    const tarefas = configPromise.then((numSlots) => {
-      const slotPorCorAtivo = numSlots ? slotPorCor : null;
-      const ajustesModelSettings = modelSettingsEntry
-        ? modelSettingsEntry
-            .async("text")
-            .then((xmlText) => {
-              zip.file(modelSettingsEntry.name, ThreeMFWriter.ajustarFilamentMapsNoModelSettings(xmlText, numSlots || 1));
-            })
-        : Promise.resolve();
-
-      return Promise.all([
-        ajustesModelSettings,
-        ...Array.from(porArquivo.keys()).map((path) => {
-          const entry = zip.file(path);
-          if (!entry) return Promise.resolve();
-          return entry.async("text").then((xmlText) => {
-            zip.file(path, ThreeMFWriter.injetarCoresNoXml(xmlText, porArquivo.get(path), slotPorCorAtivo));
-          });
-        })
-      ]);
-    });
-
-    return tarefas
-      .then(() => zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } }))
-      .then((blob) => {
-        baixarBlob(blob, nomeSaida);
-        outEl.textContent = "3MF colorido baixado.";
-      })
-      .catch((err) => {
-        if (window.console && console.error) console.error("Colorir 3MF:", err);
-        outEl.textContent = "Não foi possível gerar o arquivo 3MF.";
-      });
-  }
-
-  function exportarModelo() {
-    if (state.zip && state.triangleOrigins) return exportarModeloPreservandoPacote();
-    return exportarModeloDoZero();
+    return atualizarProjectSettings(zip, paleta)
+      .then((numSlots) => Promise.all([
+        atualizarModelSettings(zip, numSlots),
+        injetarCoresNosModelos(zip, porArquivo, numSlots ? slotPorCor : null)
+      ]))
+      .then(() => gerarEBaixar(zip, nomeSaida));
   }
 
   // Caminho usado quando o arquivo de origem é um .stl (não existe pacote
   // 3MF original pra preservar): monta um .3mf novo do zero via JSZip.
-  function exportarModeloDoZero() {
-    outEl.textContent = "Gerando arquivo 3MF...";
-    const nomeSaida = nomeArquivoSaida(state.fileName);
-
-    const triangulos = new Array(state.triCount);
-    for (let t = 0; t < state.triCount; t++) {
-      triangulos[t] = {
-        v1: state.cornerExportIndex[t * 3],
-        v2: state.cornerExportIndex[t * 3 + 1],
-        v3: state.cornerExportIndex[t * 3 + 2],
-        color: [state.baseColors[t * 3], state.baseColors[t * 3 + 1], state.baseColors[t * 3 + 2]]
-      };
-    }
-
+  function exportarModeloDoZero(nomeSaida) {
+    const triangulos = ColorirCalculo.triangulosParaExportacao(state.cornerExportIndex, state.baseColors, state.triCount);
     const { modelXml, contentTypesXml, relsXml } = ThreeMFWriter.montarModeloDoZero([
       { objectId: 2, vertices: state.exportVertices, triangulos: triangulos }
     ]);
@@ -1235,16 +1018,16 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils)
     zip.file("[Content_Types].xml", contentTypesXml);
     zip.file("_rels/.rels", relsXml);
     zip.file("3D/3dmodel.model", modelXml);
+    return gerarEBaixar(zip, nomeSaida);
+  }
 
-    return zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } })
-      .then((blob) => {
-        baixarBlob(blob, nomeSaida);
-        outEl.textContent = "3MF colorido baixado.";
-      })
-      .catch((err) => {
-        if (window.console && console.error) console.error("Colorir 3MF:", err);
-        outEl.textContent = "Não foi possível gerar o arquivo 3MF.";
-      });
+  function exportarModelo() {
+    outEl.textContent = "Gerando arquivo 3MF...";
+    // Lido agora: se outro arquivo for carregado durante a exportação, state
+    // passa a ser o dele.
+    const nomeSaida = nomeArquivoSaida(state.fileName);
+    if (state.zip && state.triangleOrigins) return exportarModeloPreservandoPacote(nomeSaida);
+    return exportarModeloDoZero(nomeSaida);
   }
 
   // -------------------------------------------------------------------------
