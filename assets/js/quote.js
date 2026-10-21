@@ -170,6 +170,7 @@
       out.textContent = "Preencha os campos";
       out.classList.remove("has-value");
       breakdown.hidden = true;
+      if (tiersBox) tiersBox.hidden = true;
       addBtn.disabled = true;
       return;
     }
@@ -300,12 +301,6 @@
     return subtotal - discount;
   }
 
-  function formatTime(timeH) {
-    const hoursInt = Math.floor(timeH);
-    const minutesInt = Math.round((timeH - hoursInt) * 60);
-    return hoursInt + "h" + (minutesInt ? " " + minutesInt + "min" : "");
-  }
-
   function createSpan(className, text) {
     const span = document.createElement("span");
     if (className) span.className = className;
@@ -319,12 +314,14 @@
 
     const info = createSpan("calc-item-info", "");
     info.appendChild(createSpan("", Calculations.itemName(item, i) + " × " + item.quantity));
-    info.appendChild(createSpan("calc-item-meta", item.weightG.toFixed(1) + " g · " + formatTime(item.timeH)));
+    info.appendChild(
+      createSpan("calc-item-meta", item.weightG.toFixed(1) + " g · " + Calculations.formatDuration(item.timeH))
+    );
 
     const removeBtn = document.createElement("button");
     removeBtn.type = "button";
     removeBtn.className = "calc-item-remove";
-    removeBtn.setAttribute("aria-label", "Remover " + (item.name || "peça " + (i + 1)));
+    removeBtn.setAttribute("aria-label", "Remover " + Calculations.itemName(item, i));
     removeBtn.textContent = "×";
     removeBtn.addEventListener("click", function () {
       items.splice(i, 1);
