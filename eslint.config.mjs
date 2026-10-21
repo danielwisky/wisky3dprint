@@ -19,7 +19,7 @@ export default [
     }
   },
   {
-    files: ["assets/js/colorir-3mf.js"],
+    files: ["assets/js/colorize-3mf.js"],
     languageOptions: { sourceType: "module" }
   },
   {

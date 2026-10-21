@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------------
 // Fórmula de custo compartilhada entre a calculadora simples (home.js) e a
-// calculadora completa (orcamento.js): filamento + energia + desgaste.
+// calculadora completa (quote.js): filamento + energia + desgaste.
 // Precisa ser carregado antes dos dois.
 // ---------------------------------------------------------------------------
 

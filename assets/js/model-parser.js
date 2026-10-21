@@ -486,7 +486,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
         bbox: escalarBBox(bbox),
         // bbox de cada item de nível topo (build item), na ordem de `items`.
         // Usado pra separar por chapa/plate em arquivos multi-plate (ver
-        // conversor-3mf.js), já que o bbox combinado acima soma objetos que
+        // converter-3mf.js), já que o bbox combinado acima soma objetos que
         // na real impressora nunca ficam juntos na mesma mesa.
         // `posicao` é a translação do item: a mesma que reposicionarPorMesa
         // usa para achar a célula da grade.
@@ -1141,7 +1141,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // triângulo, compara o `rootObjectId` da origem (o objectid do build item
   // de nível topo, não o do object-folha que contém a mesh) contra o
   // `objectIds` (Set) de cada chapa em `chapas` (formato `{indice,
-  // objectIds}`, ver detectarChapas em colorir-3mf.js) e empilha o índice do
+  // objectIds}`, ver detectarChapas em colorize-3mf.js) e empilha o índice do
   // triângulo na chapa correspondente. Usar rootObjectId em vez de objectId é
   // necessário porque model_settings.config referencia o build item de topo,
   // enquanto peças montadas via <components> aninhados têm um objectId de

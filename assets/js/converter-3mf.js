@@ -8,28 +8,28 @@
 // assets/data/printer-profiles.json.
 // ---------------------------------------------------------------------------
 
-  var root = document.getElementById("conv3mf");
+  var root = document.getElementById("convert3mf");
   if (!root) return;
 
   var ModelParser = window.Wisky3D && window.Wisky3D.ModelParser;
   var ToolUtils = window.Wisky3D && window.Wisky3D.ToolUtils;
 
-  var dropzone = document.getElementById("conv3mf-dropzone");
-  var upload = document.getElementById("conv3mf-upload");
-  var loadingEl = document.getElementById("conv3mf-loading");
-  var erroEl = document.getElementById("conv3mf-erro");
-  var painel = document.getElementById("conv3mf-painel");
-  var deNomeEl = document.getElementById("conv3mf-de-nome");
-  var deSubEl = document.getElementById("conv3mf-de-sub");
-  var dePaletaEl = document.getElementById("conv3mf-de-paleta");
-  var destinosEl = document.getElementById("conv3mf-destinos");
-  var destinosContagemEl = document.getElementById("conv3mf-destinos-contagem");
-  var semResultadoEl = document.getElementById("conv3mf-sem-resultado");
-  var buscaEl = document.getElementById("conv3mf-busca");
-  var avisoEl = document.getElementById("conv3mf-aviso");
-  var selecionadoEl = document.getElementById("conv3mf-selecionado");
-  var gerarBtn = document.getElementById("conv3mf-gerar");
-  var outEl = document.getElementById("conv3mf-out");
+  var dropzone = document.getElementById("convert3mf-dropzone");
+  var upload = document.getElementById("convert3mf-upload");
+  var loadingEl = document.getElementById("convert3mf-loading");
+  var erroEl = document.getElementById("convert3mf-error");
+  var painel = document.getElementById("convert3mf-panel");
+  var deNomeEl = document.getElementById("convert3mf-source-name");
+  var deSubEl = document.getElementById("convert3mf-source-sub");
+  var dePaletaEl = document.getElementById("convert3mf-source-palette");
+  var destinosEl = document.getElementById("convert3mf-targets");
+  var destinosContagemEl = document.getElementById("convert3mf-targets-count");
+  var semResultadoEl = document.getElementById("convert3mf-no-result");
+  var buscaEl = document.getElementById("convert3mf-search");
+  var avisoEl = document.getElementById("convert3mf-warning");
+  var selecionadoEl = document.getElementById("convert3mf-selected");
+  var gerarBtn = document.getElementById("convert3mf-generate");
+  var outEl = document.getElementById("convert3mf-out");
 
   if (!ModelParser || !ToolUtils) {
     erroEl.textContent = "Não foi possível carregar o conversor. Recarregue a página e tente novamente.";
@@ -314,7 +314,7 @@
     el.innerHTML = "";
     (cores || []).forEach(function (cor) {
       var span = document.createElement("span");
-      span.className = "conv3mf-swatch";
+      span.className = "convert3mf-swatch";
       span.style.background = cor;
       span.title = cor;
       el.appendChild(span);
@@ -368,7 +368,7 @@
     var btn = destinosEl.querySelector('[data-key="' + chave + '"]');
     var selecionado = estado.destinoKeys.indexOf(chave) !== -1;
     if (btn) {
-      btn.classList.toggle("is-selecionado", selecionado);
+      btn.classList.toggle("is-selected", selecionado);
       btn.setAttribute("aria-pressed", selecionado ? "true" : "false");
     }
     atualizarSelecaoUI();
@@ -444,7 +444,7 @@
       if (perfil.marca !== marcaAtual) {
         marcaAtual = perfil.marca;
         var grupo = document.createElement("div");
-        grupo.className = "conv3mf-grupo";
+        grupo.className = "convert3mf-group";
         grupo.textContent = marcaAtual;
         destinosEl.appendChild(grupo);
       }
@@ -452,17 +452,17 @@
       var jaSelecionado = !!(estado && estado.destinoKeys.indexOf(chave) !== -1);
       var btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "conv3mf-destino";
+      btn.className = "convert3mf-target";
       btn.setAttribute("aria-pressed", jaSelecionado ? "true" : "false");
       btn.dataset.key = chave;
-      if (chave === chaveDetectada) btn.classList.add("is-atual");
-      if (jaSelecionado) btn.classList.add("is-selecionado");
+      if (chave === chaveDetectada) btn.classList.add("is-current");
+      if (jaSelecionado) btn.classList.add("is-selected");
 
       var nome = document.createElement("span");
-      nome.className = "conv3mf-destino-nome";
+      nome.className = "convert3mf-target-name";
       nome.textContent = nomeBaseImpressora(perfil.nome);
       var marca = document.createElement("span");
-      marca.className = "conv3mf-destino-marca";
+      marca.className = "convert3mf-target-brand";
       marca.textContent = perfil.marca;
 
       btn.appendChild(nome);

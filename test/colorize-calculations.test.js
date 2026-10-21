@@ -4,7 +4,7 @@ const path = require("node:path");
 const fs = require("node:fs");
 
 global.window = global;
-new Function(fs.readFileSync(path.join(__dirname, "..", "assets", "js", "colorir-calculo.js"), "utf8"))();
+new Function(fs.readFileSync(path.join(__dirname, "..", "assets", "js", "colorize-calculations.js"), "utf8"))();
 const C = window.Wisky3D.ColorirCalculo;
 
 // Cubo de lado 10 com as 12 faces voltadas pra fora, duas por lado.

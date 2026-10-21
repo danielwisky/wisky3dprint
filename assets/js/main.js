@@ -46,7 +46,7 @@
 // ---------------------------------------------------------------------------
 
   (function () {
-    var item = document.getElementById("nav-ferramentas");
+    var item = document.getElementById("nav-tools");
     if (!item) return;
 
     var btn = item.querySelector(".nav-link-dropdown");
@@ -278,7 +278,7 @@
         var items, startIndex;
         var carousel = trigger.closest("[data-carousel]");
         if (carousel) {
-          var slides = Array.prototype.slice.call(carousel.querySelectorAll(".estoque-slide"));
+          var slides = Array.prototype.slice.call(carousel.querySelectorAll(".stock-slide"));
           items = slides.map(function (s) {
             var si = s.querySelector("img");
             // O card exibe um thumb leve; o zoom usa a foto original (data-full) quando disponível.

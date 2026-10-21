@@ -26,8 +26,8 @@
   }
 
   // Reserva o espaço da navbar fixa: o override de .section acima
-  // zera o padding-top que a .section-estoque define no desktop.
-  .section-estoque {
+  // zera o padding-top que a .section-stock define no desktop.
+  .section-stock {
     padding-top: calc(#{$nav-h} + env(safe-area-inset-top, 0px) + 3rem);
   }
 
@@ -93,21 +93,21 @@
     gap: 0.75rem;
   }
 
-  .estoque-grid {
+  .stock-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
   }
 
-  .estoque-controls {
+  .stock-controls {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .estoque-sort-select {
+  .stock-sort-select {
     width: 100%;
   }
 
-  .estoque-teaser {
+  .stock-teaser {
     flex-direction: column;
     align-items: flex-start;
     text-align: left;
@@ -284,7 +284,7 @@
   }
 
   // Navbar mobile = $nav-h-mobile + safe-area; mantém o título abaixo do menu fixo.
-  .section-estoque,
+  .section-stock,
   .section-calc {
     padding-top: calc(#{$nav-h-mobile} + env(safe-area-inset-top, 0px) + 3rem);
   }
@@ -360,7 +360,7 @@
     border-radius: 10px;
   }
 
-  .estoque-grid {
+  .stock-grid {
     grid-template-columns: 1fr;
     gap: 1rem;
   }

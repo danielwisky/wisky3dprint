@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Cálculos do Colorir 3MF (colorir-3mf.js), sem Three.js nem DOM: geometria,
+// Cálculos do Colorir 3MF (colorize-3mf.js), sem Three.js nem DOM: geometria,
 // adjacência, flood fill por tolerância de normal e preparação das cores pra
 // exportação.
 // ---------------------------------------------------------------------------

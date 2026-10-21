@@ -6,93 +6,93 @@
   var ModelParser = window.Wisky3D && window.Wisky3D.ModelParser;
   var ToolUtils = window.Wisky3D && window.Wisky3D.ToolUtils;
 
-  var form = document.getElementById("orcamento-calc");
+  var form = document.getElementById("quote-calc");
   if (!form) return;
 
-  var nome = document.getElementById("orcamento-calc-nome");
-  var quantidade = document.getElementById("orcamento-calc-quantidade");
-  var peso = document.getElementById("orcamento-calc-peso");
-  var horas = document.getElementById("orcamento-calc-horas");
-  var minutos = document.getElementById("orcamento-calc-minutos");
-  var filamento = document.getElementById("orcamento-calc-filamento");
-  var horasManuaisInput = document.getElementById("orcamento-calc-horas-manuais");
-  var minutosManuaisInput = document.getElementById("orcamento-calc-minutos-manuais");
-  var valorHoraInput = document.getElementById("orcamento-calc-valor-hora");
-  var potenciaInput = document.getElementById("orcamento-calc-potencia");
-  var tarifaInput = document.getElementById("orcamento-calc-tarifa");
-  var hardwareInput = document.getElementById("orcamento-calc-hardware");
-  var embalagemInput = document.getElementById("orcamento-calc-embalagem");
-  var freteInput = document.getElementById("orcamento-calc-frete");
-  var desgasteInput = document.getElementById("orcamento-calc-desgaste");
-  var valorMaquinaInput = document.getElementById("orcamento-calc-valor-maquina");
-  var vidaUtilInput = document.getElementById("orcamento-calc-vida-util");
-  var margemInput = document.getElementById("orcamento-calc-margem");
-  var perdaInput = document.getElementById("orcamento-calc-perda");
-  var out = document.getElementById("orcamento-calc-result");
-  var breakdown = document.getElementById("orcamento-calc-breakdown");
-  var addBtn = document.getElementById("orcamento-calc-add");
-  var itensBox = document.getElementById("orcamento-calc-itens");
-  var itensList = document.getElementById("orcamento-calc-itens-list");
-  var itensTotalOut = document.getElementById("orcamento-calc-itens-total");
-  var descontoValorInput = document.getElementById("orcamento-calc-desconto-valor");
-  var descontoTipoInput = document.getElementById("orcamento-calc-desconto-tipo");
-  var descontoTextoInput = document.getElementById("orcamento-calc-desconto-texto");
-  var descontoBreakdown = document.getElementById("orcamento-calc-desconto-breakdown");
-  var itensSubtotalOut = document.getElementById("orcamento-calc-itens-subtotal");
-  var descontoLabel = document.getElementById("orcamento-calc-desconto-label");
-  var descontoOut = document.getElementById("orcamento-calc-desconto-out");
-  var pdfBtn = document.getElementById("orcamento-calc-pdf");
-  var csvBtn = document.getElementById("orcamento-calc-csv");
-  var clearBtn = document.getElementById("orcamento-calc-clear");
-  var printBox = document.getElementById("orcamento-calc-print");
-  var printBody = document.getElementById("orcamento-calc-print-body");
-  var printThEmbalagem = document.getElementById("orcamento-calc-print-th-embalagem");
-  var printThFrete = document.getElementById("orcamento-calc-print-th-frete");
-  var printDescontoBreakdown = document.getElementById("orcamento-calc-print-desconto-breakdown");
-  var printSubtotalOut = document.getElementById("orcamento-calc-print-subtotal");
-  var printDescontoLabel = document.getElementById("orcamento-calc-print-desconto-label");
-  var printDescontoOut = document.getElementById("orcamento-calc-print-desconto");
-  var printTotalOut = document.getElementById("orcamento-calc-print-total");
-  var printLogo = document.getElementById("orcamento-calc-print-logo");
-  var printBrand = document.getElementById("orcamento-calc-print-brand");
-  var logoHideInput = document.getElementById("orcamento-calc-logo-hide");
-  var logoUploadInput = document.getElementById("orcamento-calc-logo-upload");
-  var logoResetBtn = document.getElementById("orcamento-calc-logo-reset");
-  var logoErro = document.getElementById("orcamento-calc-logo-erro");
-  var modeloUpload = document.getElementById("orcamento-calc-modelo-upload");
-  var modeloPreview = document.getElementById("orcamento-calc-modelo-preview");
-  var modeloNomeOut = document.getElementById("orcamento-calc-modelo-nome");
-  var modeloDimsOut = document.getElementById("orcamento-calc-modelo-dims");
-  var modeloVolumeOut = document.getElementById("orcamento-calc-modelo-volume");
-  var modeloDensidadeOut = document.getElementById("orcamento-calc-modelo-densidade");
-  var modeloDensidadeRow = document.getElementById("orcamento-calc-modelo-densidade-row");
-  var modeloErro = document.getElementById("orcamento-calc-modelo-erro");
-  var modeloConcluirWrap = document.getElementById("orcamento-calc-modelo-concluir-wrap");
-  var modeloConcluirBtn = document.getElementById("orcamento-calc-modelo-concluir");
-  var materialSelect = document.getElementById("orcamento-calc-material");
-  var densidadeWrap = document.getElementById("orcamento-calc-densidade-wrap");
-  var densidadeInput = document.getElementById("orcamento-calc-densidade");
-  var infillInput = document.getElementById("orcamento-calc-infill");
-  var paredesInput = document.getElementById("orcamento-calc-paredes");
-  var alturaCamadaInput = document.getElementById("orcamento-calc-altura-camada");
-  var velocidadeInput = document.getElementById("orcamento-calc-velocidade");
-  var tempoHint = document.getElementById("orcamento-calc-tempo-hint");
-  var modeloModal = document.getElementById("orcamento-calc-modelo-modal");
-  var modeloAbrirBtn = document.getElementById("orcamento-calc-modelo-abrir");
-  var modeloFecharBtn = document.getElementById("orcamento-calc-modelo-fechar");
-  var modeloEditarBtn = document.getElementById("orcamento-calc-modelo-editar");
-  var modeloRemoverBtn = document.getElementById("orcamento-calc-modelo-remover");
-  var modeloBadge = document.getElementById("orcamento-calc-modelo-badge");
-  var modeloBadgeNome = document.getElementById("orcamento-calc-modelo-badge-nome");
-  var pesoAutoTag = document.getElementById("orcamento-calc-peso-auto-tag");
-  var tempoAutoTag = document.getElementById("orcamento-calc-tempo-auto-tag");
-  var modeloDropzone = document.getElementById("orcamento-calc-dropzone");
-  var modeloLoading = document.getElementById("orcamento-calc-modelo-loading");
-  var modeloDropzoneTexto = document.getElementById("orcamento-calc-dropzone-texto");
-  var modoSimplesBtn = document.getElementById("orcamento-calc-modo-simples");
-  var modoCompletoBtn = document.getElementById("orcamento-calc-modo-completo");
-  var faixasBox = document.getElementById("orcamento-calc-faixas");
-  var faixasCols = document.getElementById("orcamento-calc-faixas-cols");
+  var nome = document.getElementById("quote-calc-name");
+  var quantidade = document.getElementById("quote-calc-quantity");
+  var peso = document.getElementById("quote-calc-weight");
+  var horas = document.getElementById("quote-calc-hours");
+  var minutos = document.getElementById("quote-calc-minutes");
+  var filamento = document.getElementById("quote-calc-filament");
+  var horasManuaisInput = document.getElementById("quote-calc-manual-hours");
+  var minutosManuaisInput = document.getElementById("quote-calc-manual-minutes");
+  var valorHoraInput = document.getElementById("quote-calc-hourly-rate");
+  var potenciaInput = document.getElementById("quote-calc-power");
+  var tarifaInput = document.getElementById("quote-calc-tariff");
+  var hardwareInput = document.getElementById("quote-calc-hardware");
+  var embalagemInput = document.getElementById("quote-calc-packaging");
+  var freteInput = document.getElementById("quote-calc-shipping");
+  var desgasteInput = document.getElementById("quote-calc-wear");
+  var valorMaquinaInput = document.getElementById("quote-calc-machine-value");
+  var vidaUtilInput = document.getElementById("quote-calc-lifespan");
+  var margemInput = document.getElementById("quote-calc-margin");
+  var perdaInput = document.getElementById("quote-calc-loss");
+  var out = document.getElementById("quote-calc-result");
+  var breakdown = document.getElementById("quote-calc-breakdown");
+  var addBtn = document.getElementById("quote-calc-add");
+  var itensBox = document.getElementById("quote-calc-items");
+  var itensList = document.getElementById("quote-calc-items-list");
+  var itensTotalOut = document.getElementById("quote-calc-items-total");
+  var descontoValorInput = document.getElementById("quote-calc-discount-value");
+  var descontoTipoInput = document.getElementById("quote-calc-discount-type");
+  var descontoTextoInput = document.getElementById("quote-calc-discount-text");
+  var descontoBreakdown = document.getElementById("quote-calc-discount-breakdown");
+  var itensSubtotalOut = document.getElementById("quote-calc-items-subtotal");
+  var descontoLabel = document.getElementById("quote-calc-discount-label");
+  var descontoOut = document.getElementById("quote-calc-discount-out");
+  var pdfBtn = document.getElementById("quote-calc-pdf");
+  var csvBtn = document.getElementById("quote-calc-csv");
+  var clearBtn = document.getElementById("quote-calc-clear");
+  var printBox = document.getElementById("quote-calc-print");
+  var printBody = document.getElementById("quote-calc-print-body");
+  var printThEmbalagem = document.getElementById("quote-calc-print-th-packaging");
+  var printThFrete = document.getElementById("quote-calc-print-th-shipping");
+  var printDescontoBreakdown = document.getElementById("quote-calc-print-discount-breakdown");
+  var printSubtotalOut = document.getElementById("quote-calc-print-subtotal");
+  var printDescontoLabel = document.getElementById("quote-calc-print-discount-label");
+  var printDescontoOut = document.getElementById("quote-calc-print-discount");
+  var printTotalOut = document.getElementById("quote-calc-print-total");
+  var printLogo = document.getElementById("quote-calc-print-logo");
+  var printBrand = document.getElementById("quote-calc-print-brand");
+  var logoHideInput = document.getElementById("quote-calc-logo-hide");
+  var logoUploadInput = document.getElementById("quote-calc-logo-upload");
+  var logoResetBtn = document.getElementById("quote-calc-logo-reset");
+  var logoErro = document.getElementById("quote-calc-logo-error");
+  var modeloUpload = document.getElementById("quote-calc-model-upload");
+  var modeloPreview = document.getElementById("quote-calc-model-preview");
+  var modeloNomeOut = document.getElementById("quote-calc-model-name");
+  var modeloDimsOut = document.getElementById("quote-calc-model-dims");
+  var modeloVolumeOut = document.getElementById("quote-calc-model-volume");
+  var modeloDensidadeOut = document.getElementById("quote-calc-model-density");
+  var modeloDensidadeRow = document.getElementById("quote-calc-model-density-row");
+  var modeloErro = document.getElementById("quote-calc-model-error");
+  var modeloConcluirWrap = document.getElementById("quote-calc-model-done-wrap");
+  var modeloConcluirBtn = document.getElementById("quote-calc-model-done");
+  var materialSelect = document.getElementById("quote-calc-material");
+  var densidadeWrap = document.getElementById("quote-calc-density-wrap");
+  var densidadeInput = document.getElementById("quote-calc-density");
+  var infillInput = document.getElementById("quote-calc-infill");
+  var paredesInput = document.getElementById("quote-calc-walls");
+  var alturaCamadaInput = document.getElementById("quote-calc-layer-height");
+  var velocidadeInput = document.getElementById("quote-calc-speed");
+  var tempoHint = document.getElementById("quote-calc-time-hint");
+  var modeloModal = document.getElementById("quote-calc-model-modal");
+  var modeloAbrirBtn = document.getElementById("quote-calc-model-open");
+  var modeloFecharBtn = document.getElementById("quote-calc-model-close");
+  var modeloEditarBtn = document.getElementById("quote-calc-model-edit");
+  var modeloRemoverBtn = document.getElementById("quote-calc-model-remove");
+  var modeloBadge = document.getElementById("quote-calc-model-badge");
+  var modeloBadgeNome = document.getElementById("quote-calc-model-badge-name");
+  var pesoAutoTag = document.getElementById("quote-calc-weight-auto-tag");
+  var tempoAutoTag = document.getElementById("quote-calc-time-auto-tag");
+  var modeloDropzone = document.getElementById("quote-calc-dropzone");
+  var modeloLoading = document.getElementById("quote-calc-model-loading");
+  var modeloDropzoneTexto = document.getElementById("quote-calc-dropzone-text");
+  var modoSimplesBtn = document.getElementById("quote-calc-mode-simple");
+  var modoCompletoBtn = document.getElementById("quote-calc-mode-full");
+  var faixasBox = document.getElementById("quote-calc-tiers");
+  var faixasCols = document.getElementById("quote-calc-tiers-cols");
   var d = form.dataset;
   var fmt = window.Wisky3D.formatarMoeda;
   var parseNum = window.Wisky3D.parseNumeroPtBr;
@@ -100,21 +100,21 @@
   var Calculo = window.Wisky3D.OrcamentoCalculo;
 
   var rows = {
-    filamento: document.getElementById("orcamento-calc-b-filamento"),
-    energia: document.getElementById("orcamento-calc-b-energia"),
-    desgaste: document.getElementById("orcamento-calc-b-desgaste"),
-    hardwareRow: document.getElementById("orcamento-calc-b-hardware-row"),
-    hardware: document.getElementById("orcamento-calc-b-hardware"),
-    subtotal: document.getElementById("orcamento-calc-b-subtotal"),
-    perda: document.getElementById("orcamento-calc-b-perda"),
-    perdaLabel: document.getElementById("orcamento-calc-b-perda-label"),
-    margem: document.getElementById("orcamento-calc-b-margem"),
-    margemLabel: document.getElementById("orcamento-calc-b-margem-label"),
-    maoDeObra: document.getElementById("orcamento-calc-b-mao-de-obra"),
-    embalagemRow: document.getElementById("orcamento-calc-b-embalagem-row"),
-    embalagem: document.getElementById("orcamento-calc-b-embalagem"),
-    freteRow: document.getElementById("orcamento-calc-b-frete-row"),
-    frete: document.getElementById("orcamento-calc-b-frete")
+    filamento: document.getElementById("quote-calc-b-filament"),
+    energia: document.getElementById("quote-calc-b-energy"),
+    desgaste: document.getElementById("quote-calc-b-wear"),
+    hardwareRow: document.getElementById("quote-calc-b-hardware-row"),
+    hardware: document.getElementById("quote-calc-b-hardware"),
+    subtotal: document.getElementById("quote-calc-b-subtotal"),
+    perda: document.getElementById("quote-calc-b-loss"),
+    perdaLabel: document.getElementById("quote-calc-b-loss-label"),
+    margem: document.getElementById("quote-calc-b-margin"),
+    margemLabel: document.getElementById("quote-calc-b-margin-label"),
+    maoDeObra: document.getElementById("quote-calc-b-labor"),
+    embalagemRow: document.getElementById("quote-calc-b-packaging-row"),
+    embalagem: document.getElementById("quote-calc-b-packaging"),
+    freteRow: document.getElementById("quote-calc-b-shipping-row"),
+    frete: document.getElementById("quote-calc-b-shipping")
   };
 
   var itens = [];
@@ -140,19 +140,19 @@
       horas: h,
       filamentoKg: parseNum(filamento.value),
       horasManuais: horasDe(horasManuaisInput, minutosManuaisInput),
-      valorHora: numeroOuPadrao(valorHoraInput, parseFloat(d.horaTrabalho) || 0),
+      valorHora: numeroOuPadrao(valorHoraInput, parseFloat(d.laborRate) || 0),
       hardware: parseNum(hardwareInput.value) || 0,
       embalagem: parseNum(embalagemInput.value) || 0,
       frete: parseNum(freteInput.value) || 0,
-      margemPct: numeroOuPadrao(margemInput, parseFloat(d.margemPct) || 0),
-      perdaPct: numeroOuPadrao(perdaInput, parseFloat(d.perdaPct) || 0),
-      potenciaW: numeroOuPadrao(potenciaInput, parseFloat(d.potenciaW)),
-      tarifaKwh: numeroOuPadrao(tarifaInput, parseFloat(d.tarifaKwh)),
+      margemPct: numeroOuPadrao(margemInput, parseFloat(d.marginPct) || 0),
+      perdaPct: numeroOuPadrao(perdaInput, parseFloat(d.lossPct) || 0),
+      potenciaW: numeroOuPadrao(potenciaInput, parseFloat(d.powerW)),
+      tarifaKwh: numeroOuPadrao(tarifaInput, parseFloat(d.tariffKwh)),
       desgaste: Calculo.calcularDesgaste({
         valorMaquina: parseNum(valorMaquinaInput.value),
         vidaUtilH: parseNum(vidaUtilInput.value),
         desgasteFixo: parseNum(desgasteInput.value),
-        desgastePadrao: parseFloat(d.desgaste),
+        desgastePadrao: parseFloat(d.wear),
         horas: h
       })
     });
@@ -202,7 +202,7 @@
   function renderFaixas(item) {
     if (!faixasCols) return;
 
-    var faixas = String(d.faixasMargemPct || "")
+    var faixas = String(d.marginTiersPct || "")
       .split(",")
       .map(function (s) { return parseFloat(s); })
       .filter(function (n) { return isFinite(n); });
@@ -219,7 +219,7 @@
       var unit = Calculo.unitTotalComMargem(item.subtotalComPerda, margemPct, item.maoDeObra, item.embalagem, item.frete);
       var col = document.createElement("button");
       col.type = "button";
-      col.className = "calc-faixa";
+      col.className = "calc-tier";
       col.setAttribute("aria-label", "Usar margem de " + margemPct + "% (" + (labels[i] || "") + ")");
       var isActive = margemPct === item.margemPct;
       col.classList.toggle("is-active", isActive);
@@ -230,15 +230,15 @@
       });
 
       var label = document.createElement("span");
-      label.className = "calc-faixa-label";
+      label.className = "calc-tier-label";
       label.textContent = labels[i] || (margemPct + "%");
 
       var pct = document.createElement("span");
-      pct.className = "calc-faixa-pct";
+      pct.className = "calc-tier-pct";
       pct.textContent = margemPct + "%";
 
       var valor = document.createElement("span");
-      valor.className = "calc-faixa-valor";
+      valor.className = "calc-tier-value";
       valor.textContent = fmt.format(unit);
 
       col.appendChild(label);
@@ -256,7 +256,7 @@
     el.appendChild(document.createTextNode("Desconto"));
     if (texto) {
       var span = document.createElement("span");
-      span.className = "calc-desconto-label-texto";
+      span.className = "calc-discount-label-text";
       span.textContent = " (" + texto + ")";
       el.appendChild(span);
     }
@@ -315,7 +315,7 @@
     });
 
     li.appendChild(info);
-    li.appendChild(criarSpan("calc-item-valor", fmt.format(item.itemTotal)));
+    li.appendChild(criarSpan("calc-item-value", fmt.format(item.itemTotal)));
     li.appendChild(removeBtn);
     return li;
   }
@@ -467,14 +467,14 @@
   // em vez de sempre voltar ao padrão do _config.yml.
   var PERSISTED_FIELDS = [
     { input: filamento, key: "orcamentoCalc:filamento" },
-    { input: valorHoraInput, key: "orcamentoCalc:valorHora", fallback: d.horaTrabalho },
-    { input: potenciaInput, key: "orcamentoCalc:potencia", fallback: d.potenciaW },
-    { input: tarifaInput, key: "orcamentoCalc:tarifa", fallback: d.tarifaKwh },
-    { input: margemInput, key: "orcamentoCalc:margem", fallback: d.margemPct },
-    { input: perdaInput, key: "orcamentoCalc:perda", fallback: d.perdaPct },
-    { input: desgasteInput, key: "orcamentoCalc:desgaste", fallback: d.desgaste },
-    { input: valorMaquinaInput, key: "orcamentoCalc:valorMaquina", fallback: positivoOuNada(d.valorMaquina) },
-    { input: vidaUtilInput, key: "orcamentoCalc:vidaUtil", fallback: positivoOuNada(d.vidaUtilH) },
+    { input: valorHoraInput, key: "orcamentoCalc:valorHora", fallback: d.laborRate },
+    { input: potenciaInput, key: "orcamentoCalc:potencia", fallback: d.powerW },
+    { input: tarifaInput, key: "orcamentoCalc:tarifa", fallback: d.tariffKwh },
+    { input: margemInput, key: "orcamentoCalc:margem", fallback: d.marginPct },
+    { input: perdaInput, key: "orcamentoCalc:perda", fallback: d.lossPct },
+    { input: desgasteInput, key: "orcamentoCalc:desgaste", fallback: d.wear },
+    { input: valorMaquinaInput, key: "orcamentoCalc:valorMaquina", fallback: positivoOuNada(d.machineValue) },
+    { input: vidaUtilInput, key: "orcamentoCalc:vidaUtil", fallback: positivoOuNada(d.lifespanH) },
     { input: embalagemInput, key: "orcamentoCalc:embalagem" },
     { input: freteInput, key: "orcamentoCalc:frete" }
   ];
@@ -504,7 +504,7 @@
   initPersistedFields();
 
   var MODO_COMPLETO_KEY = "orcamentoCalc:modoCompleto";
-  var camposAvancados = document.querySelectorAll(".calc-field-avancado");
+  var camposAvancados = document.querySelectorAll(".calc-field-advanced");
   var modoCompleto = lsGet(MODO_COMPLETO_KEY) === "1";
 
   function aplicarModo() {
@@ -621,7 +621,7 @@
       return parseMedida(densidadeInput.value);
     }
     var opt = materialSelect.options[materialSelect.selectedIndex];
-    return parseFloat(opt.dataset.densidade);
+    return parseFloat(opt.dataset.density);
   }
 
   function mostrarErroModelo(msg) {
@@ -639,7 +639,7 @@
 
     var densidade = densidadeAtual();
     var infillPct = parseNum(infillInput.value) || 0;
-    var paredes = parseInt(paredesInput.value, 10) || parseInt(d.paredes, 10) || 0;
+    var paredes = parseInt(paredesInput.value, 10) || parseInt(d.walls, 10) || 0;
 
     if (!isFinite(densidade) || densidade <= 0) {
       mostrarErroModelo("Não encontramos a densidade do material nesse arquivo. Selecione o material (ou informe a densidade manualmente) para calcular o peso.");
@@ -655,10 +655,10 @@
       densidade: densidade,
       infillPct: infillPct,
       paredes: paredes,
-      larguraExtrusao: parseFloat(d.larguraExtrusaoMm) || 0.4,
-      alturaCamada: parseMedida(alturaCamadaInput.value) || parseFloat(d.alturaCamadaMm) || 0.2,
-      velocidade: parseMedida(velocidadeInput.value) || parseFloat(d.velocidadeMmS) || 50,
-      overheadPorCamada: parseFloat(d.overheadCamadaS) || 2
+      larguraExtrusao: parseFloat(d.extrusionWidthMm) || 0.4,
+      alturaCamada: parseMedida(alturaCamadaInput.value) || parseFloat(d.layerHeightMm) || 0.2,
+      velocidade: parseMedida(velocidadeInput.value) || parseFloat(d.speedMmS) || 50,
+      overheadPorCamada: parseFloat(d.layerOverheadS) || 2
     });
 
     peso.value = estimativa.pesoG.toFixed(1);

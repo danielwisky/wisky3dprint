@@ -1,25 +1,25 @@
 // ---------------------------------------------------------------------------
 // BLOCO: Colorir 3MF
 // ---------------------------------------------------------------------------
-.cor3mf-container {
+.colorize3mf-container {
   width: min(100% - 2.5rem, 1360px);
 }
-#cor3mf.calc {
+#colorize3mf.calc {
   max-width: none;
 }
-#cor3mf-painel {
+#colorize3mf-panel {
   margin-top: 1.75rem;
   padding-top: 1.5rem;
   border-top: 1px solid var(--border);
   &[hidden] { display: none; }
 }
-.cor3mf-hint {
+.colorize3mf-hint {
   margin-bottom: 1rem;
   font-size: 0.85rem;
   color: var(--muted);
   text-align: center;
 }
-.cor3mf-abas {
+.colorize3mf-tabs {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
@@ -27,7 +27,7 @@
 
   &[hidden] { display: none; }
 }
-.cor3mf-aba {
+.colorize3mf-tab {
   padding: 0.45rem 0.9rem;
   background: var(--surface);
   border: 1.5px solid var(--border);
@@ -43,13 +43,13 @@
     border-color: var(--border-strong);
   }
 
-  &.is-ativa {
+  &.is-active {
     border-color: var(--cyan);
     background: color-mix(in srgb, var(--cyan) 12%, var(--surface));
     color: var(--cyan);
   }
 }
-.cor3mf-workspace {
+.colorize3mf-workspace {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 220px;
   gap: 1.25rem;
@@ -58,20 +58,20 @@
     grid-template-columns: 1fr;
   }
 }
-.cor3mf-canvas-wrap {
+.colorize3mf-canvas-wrap {
   position: relative;
   border: 1px solid var(--border);
   border-radius: 16px;
   overflow: hidden;
   background: var(--surface);
 }
-#cor3mf-canvas {
+#colorize3mf-canvas {
   display: block;
   width: 100%;
   touch-action: none;
   cursor: crosshair;
 }
-.cor3mf-recentralizar {
+.colorize3mf-recenter {
   position: absolute;
   top: 0.75rem;
   right: 0.75rem;
@@ -96,7 +96,7 @@
     color: var(--cyan);
   }
 }
-.cor3mf-aviso-grande {
+.colorize3mf-large-warning {
   position: absolute;
   left: 0.75rem;
   right: 0.75rem;
@@ -111,7 +111,7 @@
 
   &[hidden] { display: none; }
 }
-.cor3mf-aviso-grande-fechar {
+.colorize3mf-large-warning-close {
   position: absolute;
   top: 0.3rem;
   right: 0.45rem;
@@ -129,16 +129,16 @@
     opacity: 1;
   }
 }
-.cor3mf-toolbar {
+.colorize3mf-toolbar {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
-.cor3mf-grupo-ferramenta {
+.colorize3mf-tool-group {
   display: flex;
   gap: 0.4rem;
 }
-.cor3mf-ferramenta {
+.colorize3mf-tool {
   flex: 1;
   padding: 0.55rem 0.6rem;
   background: var(--surface);
@@ -155,13 +155,13 @@
     border-color: var(--border-strong);
   }
 
-  &.is-ativa {
+  &.is-active {
     border-color: var(--cyan);
     background: color-mix(in srgb, var(--cyan) 12%, var(--surface));
     color: var(--cyan);
   }
 }
-.cor3mf-paleta-nova-cor-oculto {
+.colorize3mf-palette-new-color-hidden {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -170,18 +170,18 @@
   opacity: 0;
   pointer-events: none;
 }
-.cor3mf-paleta-topo {
+.colorize3mf-palette-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 0.6rem;
 }
-.cor3mf-paleta-label {
+.colorize3mf-palette-label {
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--muted);
 }
-.cor3mf-paleta-add {
+.colorize3mf-palette-add {
   width: 1.8rem;
   height: 1.8rem;
   display: inline-flex;
@@ -201,17 +201,17 @@
     color: var(--cyan);
   }
 }
-.cor3mf-paleta-lista {
+.colorize3mf-palette-list {
   display: flex;
   flex-wrap: wrap;
   gap: 0.6rem;
 }
-.cor3mf-slot {
+.colorize3mf-slot {
   position: relative;
   width: 2.6rem;
   height: 2.6rem;
 }
-.cor3mf-slot-btn {
+.colorize3mf-slot-btn {
   width: 100%;
   height: 100%;
   border-radius: 50%;
@@ -223,13 +223,13 @@
   cursor: pointer;
   transition: border-color 0.15s ease, transform 0.15s ease;
 
-  .cor3mf-slot.is-ativa & {
+  .colorize3mf-slot.is-active & {
     border-color: var(--cyan);
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--cyan) 45%, transparent);
     transform: scale(1.06);
   }
 }
-.cor3mf-slot-edit {
+.colorize3mf-slot-edit {
   position: absolute;
   right: -0.2rem;
   bottom: -0.2rem;
@@ -244,7 +244,7 @@
   &::-webkit-color-swatch-wrapper { padding: 0; }
   &::-webkit-color-swatch { border: none; border-radius: 50%; }
 }
-.cor3mf-slot-del {
+.colorize3mf-slot-del {
   position: absolute;
   left: -0.25rem;
   top: -0.25rem;
@@ -266,7 +266,7 @@
     border-color: var(--coral);
   }
 }
-.cor3mf-acoes-selecao {
+.colorize3mf-selection-actions {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -277,14 +277,14 @@
 
   &[hidden] { display: none; }
 }
-.cor3mf-selecao-contagem {
+.colorize3mf-selection-count {
   font-size: 0.8rem;
   color: var(--muted);
 }
-.cor3mf-resultado {
+.colorize3mf-result {
   margin-top: 1.5rem;
 }
-.cor3mf-out {
+.colorize3mf-out {
   margin-top: 0.9rem;
   padding: 0.6rem 0.9rem;
   background: var(--surface-soft);

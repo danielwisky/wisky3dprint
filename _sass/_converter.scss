@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // BLOCO: Conversor 3MF
 // ---------------------------------------------------------------------------
-.conv3mf-privacidade {
+.convert3mf-privacy {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
@@ -21,23 +21,23 @@
     color: var(--cyan);
   }
 }
-#conv3mf-painel {
+#convert3mf-panel {
   margin-top: 1.75rem;
   padding-top: 1.5rem;
   border-top: 1px solid var(--border);
   &[hidden] { display: none; }
 }
-.conv3mf-de-nome {
+.convert3mf-source-name {
   font-size: 1.05rem;
   font-weight: 700;
   color: var(--text);
 }
-.conv3mf-de-sub {
+.convert3mf-source-sub {
   margin-top: 0.2rem;
   font-size: 0.85rem;
   color: var(--muted);
 }
-.conv3mf-paleta {
+.convert3mf-palette {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
@@ -45,13 +45,13 @@
 
   &:empty { display: none; }
 }
-.conv3mf-swatch {
+.convert3mf-swatch {
   width: 1.1rem;
   height: 1.1rem;
   border-radius: 50%;
   border: 1px solid var(--border-strong);
 }
-.conv3mf-destinos-topo {
+.convert3mf-targets-top {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
@@ -60,12 +60,12 @@
 
   .calc-section-title { margin-bottom: 0; }
 }
-.conv3mf-destinos-contagem {
+.convert3mf-targets-count {
   font-size: 0.78rem;
   color: var(--muted);
   white-space: nowrap;
 }
-.conv3mf-busca {
+.convert3mf-search {
   display: block;
   width: 100%;
   padding: 0.6rem 0.85rem;
@@ -82,7 +82,7 @@
     outline-offset: 1px;
   }
 }
-.conv3mf-sem-resultado {
+.convert3mf-no-result {
   padding: 0.8rem;
   text-align: center;
   color: var(--muted);
@@ -90,12 +90,12 @@
 
   &[hidden] { display: none; }
 }
-.conv3mf-grid {
+.convert3mf-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 0.6rem;
 }
-.conv3mf-grupo {
+.convert3mf-group {
   grid-column: 1 / -1;
   font-size: 0.72rem;
   font-weight: 700;
@@ -110,7 +110,7 @@
     border-top: none;
   }
 }
-.conv3mf-destino {
+.convert3mf-target {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
@@ -127,28 +127,28 @@
     border-color: var(--border-strong);
   }
 
-  &.is-atual {
+  &.is-current {
     opacity: 0.5;
   }
 
-  &.is-selecionado {
+  &.is-selected {
     border-color: var(--cyan);
     background: color-mix(in srgb, var(--cyan) 10%, var(--surface));
   }
 
-  &.is-atual.is-selecionado {
+  &.is-current.is-selected {
     opacity: 1;
   }
 }
-.conv3mf-destino-nome {
+.convert3mf-target-name {
   font-size: 0.9rem;
   font-weight: 600;
 }
-.conv3mf-destino-marca {
+.convert3mf-target-brand {
   font-size: 0.75rem;
   color: var(--muted);
 }
-.conv3mf-aviso {
+.convert3mf-warning {
   margin-top: 1.5rem;
   padding: 0.7rem 0.9rem;
   background: color-mix(in srgb, var(--coral) 12%, var(--surface-soft));
@@ -160,10 +160,10 @@
 
   &[hidden] { display: none; }
 }
-.conv3mf-resultado {
+.convert3mf-result {
   text-align: left;
 }
-.conv3mf-selecionado {
+.convert3mf-selected {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -184,7 +184,7 @@
 
   &[hidden] { display: none; }
 }
-.conv3mf-out {
+.convert3mf-out {
   margin-top: 0.9rem;
   padding: 0.6rem 0.9rem;
   background: var(--surface-soft);

@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Cálculos da calculadora de orçamento (orcamento.js), sem acesso ao DOM:
+// Cálculos da calculadora de orçamento (quote.js), sem acesso ao DOM:
 // custo do item, desgaste, desconto, estimativa de peso/tempo a partir da
 // malha e geração do CSV. Depende de price-formula.js (calcularSubtotalBase).
 // ---------------------------------------------------------------------------

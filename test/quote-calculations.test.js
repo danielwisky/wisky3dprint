@@ -4,7 +4,7 @@ const path = require("node:path");
 const fs = require("node:fs");
 
 global.window = global;
-for (const arquivo of ["price-formula.js", "orcamento-calculo.js"]) {
+for (const arquivo of ["price-formula.js", "quote-calculations.js"]) {
   new Function(fs.readFileSync(path.join(__dirname, "..", "assets", "js", arquivo), "utf8"))();
 }
 const Calculo = window.Wisky3D.OrcamentoCalculo;

@@ -15,8 +15,8 @@
   }
 
   var installTip = document.getElementById("pwa-install-tip");
-  var installTipTexto = document.getElementById("pwa-install-tip-texto");
-  var installTipFechar = document.getElementById("pwa-install-tip-fechar");
+  var installTipTexto = document.getElementById("pwa-install-tip-text");
+  var installTipFechar = document.getElementById("pwa-install-tip-close");
   var updateToast = document.getElementById("pwa-update-toast");
   var updateToastBtn = document.getElementById("pwa-update-btn");
 

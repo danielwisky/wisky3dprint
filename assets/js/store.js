@@ -7,10 +7,10 @@
     if (!carousels.length) return;
 
     carousels.forEach(function (car) {
-      var slides = car.querySelectorAll(".estoque-slide");
-      var dots = car.querySelectorAll(".estoque-dot");
-      var prev = car.querySelector(".estoque-nav-prev");
-      var next = car.querySelector(".estoque-nav-next");
+      var slides = car.querySelectorAll(".stock-slide");
+      var dots = car.querySelectorAll(".stock-dot");
+      var prev = car.querySelector(".stock-nav-prev");
+      var next = car.querySelector(".stock-nav-next");
       var idx = 0;
 
       function show(i) {
@@ -48,14 +48,14 @@
 // ---------------------------------------------------------------------------
 
   (function () {
-    var buttons = document.querySelectorAll("[data-estoque-buy]");
+    var buttons = document.querySelectorAll("[data-stock-buy]");
     if (!buttons.length) return;
 
     buttons.forEach(function (btn) {
       btn.addEventListener("click", function () {
-        var nome = btn.getAttribute("data-peca");
+        var nome = btn.getAttribute("data-piece");
         if (!nome) return;
-        var prontaEntrega = btn.getAttribute("data-pronta-entrega") === "true";
+        var prontaEntrega = btn.getAttribute("data-in-stock") === "true";
         var msg = "Oi! Tenho interesse na peça " + nome + (prontaEntrega ? " (pronta entrega)." : ".");
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(msg).catch(function () {});
@@ -69,20 +69,20 @@
 // ---------------------------------------------------------------------------
 
   (function () {
-    var controls = document.querySelector("[data-estoque-controls]");
-    var grid = document.querySelector(".estoque-grid");
+    var controls = document.querySelector("[data-stock-controls]");
+    var grid = document.querySelector(".stock-grid");
     if (!controls || !grid) return;
 
-    var cards = Array.prototype.slice.call(grid.querySelectorAll(".estoque-card"));
+    var cards = Array.prototype.slice.call(grid.querySelectorAll(".stock-card"));
     if (!cards.length) return;
 
-    var chips = Array.prototype.slice.call(controls.querySelectorAll(".estoque-chip"));
-    var sortSelect = controls.querySelector("[data-estoque-sort]");
-    var searchInput = controls.querySelector("[data-estoque-search]");
-    var activeBar = controls.querySelector("[data-estoque-active]");
-    var activePills = controls.querySelector("[data-estoque-active-pills]");
-    var clearBtn = controls.querySelector("[data-estoque-clear]");
-    var countMsg = document.querySelector("[data-estoque-count]");
+    var chips = Array.prototype.slice.call(controls.querySelectorAll(".stock-chip"));
+    var sortSelect = controls.querySelector("[data-stock-sort]");
+    var searchInput = controls.querySelector("[data-stock-search]");
+    var activeBar = controls.querySelector("[data-stock-active]");
+    var activePills = controls.querySelector("[data-stock-active-pills]");
+    var clearBtn = controls.querySelector("[data-stock-clear]");
+    var countMsg = document.querySelector("[data-stock-count]");
 
     var filtrosAtivos = [];
     var termoBusca = "";
@@ -100,10 +100,10 @@
     var itens = cards.map(function (card) {
       return {
         el: card,
-        cats: (card.getAttribute("data-categorias") || "")
+        cats: (card.getAttribute("data-categories") || "")
           .split("§")
           .filter(function (c) { return c !== ""; }),
-        nome: normalizar(card.getAttribute("data-nome"))
+        nome: normalizar(card.getAttribute("data-name"))
       };
     });
 
@@ -135,11 +135,11 @@
 
     // Re-dispara um fade-in suave nos cards visíveis (um reflow só).
     function reproduzirFade() {
-      cards.forEach(function (card) { card.classList.remove("estoque-card--in"); });
+      cards.forEach(function (card) { card.classList.remove("stock-card--in"); });
       void grid.offsetWidth;
       cards.forEach(function (card) {
-        if (!card.classList.contains("estoque-card--hidden")) {
-          card.classList.add("estoque-card--in");
+        if (!card.classList.contains("stock-card--hidden")) {
+          card.classList.add("stock-card--in");
         }
       });
     }
@@ -148,7 +148,7 @@
       var visiveis = 0;
       itens.forEach(function (item) {
         var mostra = combina(item, filtrosAtivos, termoBusca);
-        item.el.classList.toggle("estoque-card--hidden", !mostra);
+        item.el.classList.toggle("stock-card--hidden", !mostra);
         if (mostra) visiveis++;
       });
       atualizarContagem(visiveis);
@@ -161,28 +161,28 @@
       var ordenados = cards.slice();
       ordenados.sort(function (a, b) {
         if (modo === "preco-asc" || modo === "preco-desc") {
-          var pa = parseFloat(a.getAttribute("data-preco")) || 0;
-          var pb = parseFloat(b.getAttribute("data-preco")) || 0;
+          var pa = parseFloat(a.getAttribute("data-price")) || 0;
+          var pb = parseFloat(b.getAttribute("data-price")) || 0;
           return modo === "preco-asc" ? pa - pb : pb - pa;
         }
         if (modo === "nome-asc") {
-          return (a.getAttribute("data-nome") || "").localeCompare(
-            b.getAttribute("data-nome") || "",
+          return (a.getAttribute("data-name") || "").localeCompare(
+            b.getAttribute("data-name") || "",
             "pt-BR",
             { sensitivity: "base" }
           );
         }
         // padrão: pronta entrega primeiro, depois oferta, depois ordem original do YAML
         function grupo(el) {
-          if (el.getAttribute("data-oferta") === "true") return 0;
-          if (el.getAttribute("data-pronta-entrega") === "true") return 1;
+          if (el.getAttribute("data-sale") === "true") return 0;
+          if (el.getAttribute("data-in-stock") === "true") return 1;
           return 2;
         }
         var ga = grupo(a);
         var gb = grupo(b);
         if (ga !== gb) return ga - gb;
-        return (parseInt(a.getAttribute("data-ordem"), 10) || 0) -
-          (parseInt(b.getAttribute("data-ordem"), 10) || 0);
+        return (parseInt(a.getAttribute("data-order"), 10) || 0) -
+          (parseInt(b.getAttribute("data-order"), 10) || 0);
       });
       ordenados.forEach(function (card) {
         grid.appendChild(card);
@@ -194,7 +194,7 @@
     // "Todos" e chips já ativos nunca desabilitam (precisa poder remover).
     function atualizarChips() {
       chips.forEach(function (chip) {
-        var filtro = chip.getAttribute("data-filtro") || "todos";
+        var filtro = chip.getAttribute("data-filter") || "todos";
         var ativo = filtro === "todos"
           ? filtrosAtivos.length === 0
           : filtrosAtivos.indexOf(filtro) !== -1;
@@ -204,7 +204,7 @@
         else if (ativo) n = contar(filtrosAtivos, termoBusca);
         else n = contar(filtrosAtivos.concat([filtro]), termoBusca);
 
-        var countEl = chip.querySelector(".estoque-chip-count");
+        var countEl = chip.querySelector(".stock-chip-count");
         if (countEl) countEl.textContent = n;
 
         chip.classList.toggle("is-active", ativo);
@@ -229,20 +229,20 @@
       filtrosAtivos.forEach(function (cat) {
         var pill = document.createElement("button");
         pill.type = "button";
-        pill.className = "estoque-active-pill";
+        pill.className = "stock-active-pill";
         pill.setAttribute("data-remove", cat);
         pill.setAttribute("aria-label", "Remover filtro " + cat);
         var rotulo = document.createElement("span");
         rotulo.textContent = cat;
         var x = document.createElement("span");
-        x.className = "estoque-active-x";
+        x.className = "stock-active-x";
         x.setAttribute("aria-hidden", "true");
         x.textContent = "×";
         pill.appendChild(rotulo);
         pill.appendChild(x);
         activePills.appendChild(pill);
       });
-      var activeLabel = activeBar.querySelector(".estoque-active-label");
+      var activeLabel = activeBar.querySelector(".stock-active-label");
       if (activeLabel) activeLabel.hidden = filtrosAtivos.length === 0;
       activeBar.hidden = filtrosAtivos.length === 0 && termoBusca === "";
     }
@@ -271,7 +271,7 @@
     chips.forEach(function (chip) {
       chip.addEventListener("click", function () {
         if (chip.disabled) return;
-        var filtro = chip.getAttribute("data-filtro") || "todos";
+        var filtro = chip.getAttribute("data-filter") || "todos";
         if (filtro === "todos") filtrosAtivos = [];
         else alternarCategoria(filtro);
         aplicarFiltro(true);
@@ -282,7 +282,7 @@
     // × nas etiquetas de filtros ativos (remove aquela categoria).
     if (activePills) {
       activePills.addEventListener("click", function (e) {
-        var pill = e.target.closest(".estoque-active-pill");
+        var pill = e.target.closest(".stock-active-pill");
         if (!pill) return;
         alternarCategoria(pill.getAttribute("data-remove"));
         aplicarFiltro(true);
@@ -311,7 +311,7 @@
     // Botão "Filtros": recolhe/expande TUDO (busca, chips e filtros ativos),
     // deixando só o próprio botão e a ordenação. Usa uma classe no contêiner
     // para não conflitar com o controle dinâmico da barra de filtros ativos.
-    var toggleBtn = controls.querySelector("[data-estoque-toggle]");
+    var toggleBtn = controls.querySelector("[data-stock-toggle]");
     if (toggleBtn) {
       toggleBtn.addEventListener("click", function () {
         var aberto = toggleBtn.getAttribute("aria-expanded") !== "true";
@@ -335,7 +335,7 @@
       var ordem = params.get("ordem");
 
       if (cat) {
-        var validas = chips.map(function (c) { return c.getAttribute("data-filtro"); });
+        var validas = chips.map(function (c) { return c.getAttribute("data-filter"); });
         filtrosAtivos = cat.split(",").filter(function (p) {
           return p !== "todos" && validas.indexOf(p) !== -1;
         });

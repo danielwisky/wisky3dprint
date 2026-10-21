@@ -1,12 +1,12 @@
 @use "tokens" as *;
 
 // Loja (estoque)
-.section-estoque {
+.section-stock {
   padding-top: calc(#{$nav-h} + 4rem);
 }
 
 // Barra de filtro: busca + ordenação em cima, chips e filtros ativos embaixo.
-.estoque-controls {
+.stock-controls {
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -14,7 +14,7 @@
 }
 
 // Linha de cima: campo de busca (cresce) + seletor de ordenação.
-.estoque-controls-top {
+.stock-controls-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -23,13 +23,13 @@
 }
 
 // Campo de busca por nome, com ícone de lupa embutido.
-.estoque-search {
+.stock-search {
   position: relative;
   flex: 1 1 260px;
   min-width: 220px;
 }
 
-.estoque-search-icon {
+.stock-search-icon {
   position: absolute;
   left: 0.9rem;
   top: 50%;
@@ -40,7 +40,7 @@
   pointer-events: none;
 }
 
-.estoque-search-input {
+.stock-search-input {
   width: 100%;
   padding: 0.55rem 1rem 0.55rem 2.5rem;
   font-family: $font-body;
@@ -67,14 +67,14 @@
 }
 
 // Ordenação + botão "Filtros" agrupados à direita da linha de cima.
-.estoque-top-actions {
+.stock-top-actions {
   display: flex;
   align-items: center;
   gap: 0.75rem;
 }
 
 // Botão que recolhe/expande a fileira de chips.
-.estoque-toggle {
+.stock-toggle {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
@@ -100,32 +100,32 @@
 }
 
 // Seta que gira quando o painel está recolhido.
-.estoque-toggle-chevron {
+.stock-toggle-chevron {
   width: 0.95rem;
   height: 0.95rem;
   transition: transform 0.2s ease;
 }
 
-.estoque-toggle[aria-expanded="false"] .estoque-toggle-chevron {
+.stock-toggle[aria-expanded="false"] .stock-toggle-chevron {
   transform: rotate(-90deg);
 }
 
 // Recolhido: esconde busca, chips e filtros ativos (fica só o botão + ordenar).
-// Três classes (0,3,0) para vencer a regra .estoque-active[hidden] (0,2,0).
-.estoque-controls.is-collapsed .estoque-search,
-.estoque-controls.is-collapsed .estoque-filters,
-.estoque-controls.is-collapsed .estoque-active {
+// Três classes (0,3,0) para vencer a regra .stock-active[hidden] (0,2,0).
+.stock-controls.is-collapsed .stock-search,
+.stock-controls.is-collapsed .stock-filters,
+.stock-controls.is-collapsed .stock-active {
   display: none;
 }
 
 // Contagem de resultados (também é a região aria-live para leitores de tela).
-.estoque-count {
+.stock-count {
   margin: 0 0 1.75rem;
   font-size: 0.9rem;
   color: var(--muted);
 }
 
-.estoque-filters {
+.stock-filters {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
@@ -137,7 +137,7 @@
   }
 }
 
-.estoque-chip {
+.stock-chip {
   padding: 0.45rem 1rem;
   font-family: $font-body;
   font-size: 0.9rem;
@@ -173,7 +173,7 @@
 }
 
 // "Pronta entrega" e "Oferta": chips fixos, com contorno para se destacar das categorias.
-.estoque-chip--special {
+.stock-chip--special {
   border-color: color-mix(in srgb, var(--coral) 40%, var(--border));
 
   &.is-active {
@@ -185,7 +185,7 @@
 // Número entre parênteses com a contagem contextual de peças no chip.
 // Os parênteses só aparecem quando o JS preencheu o número (:not(:empty)),
 // evitando um "()" solto antes do script rodar ou com JS desativado.
-.estoque-chip-count {
+.stock-chip-count {
   opacity: 0.7;
   font-variant-numeric: tabular-nums;
 
@@ -194,7 +194,7 @@
 }
 
 // Linha "Filtros: (…×) (…×)  Limpar", visível só quando há categoria marcada.
-.estoque-active {
+.stock-active {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -206,18 +206,18 @@
   }
 }
 
-.estoque-active-label {
+.stock-active-label {
   color: var(--muted);
   font-weight: 600;
 }
 
-.estoque-active-pills {
+.stock-active-pills {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
 }
 
-.estoque-active-pill {
+.stock-active-pill {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
@@ -238,13 +238,13 @@
   }
 }
 
-.estoque-active-x {
+.stock-active-x {
   font-size: 1.05rem;
   line-height: 1;
   color: var(--muted);
 }
 
-.estoque-clear {
+.stock-clear {
   padding: 0.2rem 0.3rem;
   font-family: $font-body;
   font-size: 0.85rem;
@@ -262,7 +262,7 @@
   }
 }
 
-.estoque-sort-select {
+.stock-sort-select {
   padding: 0.5rem 2.2rem 0.5rem 0.9rem;
   font-family: $font-body;
   font-size: 0.9rem;
@@ -290,32 +290,32 @@
   }
 }
 
-.estoque-grid {
+.stock-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1.5rem;
 }
 
 // Escondido pelo filtro de categoria (JS). Seletor combinado para ganhar da
-// regra .estoque-card { display: flex } independentemente da ordem no arquivo.
-.estoque-card.estoque-card--hidden {
+// regra .stock-card { display: flex } independentemente da ordem no arquivo.
+.stock-card.stock-card--hidden {
   display: none;
 }
 
 // Fade-in suave dos cards ao trocar de filtro (só opacidade, para não brigar
 // com o transform do hover). Aplicado via JS apenas em interações do usuário.
 @media (prefers-reduced-motion: no-preference) {
-  @keyframes estoqueFadeIn {
+  @keyframes stockFadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
   }
 
-  .estoque-card--in {
-    animation: estoqueFadeIn 0.3s ease;
+  .stock-card--in {
+    animation: stockFadeIn 0.3s ease;
   }
 }
 
-.estoque-card {
+.stock-card {
   display: flex;
   flex-direction: column;
   border-radius: $radius-md;
@@ -331,7 +331,7 @@
   }
 }
 
-.estoque-card-media {
+.stock-card-media {
   position: relative;
   width: 100%;
   // Proporção 3:4 via padding (robusto em todo navegador, inclusive Safari iOS,
@@ -343,7 +343,7 @@
 }
 
 // Cada foto do carrossel (também é o gatilho de zoom).
-.estoque-slide {
+.stock-slide {
   position: absolute;
   inset: 0;
   padding: 0;
@@ -361,7 +361,7 @@
   }
 }
 
-.estoque-card-image {
+.stock-card-image {
   position: relative;
   z-index: 1;
   width: 100%;
@@ -372,7 +372,7 @@
 }
 
 // Selos ("Pronta entrega", tamanho) sobre a foto do card.
-.estoque-badges {
+.stock-badges {
   position: absolute;
   top: 0.6rem;
   left: 0.6rem;
@@ -384,7 +384,7 @@
   pointer-events: none;
 }
 
-.estoque-badge {
+.stock-badge {
   padding: 0.3rem 0.65rem;
   font-size: 0.68rem;
   font-weight: 700;
@@ -395,22 +395,22 @@
   border-radius: 999px;
 }
 
-.estoque-badge--tamanho {
+.stock-badge--size {
   color: #1a1f2b;
   background: rgba(255, 255, 255, 0.9);
 }
 
-.estoque-badge--oferta {
+.stock-badge--sale {
   color: #fff;
   background: var(--coral);
 }
 
-.estoque-card:hover .estoque-slide.is-active .estoque-card-image {
+.stock-card:hover .stock-slide.is-active .stock-card-image {
   transform: scale(1.03);
 }
 
 // Setas do carrossel
-.estoque-nav {
+.stock-nav {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
@@ -439,27 +439,27 @@
   }
 }
 
-.estoque-nav-prev {
+.stock-nav-prev {
   left: 0.5rem;
 }
 
-.estoque-nav-next {
+.stock-nav-next {
   right: 0.5rem;
 }
 
-.estoque-card-media:hover .estoque-nav {
+.stock-card-media:hover .stock-nav {
   opacity: 1;
 }
 
 // Em telas de toque (sem hover), as setas ficam sempre visíveis.
 @media (hover: none) {
-  .estoque-nav {
+  .stock-nav {
     opacity: 0.9;
   }
 }
 
 // Bolinhas indicadoras
-.estoque-dots {
+.stock-dots {
   position: absolute;
   bottom: 0.6rem;
   left: 0;
@@ -470,7 +470,7 @@
   gap: 0.35rem;
 }
 
-.estoque-dot {
+.stock-dot {
   width: 7px;
   height: 7px;
   padding: 0;
@@ -488,7 +488,7 @@
   }
 }
 
-.estoque-empty-inner {
+.stock-empty-inner {
   position: absolute;
   inset: 0;
   display: flex;
@@ -510,7 +510,7 @@
   }
 }
 
-.estoque-card-body {
+.stock-card-body {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
@@ -519,7 +519,7 @@
 }
 
 // Selos discretos de categoria acima do título (uma peça pode ter vários).
-.estoque-card-cats {
+.stock-card-cats {
   align-self: flex-start;
   margin-bottom: -0.3rem;
   display: flex;
@@ -527,7 +527,7 @@
   gap: 0.5rem;
 }
 
-.estoque-card-cat {
+.stock-card-cat {
   font-family: $font-body;
   font-size: 0.72rem;
   font-weight: 700;
@@ -537,24 +537,24 @@
 }
 
 // Ponto separador entre selos vizinhos.
-.estoque-card-cat:not(:last-child)::after {
+.stock-card-cat:not(:last-child)::after {
   content: "·";
   margin-left: 0.5rem;
   color: var(--muted);
 }
 
-.estoque-card-title {
+.stock-card-title {
   font-size: 1.15rem;
   margin: 0;
 }
 
-.estoque-card-desc {
+.stock-card-desc {
   color: var(--muted);
   font-size: 0.92rem;
   margin: 0;
 }
 
-.estoque-card-footer {
+.stock-card-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -563,20 +563,20 @@
   padding-top: 0.5rem;
 }
 
-.estoque-card-price {
+.stock-card-price {
   font-family: $font-display;
   font-weight: 700;
   font-size: 1.35rem;
   color: var(--text);
 }
 
-.estoque-card-price--oferta {
+.stock-card-price--sale {
   display: flex;
   flex-direction: column;
   gap: 0.1rem;
 }
 
-.estoque-card-price-old {
+.stock-card-price-old {
   font-family: $font-body;
   font-weight: 600;
   font-size: 0.85rem;
@@ -584,17 +584,17 @@
   text-decoration: line-through;
 }
 
-.estoque-card-price-new {
+.stock-card-price-new {
   color: var(--coral);
 }
 
-.estoque-card-btn {
+.stock-card-btn {
   padding: 0.6rem 1.1rem;
   font-size: 0.9rem;
   white-space: nowrap;
 }
 
-.estoque-empty {
+.stock-empty {
   text-align: center;
   padding: 3.5rem 1.5rem;
   border-radius: $radius-lg;
@@ -602,7 +602,7 @@
   background: var(--surface);
 }
 
-.estoque-empty-icon {
+.stock-empty-icon {
   width: 3rem;
   height: 3rem;
   margin: 0 auto 1rem;
@@ -614,13 +614,13 @@
   }
 }
 
-.estoque-empty p {
+.stock-empty p {
   color: var(--muted);
   margin-bottom: 1.25rem;
 }
 
 // Teaser da home
-.estoque-teaser {
+.stock-teaser {
   display: flex;
   align-items: center;
   justify-content: space-between;

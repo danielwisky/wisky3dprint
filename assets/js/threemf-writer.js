@@ -4,7 +4,7 @@ window.Wisky3D = window.Wisky3D || {};
 // ---------------------------------------------------------------------------
 // BLOCO: Escrita/exportação de 3MF (cores por triângulo, project_settings.config
 // e model_settings.config do Bambu Studio/OrcaSlicer, montagem de pacote do
-// zero). Extraído de colorir-3mf.js pra ser reaproveitado por outras
+// zero). Extraído de colorize-3mf.js pra ser reaproveitado por outras
 // ferramentas que também precisam gerar/editar .3mf coloridos, sem duplicar
 // essa lógica. Assume que model-parser.js já foi carregado antes (mesma
 // ordem de <script> das páginas que usam este módulo), pra usar
@@ -19,7 +19,7 @@ window.Wisky3D = window.Wisky3D || {};
   // pintada. Exportada como ThreeMFWriter.DEFAULT_COLOR (fonte única) porque
   // injetarCoresNoXml usa esse valor pra decidir se um triângulo foi "pintado
   // de verdade" (recebe paint_color) ou ficou com a cor default do objeto
-  // (não recebe, herda o extrusor/filamento padrão) — colorir-3mf.js reusa a
+  // (não recebe, herda o extrusor/filamento padrão) — colorize-3mf.js reusa a
   // mesma constante em vez de declarar seu próprio literal.
   var DEFAULT_COLOR = [176, 176, 190];
 

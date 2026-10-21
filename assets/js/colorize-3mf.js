@@ -6,11 +6,11 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
-const root = document.getElementById("cor3mf");
+const root = document.getElementById("colorize3mf");
 const modulos = window.Wisky3D || {};
 
 if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils && modulos.ColorirCalculo)) {
-  const erroEl = document.getElementById("cor3mf-erro");
+  const erroEl = document.getElementById("colorize3mf-error");
   erroEl.textContent = "Não foi possível carregar a ferramenta. Recarregue a página e tente novamente.";
   erroEl.hidden = false;
 } else if (root) {
@@ -24,33 +24,33 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
     hexToRgb
   } = ColorirCalculo;
 
-  const dropzone = document.getElementById("cor3mf-dropzone");
-  const upload = document.getElementById("cor3mf-upload");
-  const loadingEl = document.getElementById("cor3mf-loading");
-  const erroEl = document.getElementById("cor3mf-erro");
-  const painel = document.getElementById("cor3mf-painel");
-  const canvasEl = document.getElementById("cor3mf-canvas");
-  const avisoGrandeEl = document.getElementById("cor3mf-aviso-grande");
-  const avisoGrandeTextoEl = document.getElementById("cor3mf-aviso-grande-texto");
-  const avisoGrandeFecharBtn = document.getElementById("cor3mf-aviso-grande-fechar");
-  const toolBaldeBtn = document.getElementById("cor3mf-tool-balde");
-  const toolMagicaBtn = document.getElementById("cor3mf-tool-magica");
-  const toleranciaCampoEl = document.getElementById("cor3mf-tolerancia-campo");
-  const toleranciaInput = document.getElementById("cor3mf-tolerancia");
-  const toleranciaValorEl = document.getElementById("cor3mf-tolerancia-valor");
-  const paletaListaEl = document.getElementById("cor3mf-paleta-lista");
-  const paletaAddBtn = document.getElementById("cor3mf-paleta-add");
-  const paletaNovaCorInput = document.getElementById("cor3mf-paleta-nova-cor");
-  const acoesSelecaoEl = document.getElementById("cor3mf-acoes-selecao");
-  const selecaoContagemEl = document.getElementById("cor3mf-selecao-contagem");
-  const aplicarSelecaoBtn = document.getElementById("cor3mf-aplicar-selecao");
-  const limparSelecaoBtn = document.getElementById("cor3mf-limpar-selecao");
-  const desfazerBtn = document.getElementById("cor3mf-desfazer");
-  const resetarBtn = document.getElementById("cor3mf-resetar");
-  const exportBtn = document.getElementById("cor3mf-exportar");
-  const outEl = document.getElementById("cor3mf-out");
-  const recentralizarBtn = document.getElementById("cor3mf-recentralizar");
-  const abasEl = document.getElementById("cor3mf-abas");
+  const dropzone = document.getElementById("colorize3mf-dropzone");
+  const upload = document.getElementById("colorize3mf-upload");
+  const loadingEl = document.getElementById("colorize3mf-loading");
+  const erroEl = document.getElementById("colorize3mf-error");
+  const painel = document.getElementById("colorize3mf-panel");
+  const canvasEl = document.getElementById("colorize3mf-canvas");
+  const avisoGrandeEl = document.getElementById("colorize3mf-large-warning");
+  const avisoGrandeTextoEl = document.getElementById("colorize3mf-large-warning-text");
+  const avisoGrandeFecharBtn = document.getElementById("colorize3mf-large-warning-close");
+  const toolBaldeBtn = document.getElementById("colorize3mf-tool-bucket");
+  const toolMagicaBtn = document.getElementById("colorize3mf-tool-magic");
+  const toleranciaCampoEl = document.getElementById("colorize3mf-tolerance-field");
+  const toleranciaInput = document.getElementById("colorize3mf-tolerance");
+  const toleranciaValorEl = document.getElementById("colorize3mf-tolerance-value");
+  const paletaListaEl = document.getElementById("colorize3mf-palette-list");
+  const paletaAddBtn = document.getElementById("colorize3mf-palette-add");
+  const paletaNovaCorInput = document.getElementById("colorize3mf-palette-new-color");
+  const acoesSelecaoEl = document.getElementById("colorize3mf-selection-actions");
+  const selecaoContagemEl = document.getElementById("colorize3mf-selection-count");
+  const aplicarSelecaoBtn = document.getElementById("colorize3mf-apply-selection");
+  const limparSelecaoBtn = document.getElementById("colorize3mf-clear-selection");
+  const desfazerBtn = document.getElementById("colorize3mf-undo");
+  const resetarBtn = document.getElementById("colorize3mf-reset");
+  const exportBtn = document.getElementById("colorize3mf-export");
+  const outEl = document.getElementById("colorize3mf-out");
+  const recentralizarBtn = document.getElementById("colorize3mf-recenter");
+  const abasEl = document.getElementById("colorize3mf-tabs");
 
   const DEFAULT_COLOR = ThreeMFWriter.DEFAULT_COLOR;
   const HIGHLIGHT_COLOR = [255, 214, 51];
@@ -305,11 +305,11 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
     paletaListaEl.innerHTML = "";
     state.paleta.forEach((cor, i) => {
       const slot = document.createElement("div");
-      slot.className = "cor3mf-slot" + (i === state.paletaAtivaIndex ? " is-ativa" : "");
+      slot.className = "colorize3mf-slot" + (i === state.paletaAtivaIndex ? " is-active" : "");
 
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "cor3mf-slot-btn";
+      btn.className = "colorize3mf-slot-btn";
       btn.style.background = cor.hex;
       btn.textContent = String(i + 1);
       btn.setAttribute("aria-label", "Usar cor " + (i + 1));
@@ -321,7 +321,7 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
 
       const edit = document.createElement("input");
       edit.type = "color";
-      edit.className = "cor3mf-slot-edit";
+      edit.className = "colorize3mf-slot-edit";
       edit.value = cor.hex;
       edit.setAttribute("aria-label", "Editar cor " + (i + 1));
       edit.addEventListener("click", (e) => e.stopPropagation());
@@ -349,7 +349,7 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
       if (state.paleta.length > 1) {
         const del = document.createElement("button");
         del.type = "button";
-        del.className = "cor3mf-slot-del";
+        del.className = "colorize3mf-slot-del";
         del.textContent = "×";
         del.setAttribute("aria-label", "Remover cor " + (i + 1));
         del.addEventListener("click", (e) => {
@@ -417,9 +417,9 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
 
   function setTool(tool) {
     currentTool = tool;
-    toolBaldeBtn.classList.toggle("is-ativa", tool === "balde");
+    toolBaldeBtn.classList.toggle("is-active", tool === "balde");
     toolBaldeBtn.setAttribute("aria-checked", tool === "balde" ? "true" : "false");
-    toolMagicaBtn.classList.toggle("is-ativa", tool === "magica");
+    toolMagicaBtn.classList.toggle("is-active", tool === "magica");
     toolMagicaBtn.setAttribute("aria-checked", tool === "magica" ? "true" : "false");
     acoesSelecaoEl.hidden = tool !== "magica";
     // Tolerância só faz sentido pra seleção mágica (agrupar curvas em vários
@@ -463,7 +463,7 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
       const ativa = state.chapaAtivaIndice === indice;
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "cor3mf-aba" + (ativa ? " is-ativa" : "");
+      btn.className = "colorize3mf-tab" + (ativa ? " is-active" : "");
       btn.setAttribute("role", "tab");
       btn.setAttribute("aria-selected", ativa ? "true" : "false");
       btn.dataset.chapa = indice === null ? "" : String(indice);

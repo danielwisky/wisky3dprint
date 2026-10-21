@@ -6,11 +6,11 @@
     var form = document.getElementById("price-calc");
     if (!form) return;
 
-    var peso = document.getElementById("calc-peso");
-    var tempo = document.getElementById("calc-tempo");
+    var peso = document.getElementById("calc-weight");
+    var tempo = document.getElementById("calc-time");
     var out = document.getElementById("calc-result");
-    var energiaInfo = document.getElementById("calc-result-energia");
-    var energiaValorOut = document.getElementById("calc-result-energia-valor");
+    var energiaInfo = document.getElementById("calc-result-energy");
+    var energiaValorOut = document.getElementById("calc-result-energy-value");
     var d = form.dataset;
     var fmt = window.Wisky3D.formatarMoeda;
 
@@ -26,12 +26,12 @@
       var base = window.Wisky3D.calcularSubtotalBase({
         pesoG: g,
         horas: h,
-        filamentoKg: parseFloat(d.filamentoKg),
-        potenciaW: parseFloat(d.potenciaW),
-        tarifaKwh: parseFloat(d.tarifaKwh),
-        desgaste: parseFloat(d.desgaste)
+        filamentoKg: parseFloat(d.filamentKg),
+        potenciaW: parseFloat(d.powerW),
+        tarifaKwh: parseFloat(d.tariffKwh),
+        desgaste: parseFloat(d.wear)
       });
-      var total = base.subtotal * (1 + parseFloat(d.margemPct) / 100) + parseFloat(d.montagem);
+      var total = base.subtotal * (1 + parseFloat(d.marginPct) / 100) + parseFloat(d.assembly);
       out.textContent = fmt.format(total);
       out.classList.add("has-value");
       energiaValorOut.textContent = fmt.format(base.energia);
