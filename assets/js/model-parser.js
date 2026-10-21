@@ -962,6 +962,165 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     };
   }
 
+  // Opções de processo que o Bambu Studio grava com um valor por variante de
+  // bico (print_extruder_variant).
+  var OPCOES_PROCESSO_POR_VARIANTE = [
+    "bridge_speed", "default_acceleration", "enable_height_slowdown",
+    "enable_overhang_speed", "gap_infill_speed", "initial_layer_acceleration",
+    "initial_layer_infill_speed", "initial_layer_speed",
+    "initial_layer_travel_acceleration", "inner_wall_acceleration",
+    "inner_wall_speed", "internal_solid_infill_speed", "outer_wall_acceleration",
+    "outer_wall_speed", "overhang_1_4_speed", "overhang_2_4_speed",
+    "overhang_3_4_speed", "overhang_4_4_speed", "overhang_totally_speed",
+    "slowdown_end_acc", "slowdown_end_height", "slowdown_end_speed",
+    "slowdown_start_acc", "slowdown_start_height", "slowdown_start_speed",
+    "small_perimeter_speed", "small_perimeter_threshold",
+    "sparse_infill_acceleration", "sparse_infill_speed", "support_interface_speed",
+    "support_speed", "top_solid_infill_flow_ratio", "top_surface_acceleration",
+    "top_surface_speed", "travel_acceleration", "travel_short_distance_acceleration",
+    "travel_speed", "travel_speed_z", "vertical_shell_speed"
+  ];
+
+  // Opções de filamento por variante de bico sem o prefixo filament_.
+  var OPCOES_FILAMENTO_POR_VARIANTE = [
+    "long_retractions_when_ec", "nozzle_temperature", "nozzle_temperature_initial_layer",
+    "override_process_overhang_speed", "retraction_distances_when_ec",
+    "slow_down_min_speed", "volumetric_speed_coefficients"
+  ];
+
+  // Mapa de filamento por bico do Bambu Studio (H2D, H2C), sem sentido numa
+  // impressora que não os tem.
+  var MAPAS_DE_BICO = [
+    "filament_nozzle_map", "filament_volume_map", "filament_extruder_compatibility", "enable_filament_dynamic_map"
+  ];
+
+  // O Bambu Studio grava um valor por variante de bico (Standard, High
+  // Flow...) em parte das opções de filamento (filament_self_index diz de que
+  // filamento é cada valor) e de processo (um por print_extruder_variant).
+  // Com variantes que a impressora de destino não tem, o fatiador de destino
+  // não casa os filamentos com os bicos e imprime tudo no primeiro. Ficam só
+  // os valores das variantes do destino (ou o primeiro de cada filamento),
+  // como o fatiador faz ao importar o projeto, no formato do perfil de
+  // destino. Devolve uma cópia de `config`.
+  function ajustarVariantesDeBico(config, baseDestino) {
+    var novo = {};
+    Object.keys(config).forEach(function (k) {
+      if (MAPAS_DE_BICO.indexOf(k) !== -1 && !Object.prototype.hasOwnProperty.call(baseDestino, k)) return;
+      novo[k] = config[k];
+    });
+    var variantesDestino = baseDestino.printer_extruder_variant || baseDestino.extruder_variant_list || baseDestino.print_extruder_variant || [];
+
+    // filament_map aponta cada filamento para um extrusor (1, 2...); os que
+    // o destino não tem vão para o primeiro.
+    var qtdExtrusores = [].concat(baseDestino.nozzle_diameter || []).length;
+    if (Array.isArray(novo.filament_map) && qtdExtrusores) {
+      novo.filament_map = novo.filament_map.map(function (v) {
+        return parseInt(v, 10) > qtdExtrusores ? "1" : v;
+      });
+    }
+
+    var pev = config.print_extruder_variant;
+    var pid = config.print_extruder_id;
+    if (Array.isArray(pev) && pev.length) {
+      var dev = Array.isArray(baseDestino.print_extruder_variant) ? baseDestino.print_extruder_variant : [pev[0]];
+      var did = Array.isArray(baseDestino.print_extruder_id) ? baseDestino.print_extruder_id : null;
+      var escolhidos = dev.map(function (variante, j) {
+        for (var i = 0; i < pev.length; i++) {
+          if (pev[i] === variante && did && pid && pid[i] === did[j]) return i;
+        }
+        var mesma = pev.indexOf(variante);
+        return mesma === -1 ? 0 : mesma;
+      });
+      var identico = escolhidos.length === pev.length && escolhidos.every(function (i, j) {
+        return i === j && (!did || !pid || pid[i] === did[j]);
+      });
+      if (!identico) {
+        OPCOES_PROCESSO_POR_VARIANTE.forEach(function (k) {
+          var v = novo[k];
+          if (!Array.isArray(v) || v.length !== pev.length) return;
+          var valorUnico = Object.prototype.hasOwnProperty.call(baseDestino, k) && !Array.isArray(baseDestino[k]);
+          novo[k] = valorUnico ? v[escolhidos[0]] : escolhidos.map(function (i) { return v[i]; });
+        });
+        novo.print_extruder_variant = dev.slice();
+        novo.print_extruder_id = did ? did.slice() : escolhidos.map(function (i) { return pid ? pid[i] : "1"; });
+      }
+    }
+
+    var fev = config.filament_extruder_variant;
+    var fsi = config.filament_self_index;
+    if (Array.isArray(fev) && Array.isArray(fsi) && fev.length === fsi.length) {
+      var porFilamento = {};
+      var ordem = [];
+      fsi.forEach(function (s, i) {
+        if (!porFilamento[s]) {
+          porFilamento[s] = [];
+          ordem.push(s);
+        }
+        porFilamento[s].push(i);
+      });
+      var manter = [];
+      var novaVariante = [];
+      var novoIndice = [];
+      ordem.forEach(function (s, f) {
+        var doDestino = porFilamento[s].filter(function (i) { return variantesDestino.indexOf(fev[i]) !== -1; });
+        if (!doDestino.length) {
+          manter.push(porFilamento[s][0]);
+          novaVariante.push(variantesDestino[0] || fev[porFilamento[s][0]]);
+          novoIndice.push(String(f + 1));
+          return;
+        }
+        doDestino.forEach(function (i) {
+          manter.push(i);
+          novaVariante.push(fev[i]);
+          novoIndice.push(String(f + 1));
+        });
+      });
+      var mudou = manter.length !== fev.length || novaVariante.some(function (v, i) { return v !== fev[i]; });
+      if (mudou) {
+        Object.keys(novo).forEach(function (k) {
+          var v = novo[k];
+          if (!Array.isArray(v) || v.length !== fev.length) return;
+          if (k.indexOf("filament_") !== 0 && OPCOES_FILAMENTO_POR_VARIANTE.indexOf(k) === -1) return;
+          novo[k] = manter.map(function (i) { return v[i]; });
+        });
+        novo.filament_extruder_variant = novaVariante;
+        novo.filament_self_index = novoIndice;
+      }
+    }
+    return novo;
+  }
+
+  // Com mais de um bico, flush_volumes_matrix tem uma matriz de purga
+  // (filamentos × filamentos) por bico e flush_multiplier um valor por bico.
+  // O projeto vem com a quantidade de bicos da origem; o perfil de destino diz
+  // a dele em flush_multiplier. Bicos a mais repetem a primeira matriz, como
+  // o fatiador faz ao importar o projeto. Devolve uma cópia de `config`.
+  function ajustarPurgaPorBico(config, baseDestino) {
+    var novo = {};
+    Object.keys(config).forEach(function (k) { novo[k] = config[k]; });
+    if (!Array.isArray(baseDestino.flush_multiplier)) return novo;
+    var qtdBicos = baseDestino.flush_multiplier.length;
+
+    function porBico(valores, tamanho) {
+      var blocos = valores.length / tamanho;
+      var resultado = [];
+      for (var b = 0; b < qtdBicos; b++) {
+        var inicio = (b < blocos ? b : 0) * tamanho;
+        resultado = resultado.concat(valores.slice(inicio, inicio + tamanho));
+      }
+      return resultado;
+    }
+
+    var qtdFilamentos = [].concat(config.filament_colour || []).length;
+    var matriz = config.flush_volumes_matrix;
+    var bloco = qtdFilamentos * qtdFilamentos;
+    if (Array.isArray(matriz) && bloco && matriz.length && matriz.length % bloco === 0) {
+      novo.flush_volumes_matrix = porBico(matriz, bloco);
+    }
+    if (config.flush_multiplier != null) novo.flush_multiplier = porBico([].concat(config.flush_multiplier), 1);
+    return novo;
+  }
+
   // Agrupa índices de triângulo por chapa, numa única varredura de
   // `triangleOrigins` (formato `{path, objectId, rootObjectId, localIndex}`
   // por triângulo, ver resolveObjectTriangles/extractTriangles3MF). Pra cada
@@ -1094,6 +1253,8 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     temPartesNaoSolidas: function (modelSettingsText) { return !!parsePartesNaoSolidas(modelSettingsText); },
     reposicionarPorMesa: reposicionarPorMesa,
     reposicionarTorres: reposicionarTorres,
+    ajustarVariantesDeBico: ajustarVariantesDeBico,
+    ajustarPurgaPorBico: ajustarPurgaPorBico,
     pegadasPorMesa: pegadasPorMesa,
     posicionarTorres: posicionarTorres,
     mapearCopiasDeMalha: mapearCopiasDeMalha,

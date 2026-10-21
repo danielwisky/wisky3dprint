@@ -123,6 +123,16 @@
     "wrapping_detection_layers", "z_hop", "z_hop_types", "z_offset"
   ];
 
+  // Opções de processo que dependem das cabeças da impressora: numa de
+  // várias cabeças (Flashforge Creator 5), ooze_prevention e o pré-aquecimento
+  // esquentam a próxima cabeça antes da troca; com os valores de uma
+  // impressora de um bico só ela fica fria e não extruda a outra cor.
+  // exclude_object depende do firmware.
+  var OPCOES_TROCA_DE_CABECA = [
+    "ooze_prevention", "standby_temperature_delta", "preheat_time", "preheat_steps",
+    "enable_tower_interface_features", "exclude_object"
+  ];
+
   // Cada fatiador lê a versão do projeto em <metadata name="Application">
   // no 3dmodel.model e avisa que o software está desatualizado quando ela é
   // maior que a dele. Gravamos o mesmo valor que o fatiador da marca de
@@ -175,23 +185,30 @@
     });
   }
 
-  // G-code de filamento é configuração de filamento (mantida do projeto),
-  // mas escrito para a máquina: o da Bambu liga a ventoinha auxiliar dela
-  // (M106 P3), o dos Creality K controla a temperatura do bico. Vem do perfil
-  // de destino, repetido para cada filamento do projeto (o perfil tem só a
+  // Opções de filamento (um valor por filamento) que dependem da máquina:
+  // o G-code de filamento da Bambu liga a ventoinha auxiliar dela (M106 P3),
+  // o dos Creality K controla a temperatura do bico, a dureza de bico
+  // exigida (required_nozzle_HRC) é a dos bicos do destino e as demais
+  // descrevem a troca de cabeça ou de filamento da máquina. Vêm do perfil de
+  // destino, repetidas para cada filamento do projeto (o perfil tem só a
   // quantidade de filamentos dele).
-  var GCODE_FILAMENTO_DESTINO = ["filament_start_gcode", "filament_end_gcode"];
+  var CAMPOS_FILAMENTO_DESTINO = [
+    "filament_start_gcode", "filament_end_gcode", "required_nozzle_HRC",
+    "idle_temperature", "filament_toolchange_delay", "filament_multitool_ramming",
+    "filament_multitool_ramming_flow", "filament_multitool_ramming_volume",
+    "filament_change_length"
+  ];
 
-  function aplicarGcodeDeFilamento(novo, configOriginal, perfilDestino) {
-    var qtdFilamentos = Array.isArray(configOriginal.filament_colour) ? configOriginal.filament_colour.length : 1;
-    GCODE_FILAMENTO_DESTINO.forEach(function (campo) {
+  function aplicarCamposDeFilamento(novo, configOriginal, perfilDestino) {
+    var temCores = Array.isArray(configOriginal.filament_colour);
+    CAMPOS_FILAMENTO_DESTINO.forEach(function (campo) {
       if (!Object.prototype.hasOwnProperty.call(perfilDestino.base, campo)) return;
       var doDestino = perfilDestino.base[campo];
       if (!Array.isArray(doDestino)) {
         novo[campo] = doDestino;
         return;
       }
-      var qtd = Array.isArray(configOriginal[campo]) ? configOriginal[campo].length : qtdFilamentos;
+      var qtd = temCores ? configOriginal.filament_colour.length : (Array.isArray(configOriginal[campo]) ? configOriginal[campo].length : 1);
       var valor = doDestino.length ? doDestino[0] : "";
       novo[campo] = [];
       for (var i = 0; i < qtd; i++) novo[campo].push(valor);
@@ -199,7 +216,7 @@
   }
 
   function ehCampoDestino(campo) {
-    if (CAMPOS_DESTINO.indexOf(campo) !== -1 || OPCOES_IMPRESSORA_FATIADORES.indexOf(campo) !== -1) return true;
+    if (CAMPOS_DESTINO.indexOf(campo) !== -1 || OPCOES_IMPRESSORA_FATIADORES.indexOf(campo) !== -1 || OPCOES_TROCA_DE_CABECA.indexOf(campo) !== -1) return true;
     return PREFIXOS_CAMPOS_DESTINO.some(function (prefixo) {
       return campo.indexOf(prefixo) === 0;
     });
@@ -468,19 +485,20 @@
   // `geometria` ({ itens, mesas }, ver processarArquivo) permite pôr a torre
   // de purga num lugar livre de cada mesa (ver posicionarTorres).
   function montarNovoConfig(configOriginal, perfilDestino, geometria) {
+    var ajustado = ModelParser.ajustarPurgaPorBico(ModelParser.ajustarVariantesDeBico(configOriginal, perfilDestino.base), perfilDestino.base);
     var novo = {};
     // Campos de hardware que o perfil de destino não tem são de outra
     // impressora (AMS de uma Bambu numa Ender-3, segundo bico de uma H2D...).
-    Object.keys(configOriginal).forEach(function (k) {
+    Object.keys(ajustado).forEach(function (k) {
       if (ehCampoDestino(k) && !Object.prototype.hasOwnProperty.call(perfilDestino.base, k)) return;
-      novo[k] = configOriginal[k];
+      novo[k] = ajustado[k];
     });
     Object.keys(perfilDestino.base).forEach(function (k) {
       if (ehCampoDestino(k)) novo[k] = perfilDestino.base[k];
     });
     if (versaoFatiador(perfilDestino)) novo.version = versaoFatiador(perfilDestino);
     traduzirValoresPorFamilia(novo, perfilDestino);
-    aplicarGcodeDeFilamento(novo, configOriginal, perfilDestino);
+    aplicarCamposDeFilamento(novo, configOriginal, perfilDestino);
     var torres = null;
     if (geometria && geometria.itens) {
       var qtdMesas = [].concat(configOriginal.wipe_tower_x == null ? [] : configOriginal.wipe_tower_x).length;
