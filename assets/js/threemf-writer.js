@@ -1,15 +1,15 @@
 window.Wisky3D = window.Wisky3D || {};
 
 (function () {
-// ---------------------------------------------------------------------------
-// BLOCO: Escrita/exportação de 3MF (cores por triângulo, project_settings.config
-// e model_settings.config do Bambu Studio/OrcaSlicer, montagem de pacote do
-// zero). Extraído de colorize-3mf.js pra ser reaproveitado por outras
-// ferramentas que também precisam gerar/editar .3mf coloridos, sem duplicar
-// essa lógica. Assume que model-parser.js já foi carregado antes (mesma
-// ordem de <script> das páginas que usam este módulo), pra usar
-// ModelParser.directChild/directChildren/findObjectElement.
-// ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // BLOCO: Escrita/exportação de 3MF (cores por triângulo, project_settings.config
+  // e model_settings.config do Bambu Studio/OrcaSlicer, montagem de pacote do
+  // zero). Extraído de colorize-3mf.js pra ser reaproveitado por outras
+  // ferramentas que também precisam gerar/editar .3mf coloridos, sem duplicar
+  // essa lógica. Assume que model-parser.js já foi carregado antes (mesma
+  // ordem de <script> das páginas que usam este módulo), pra usar
+  // ModelParser.directChild/directChildren/findObjectElement.
+  // ---------------------------------------------------------------------------
 
   const ModelParser = window.Wisky3D.ModelParser;
 
@@ -60,7 +60,9 @@ window.Wisky3D = window.Wisky3D || {};
     return nibbles
       .slice()
       .reverse()
-      .map(function (n) { return n.toString(16).toUpperCase(); })
+      .map(function (n) {
+        return n.toString(16).toUpperCase();
+      })
       .join("");
   }
 
@@ -219,22 +221,41 @@ window.Wisky3D = window.Wisky3D || {};
   const EXCLUDED_FILAMENT_FIELD_PREFIXES = ["filament_dev_"];
   const EXCLUDED_FILAMENT_FIELDS = ["filament_nozzle_map", "filament_volume_map"];
   const EXTRA_FILAMENT_FIELDS = [
-    "nozzle_temperature", "nozzle_temperature_initial_layer",
-    "nozzle_temperature_range_low", "nozzle_temperature_range_high",
-    "cool_plate_temp", "cool_plate_temp_initial_layer",
-    "eng_plate_temp", "eng_plate_temp_initial_layer",
-    "hot_plate_temp", "hot_plate_temp_initial_layer",
-    "textured_plate_temp", "textured_plate_temp_initial_layer",
-    "supertack_plate_temp", "supertack_plate_temp_initial_layer",
-    "chamber_temperatures", "temperature_vitrification",
-    "fan_max_speed", "fan_min_speed", "fan_cooling_layer_time",
-    "close_fan_the_first_x_layers", "full_fan_speed_layer",
-    "overhang_fan_speed", "overhang_fan_threshold", "enable_overhang_bridge_fan",
-    "reduce_fan_stop_start_freq", "additional_cooling_fan_speed",
-    "slow_down_for_layer_cooling", "slow_down_layer_time", "slow_down_min_speed",
-    "activate_air_filtration", "during_print_exhaust_fan_speed",
+    "nozzle_temperature",
+    "nozzle_temperature_initial_layer",
+    "nozzle_temperature_range_low",
+    "nozzle_temperature_range_high",
+    "cool_plate_temp",
+    "cool_plate_temp_initial_layer",
+    "eng_plate_temp",
+    "eng_plate_temp_initial_layer",
+    "hot_plate_temp",
+    "hot_plate_temp_initial_layer",
+    "textured_plate_temp",
+    "textured_plate_temp_initial_layer",
+    "supertack_plate_temp",
+    "supertack_plate_temp_initial_layer",
+    "chamber_temperatures",
+    "temperature_vitrification",
+    "fan_max_speed",
+    "fan_min_speed",
+    "fan_cooling_layer_time",
+    "close_fan_the_first_x_layers",
+    "full_fan_speed_layer",
+    "overhang_fan_speed",
+    "overhang_fan_threshold",
+    "enable_overhang_bridge_fan",
+    "reduce_fan_stop_start_freq",
+    "additional_cooling_fan_speed",
+    "slow_down_for_layer_cooling",
+    "slow_down_layer_time",
+    "slow_down_min_speed",
+    "activate_air_filtration",
+    "during_print_exhaust_fan_speed",
     "complete_print_exhaust_fan_speed",
-    "pressure_advance", "enable_pressure_advance", "default_filament_colour"
+    "pressure_advance",
+    "enable_pressure_advance",
+    "default_filament_colour"
   ];
 
   function isFilamentField(key) {
@@ -263,7 +284,9 @@ window.Wisky3D = window.Wisky3D || {};
     cfg.filament_colour = palette.map(rgbToHexBambu);
     cfg.filament_multi_colour = cfg.filament_colour.slice();
     cfg.filament_colour_type = new Array(n).fill("1");
-    cfg.filament_self_index = palette.map(function (_, i) { return String(i + 1); });
+    cfg.filament_self_index = palette.map(function (_, i) {
+      return String(i + 1);
+    });
     cfg.filament_map = new Array(n).fill("1");
 
     return cfg;
@@ -297,40 +320,60 @@ window.Wisky3D = window.Wisky3D || {};
     const colors = indexer.colors;
     const indexOfColor = indexer.indexOfColor;
 
-    const objectsXml = objects.map(function (obj) {
-      const vertexLines = obj.vertices.map(function (v) {
-        return '<vertex x="' + v[0] + '" y="' + v[1] + '" z="' + v[2] + '"/>';
-      });
-      const triangleLines = obj.triangles.map(function (t) {
-        const pIndex = indexOfColor(t.color[0], t.color[1], t.color[2]);
-        return '<triangle v1="' + t.v1 + '" v2="' + t.v2 + '" v3="' + t.v3 + '" pid="1" p1="' + pIndex + '"/>';
-      });
-      return (
-        '    <object id="' + obj.objectId + '" type="model">\n' +
-        "      <mesh>\n" +
-        "        <vertices>\n" +
-        vertexLines.map(function (l) { return "          " + l + "\n"; }).join("") +
-        "        </vertices>\n" +
-        "        <triangles>\n" +
-        triangleLines.map(function (l) { return "          " + l + "\n"; }).join("") +
-        "        </triangles>\n" +
-        "      </mesh>\n" +
-        "    </object>\n"
-      );
-    }).join("");
+    const objectsXml = objects
+      .map(function (obj) {
+        const vertexLines = obj.vertices.map(function (v) {
+          return '<vertex x="' + v[0] + '" y="' + v[1] + '" z="' + v[2] + '"/>';
+        });
+        const triangleLines = obj.triangles.map(function (t) {
+          const pIndex = indexOfColor(t.color[0], t.color[1], t.color[2]);
+          return '<triangle v1="' + t.v1 + '" v2="' + t.v2 + '" v3="' + t.v3 + '" pid="1" p1="' + pIndex + '"/>';
+        });
+        return (
+          '    <object id="' +
+          obj.objectId +
+          '" type="model">\n' +
+          "      <mesh>\n" +
+          "        <vertices>\n" +
+          vertexLines
+            .map(function (l) {
+              return "          " + l + "\n";
+            })
+            .join("") +
+          "        </vertices>\n" +
+          "        <triangles>\n" +
+          triangleLines
+            .map(function (l) {
+              return "          " + l + "\n";
+            })
+            .join("") +
+          "        </triangles>\n" +
+          "      </mesh>\n" +
+          "    </object>\n"
+        );
+      })
+      .join("");
 
-    const itemsXml = objects.map(function (obj) {
-      return '    <item objectid="' + obj.objectId + '"/>\n';
-    }).join("");
+    const itemsXml = objects
+      .map(function (obj) {
+        return '    <item objectid="' + obj.objectId + '"/>\n';
+      })
+      .join("");
 
-    const colorLines = colors.map(function (c) { return '<m:color color="' + rgbToHex3mf(c) + '"/>'; });
+    const colorLines = colors.map(function (c) {
+      return '<m:color color="' + rgbToHex3mf(c) + '"/>';
+    });
 
     const modelXml =
       '<?xml version="1.0" encoding="UTF-8"?>\n' +
       '<model unit="millimeter" xml:lang="pt-BR" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" xmlns:m="http://schemas.microsoft.com/3dmanufacturing/material/2015/02">\n' +
       "  <resources>\n" +
       '    <m:colorgroup id="1">\n' +
-      colorLines.map(function (l) { return "      " + l + "\n"; }).join("") +
+      colorLines
+        .map(function (l) {
+          return "      " + l + "\n";
+        })
+        .join("") +
       "    </m:colorgroup>\n" +
       objectsXml +
       "  </resources>\n" +

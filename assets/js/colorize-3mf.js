@@ -278,7 +278,9 @@ if (root && !(modules.ModelParser && modules.ThreeMFWriter && modules.ToolUtils 
         b = (b + HIGHLIGHT_COLOR[2]) / 2;
       }
       const base = t * 9;
-      const rN = r / 255, gN = g / 255, bN = b / 255;
+      const rN = r / 255,
+        gN = g / 255,
+        bN = b / 255;
       for (let c = 0; c < 3; c++) {
         arr[base + c * 3] = rN;
         arr[base + c * 3 + 1] = gN;
@@ -518,8 +520,12 @@ if (root && !(modules.ModelParser && modules.ThreeMFWriter && modules.ToolUtils 
   function computePlatePivotAndRadius(index) {
     const visible = state.trianglesByPlate && state.trianglesByPlate.get(index);
     if (!visible || !visible.size) return null;
-    let minX = Infinity, minY = Infinity, minZ = Infinity;
-    let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+    let minX = Infinity,
+      minY = Infinity,
+      minZ = Infinity;
+    let maxX = -Infinity,
+      maxY = -Infinity,
+      maxZ = -Infinity;
     visible.forEach((t) => {
       const base = t * 9;
       for (let c = 0; c < 3; c++) {
@@ -688,10 +694,19 @@ if (root && !(modules.ModelParser && modules.ThreeMFWriter && modules.ToolUtils 
     // face plana clicada (e a granularidade fina de malhas orgânicas) sem
     // vazar pras faces vizinhas nem depender de deriva acumulada.
     const toleranceDeg = isBucket ? BUCKET_TOLERANCE_DEG : Number(toleranceInput.value);
-    const visibleFilter = state.activePlateIndex !== null && state.trianglesByPlate
-      ? state.trianglesByPlate.get(state.activePlateIndex)
-      : null;
-    const region = floodFillByNormalTolerance(triIndex, toleranceDeg, state.adjacency, state.faceNormals, state.triCount, isBucket, visibleFilter);
+    const visibleFilter =
+      state.activePlateIndex !== null && state.trianglesByPlate
+        ? state.trianglesByPlate.get(state.activePlateIndex)
+        : null;
+    const region = floodFillByNormalTolerance(
+      triIndex,
+      toleranceDeg,
+      state.adjacency,
+      state.faceNormals,
+      state.triCount,
+      isBucket,
+      visibleFilter
+    );
 
     if (currentTool === "bucket") {
       paintTriangles(region, hexToRgb(activeColorHex()));
@@ -766,7 +781,10 @@ if (root && !(modules.ModelParser && modules.ThreeMFWriter && modules.ToolUtils 
     const large = triCount >= LARGE_TRIANGLE_WARNING;
     largeWarningEl.hidden = !large;
     if (large) {
-      largeWarningTextEl.textContent = "Modelo com " + triCount.toLocaleString("pt-BR") + " triângulos, pintar regiões grandes pode ficar um pouco mais lento.";
+      largeWarningTextEl.textContent =
+        "Modelo com " +
+        triCount.toLocaleString("pt-BR") +
+        " triângulos, pintar regiões grandes pode ficar um pouco mais lento.";
     }
   }
 
@@ -843,7 +861,13 @@ if (root && !(modules.ModelParser && modules.ThreeMFWriter && modules.ToolUtils 
   // Erro de modelo grande demais: a mensagem vai inteira para o usuário (ver
   // processFile), em vez do "não foi possível ler esse arquivo".
   function limitError(count) {
-    const error = new Error("Modelo muito complexo para pintar no navegador (" + count.toLocaleString("pt-BR") + " triângulos, máx. " + (ToolUtils.MAX_TRIANGLES / 1e6).toLocaleString("pt-BR") + " milhões). Tente simplificar a malha.");
+    const error = new Error(
+      "Modelo muito complexo para pintar no navegador (" +
+        count.toLocaleString("pt-BR") +
+        " triângulos, máx. " +
+        (ToolUtils.MAX_TRIANGLES / 1e6).toLocaleString("pt-BR") +
+        " milhões). Tente simplificar a malha."
+    );
     error.limit = true;
     return error;
   }
@@ -859,24 +883,28 @@ if (root && !(modules.ModelParser && modules.ThreeMFWriter && modules.ToolUtils 
       });
     }
 
-    return ToolUtils.read3MFPackage(file).then((pkg) => {
-      if (!pkg.modelText) throw new Error("3dmodel.model não encontrado no pacote 3MF");
-      // Com modificadores ou bloqueadores de suporte, a contagem prévia (que
-      // inclui as partes que a extração deixa de fora) poderia recusar um
-      // modelo que cabe: fica só a checagem depois da extração.
-      if (ModelParser.hasNonSolidParts(pkg.modelSettingsText)) return pkg;
-      return ModelParser.countTriangles3MF(pkg.zip, pkg.modelText, pkg.modelPath).then((count) => {
-        if (count > ToolUtils.MAX_TRIANGLES) throw limitError(count);
-        return pkg;
+    return ToolUtils.read3MFPackage(file)
+      .then((pkg) => {
+        if (!pkg.modelText) throw new Error("3dmodel.model não encontrado no pacote 3MF");
+        // Com modificadores ou bloqueadores de suporte, a contagem prévia (que
+        // inclui as partes que a extração deixa de fora) poderia recusar um
+        // modelo que cabe: fica só a checagem depois da extração.
+        if (ModelParser.hasNonSolidParts(pkg.modelSettingsText)) return pkg;
+        return ModelParser.countTriangles3MF(pkg.zip, pkg.modelText, pkg.modelPath).then((count) => {
+          if (count > ToolUtils.MAX_TRIANGLES) throw limitError(count);
+          return pkg;
+        });
+      })
+      .then((pkg) => {
+        return ModelParser.extractTriangles3MF(pkg.zip, pkg.modelText, pkg.modelPath, pkg.modelSettingsText).then(
+          (result) => ({
+            triangles: result.triangles,
+            origins: result.origins,
+            zip: pkg.zip,
+            modelSettingsText: pkg.modelSettingsText
+          })
+        );
       });
-    }).then((pkg) => {
-      return ModelParser.extractTriangles3MF(pkg.zip, pkg.modelText, pkg.modelPath, pkg.modelSettingsText).then((result) => ({
-        triangles: result.triangles,
-        origins: result.origins,
-        zip: pkg.zip,
-        modelSettingsText: pkg.modelSettingsText
-      }));
-    });
   }
 
   // Detecta as chapas (plates) de um pacote 3MF multi-plate a partir do texto
@@ -945,7 +973,8 @@ if (root && !(modules.ModelParser && modules.ThreeMFWriter && modules.ToolUtils 
   }
 
   function generateAndDownload(zip, outputName) {
-    return zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } })
+    return zip
+      .generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } })
       .then((blob) => {
         ModelParser.downloadBlob(blob, outputName);
         outEl.textContent = "3MF colorido baixado.";
@@ -979,13 +1008,15 @@ if (root && !(modules.ModelParser && modules.ThreeMFWriter && modules.ToolUtils 
   }
 
   function injectColorsIntoModels(zip, byFile, slotByColor) {
-    return Promise.all(Array.from(byFile.keys()).map((path) => {
-      const entry = zip.file(path);
-      if (!entry) return Promise.resolve();
-      return entry.async("text").then((xmlText) => {
-        zip.file(path, ThreeMFWriter.injectColorsIntoXml(xmlText, byFile.get(path), slotByColor));
-      });
-    }));
+    return Promise.all(
+      Array.from(byFile.keys()).map((path) => {
+        const entry = zip.file(path);
+        if (!entry) return Promise.resolve();
+        return entry.async("text").then((xmlText) => {
+          zip.file(path, ThreeMFWriter.injectColorsIntoXml(xmlText, byFile.get(path), slotByColor));
+        });
+      })
+    );
   }
 
   // Caminho usado quando o arquivo de origem é um .3mf: reabre o zip
@@ -996,20 +1027,30 @@ if (root && !(modules.ModelParser && modules.ThreeMFWriter && modules.ToolUtils 
   function exportModelPreservingPackage(outputName) {
     const zip = state.zip;
     const byFile = ColorizeCalculations.groupColorsByFile(state.triangleOrigins, state.baseColors, state.triCount);
-    const { palette, slotByColor } = ColorizeCalculations.exportPalette(state.baseColors, state.triCount, DEFAULT_COLOR);
+    const { palette, slotByColor } = ColorizeCalculations.exportPalette(
+      state.baseColors,
+      state.triCount,
+      DEFAULT_COLOR
+    );
 
     return updateProjectSettings(zip, palette)
-      .then((numSlots) => Promise.all([
-        updateModelSettings(zip, numSlots),
-        injectColorsIntoModels(zip, byFile, numSlots ? slotByColor : null)
-      ]))
+      .then((numSlots) =>
+        Promise.all([
+          updateModelSettings(zip, numSlots),
+          injectColorsIntoModels(zip, byFile, numSlots ? slotByColor : null)
+        ])
+      )
       .then(() => generateAndDownload(zip, outputName));
   }
 
   // Caminho usado quando o arquivo de origem é um .stl (não existe pacote
   // 3MF original pra preservar): monta um .3mf novo do zero via JSZip.
   function exportModelFromScratch(outputName) {
-    const triangles = ColorizeCalculations.trianglesForExport(state.cornerExportIndex, state.baseColors, state.triCount);
+    const triangles = ColorizeCalculations.trianglesForExport(
+      state.cornerExportIndex,
+      state.baseColors,
+      state.triCount
+    );
     const { modelXml, contentTypesXml, relsXml } = ThreeMFWriter.buildModelFromScratch([
       { objectId: 2, vertices: state.exportVertices, triangles: triangles }
     ]);
@@ -1075,7 +1116,9 @@ if (root && !(modules.ModelParser && modules.ThreeMFWriter && modules.ToolUtils 
   });
 
   recenterBtn.addEventListener("click", () => recenterView());
-  largeWarningCloseBtn.addEventListener("click", () => { largeWarningEl.hidden = true; });
+  largeWarningCloseBtn.addEventListener("click", () => {
+    largeWarningEl.hidden = true;
+  });
 
   undoBtn.addEventListener("click", () => undo());
 

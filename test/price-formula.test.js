@@ -3,10 +3,7 @@ const assert = require("node:assert/strict");
 const path = require("node:path");
 const fs = require("node:fs");
 
-const source = fs.readFileSync(
-  path.join(__dirname, "..", "assets", "js", "price-formula.js"),
-  "utf8"
-);
+const source = fs.readFileSync(path.join(__dirname, "..", "assets", "js", "price-formula.js"), "utf8");
 global.window = global;
 new Function(source)();
 

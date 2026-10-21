@@ -63,7 +63,11 @@ test("calculateItem retorna null com entrada inválida", () => {
 
 test("calculateWear proporcional ao tempo quando há valor da máquina e vida útil", () => {
   const wear = Calculations.calculateWear({
-    machineValue: 5000, lifespanH: 5000, fixedWear: 3, defaultWear: 1, hours: 4
+    machineValue: 5000,
+    lifespanH: 5000,
+    fixedWear: 3,
+    defaultWear: 1,
+    hours: 4
   });
   assert.equal(wear, 4);
 });
@@ -113,7 +117,11 @@ test("estimateWeightAndTime limita a casca ao volume da peça", () => {
 test("estimateWeightAndTime arredonda o total antes de separar horas e minutos", () => {
   // 43104 mm³ / 4 mm³/s = 10776 s = 179,6 min → 3h 0min, nunca 2h 60min
   const r = Calculations.estimateWeightAndTime({
-    ...MESH, volumeMm3: 43104, areaMm2: 0, infillPct: 100, modelHeightMm: 0
+    ...MESH,
+    volumeMm3: 43104,
+    areaMm2: 0,
+    infillPct: 100,
+    modelHeightMm: 0
   });
   assert.equal(r.hours, 3);
   assert.equal(r.minutes, 0);

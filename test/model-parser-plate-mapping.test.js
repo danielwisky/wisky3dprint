@@ -4,10 +4,7 @@ const path = require("node:path");
 const fs = require("node:fs");
 const { DOMParser } = require("@xmldom/xmldom");
 
-const source = fs.readFileSync(
-  path.join(__dirname, "..", "assets", "js", "model-parser.js"),
-  "utf8"
-);
+const source = fs.readFileSync(path.join(__dirname, "..", "assets", "js", "model-parser.js"), "utf8");
 global.window = global;
 global.DOMParser = DOMParser;
 new Function(source)();
@@ -64,11 +61,7 @@ test("mapTrianglesToPlates usa rootObjectId (build item de topo), não objectId 
   // mas a mesh de verdade vive num object aninhado "10-a" (objectId do
   // leaf). model_settings.config só conhece o id de topo ("10"), então o
   // agrupamento por chapa precisa comparar contra rootObjectId, não objectId.
-  const triangleOrigins = [
-    origin("10-a", 0, "10"),
-    origin("10-a", 1, "10"),
-    origin("20", 0, "20")
-  ];
+  const triangleOrigins = [origin("10-a", 0, "10"), origin("10-a", 1, "10"), origin("20", 0, "20")];
   const plates = [
     { index: 1, objectIds: new Set(["10"]) },
     { index: 2, objectIds: new Set(["20"]) }
@@ -108,5 +101,5 @@ test("mapTrianglesToPlates não atribui a nenhuma chapa quando o rootObjectId é
   const result = ModelParser.mapTrianglesToPlates(triangleOrigins, plates);
 
   assert.deepEqual(result.get(1), [], "chapa 1 não recebe o id ambíguo");
-  assert.deepEqual(result.get(2), [1], "chapa 2 só recebe o triângulo do id não ambíguo (\"2\")");
+  assert.deepEqual(result.get(2), [1], 'chapa 2 só recebe o triângulo do id não ambíguo ("2")');
 });

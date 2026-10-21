@@ -10,16 +10,17 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
 }
 
 (function () {
-// ---------------------------------------------------------------------------
-// BLOCO: Parsing de modelos 3D (STL/3MF): volume, bounding box e densidade
-// ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // BLOCO: Parsing de modelos 3D (STL/3MF): volume, bounding box e densidade
+  // ---------------------------------------------------------------------------
 
   function signedVolumeOfTriangle(p1, p2, p3) {
     return (
-      p1[0] * (p2[1] * p3[2] - p3[1] * p2[2]) -
-      p1[1] * (p2[0] * p3[2] - p3[0] * p2[2]) +
-      p1[2] * (p2[0] * p3[1] - p3[0] * p2[1])
-    ) / 6.0;
+      (p1[0] * (p2[1] * p3[2] - p3[1] * p2[2]) -
+        p1[1] * (p2[0] * p3[2] - p3[0] * p2[2]) +
+        p1[2] * (p2[0] * p3[1] - p3[0] * p2[1])) /
+      6.0
+    );
   }
 
   function computeMeshVolumeMm3(triangles) {
@@ -32,8 +33,12 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   }
 
   function triangleAreaMm2(p1, p2, p3) {
-    const ux = p2[0] - p1[0], uy = p2[1] - p1[1], uz = p2[2] - p1[2];
-    const vx = p3[0] - p1[0], vy = p3[1] - p1[1], vz = p3[2] - p1[2];
+    const ux = p2[0] - p1[0],
+      uy = p2[1] - p1[1],
+      uz = p2[2] - p1[2];
+    const vx = p3[0] - p1[0],
+      vy = p3[1] - p1[1],
+      vz = p3[2] - p1[2];
     const cx = uy * vz - uz * vy;
     const cy = uz * vx - ux * vz;
     const cz = ux * vy - uy * vx;
@@ -65,8 +70,12 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
       }
     }
     return {
-      minX: min[0], minY: min[1], minZ: min[2],
-      maxX: max[0], maxY: max[1], maxZ: max[2]
+      minX: min[0],
+      minY: min[1],
+      minZ: min[2],
+      maxX: max[0],
+      maxY: max[1],
+      maxZ: max[2]
     };
   }
 
@@ -100,10 +109,14 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   function parseAsciiSTL(text) {
     const triangles = [];
     const re = /vertex\s+([-\d.eE+]+)\s+([-\d.eE+]+)\s+([-\d.eE+]+)/g;
-    let m, verts = [];
+    let m,
+      verts = [];
     while ((m = re.exec(text)) !== null) {
       verts.push([parseFloat(m[1]), parseFloat(m[2]), parseFloat(m[3])]);
-      if (verts.length === 3) { triangles.push(verts); verts = []; }
+      if (verts.length === 3) {
+        triangles.push(verts);
+        verts = [];
+      }
     }
     return triangles;
   }
@@ -132,7 +145,10 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
       if (bytes[i] !== 101) continue;
       let k = 1;
       while (k < target.length && bytes[i + k] === target[k]) k++;
-      if (k === target.length) { n++; i += target.length - 1; }
+      if (k === target.length) {
+        n++;
+        i += target.length - 1;
+      }
     }
     return n;
   }
@@ -150,16 +166,26 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     const files = zip.file(/\.model$/i).filter(function (file) {
       return rootXmlText == null || file.name !== rootPath;
     });
-    return files.reduce(function (promise, file) {
-      return promise.then(function (total) {
-        return file.async("text").then(function (text) {
-          return total + count(text);
+    return files.reduce(
+      function (promise, file) {
+        return promise.then(function (total) {
+          return file.async("text").then(function (text) {
+            return total + count(text);
+          });
         });
-      });
-    }, Promise.resolve(rootXmlText == null ? 0 : count(rootXmlText)));
+      },
+      Promise.resolve(rootXmlText == null ? 0 : count(rootXmlText))
+    );
   }
 
-  const IDENTITY_TRANSFORM = { M: [[1, 0, 0], [0, 1, 0], [0, 0, 1]], t: [0, 0, 0] };
+  const IDENTITY_TRANSFORM = {
+    M: [
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1]
+    ],
+    t: [0, 0, 0]
+  };
 
   // Fator pra converter a unidade declarada no <model unit="..."> pra mm.
   // Fatiadores (Bambu/Orca) sempre gravam em mm, mas o padrão 3MF permite
@@ -172,13 +198,21 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     const n = str.trim().split(/\s+/).map(Number);
     if (n.length < 12 || n.some(isNaN)) return IDENTITY_TRANSFORM;
     return {
-      M: [[n[0], n[3], n[6]], [n[1], n[4], n[7]], [n[2], n[5], n[8]]],
+      M: [
+        [n[0], n[3], n[6]],
+        [n[1], n[4], n[7]],
+        [n[2], n[5], n[8]]
+      ],
       t: [n[9], n[10], n[11]]
     };
   }
 
   function matMul3(A, B) {
-    const R = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+    const R = [
+      [0, 0, 0],
+      [0, 0, 0],
+      [0, 0, 0]
+    ];
     for (let i = 0; i < 3; i++) {
       for (let j = 0; j < 3; j++) {
         R[i][j] = A[i][0] * B[0][j] + A[i][1] * B[1][j] + A[i][2] * B[2][j];
@@ -262,8 +296,12 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
 
   function mergeBBox(a, b) {
     return {
-      minX: Math.min(a.minX, b.minX), minY: Math.min(a.minY, b.minY), minZ: Math.min(a.minZ, b.minZ),
-      maxX: Math.max(a.maxX, b.maxX), maxY: Math.max(a.maxY, b.maxY), maxZ: Math.max(a.maxZ, b.maxZ)
+      minX: Math.min(a.minX, b.minX),
+      minY: Math.min(a.minY, b.minY),
+      minZ: Math.min(a.minZ, b.minZ),
+      maxX: Math.max(a.maxX, b.maxX),
+      maxY: Math.max(a.maxY, b.maxY),
+      maxZ: Math.max(a.maxZ, b.maxZ)
     };
   }
 
@@ -298,7 +336,17 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // <triangle> exato a recolorir. `ignoredComponents` (Set de objectid,
   // opcional) vale só para os <component> deste nível: ver
   // parseNonSolidParts.
-  function resolveObjectRecursive(zip, docCache, doc, objectId, accumTransform, path, onMesh, rootObjectId, ignoredComponents) {
+  function resolveObjectRecursive(
+    zip,
+    docCache,
+    doc,
+    objectId,
+    accumTransform,
+    path,
+    onMesh,
+    rootObjectId,
+    ignoredComponents
+  ) {
     const objectEl = findObjectElement(doc, objectId);
     if (!objectEl) return Promise.resolve();
     if (rootObjectId === undefined) rootObjectId = objectId;
@@ -310,11 +358,10 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
       const vertexEls = verticesEl ? directChildren(verticesEl, "vertex") : [];
       const meshBbox = emptyBbox();
       const vertices = vertexEls.map(function (v) {
-        const p = applyTransform([
-          parseFloat(v.getAttribute("x")),
-          parseFloat(v.getAttribute("y")),
-          parseFloat(v.getAttribute("z"))
-        ], accumTransform);
+        const p = applyTransform(
+          [parseFloat(v.getAttribute("x")), parseFloat(v.getAttribute("y")), parseFloat(v.getAttribute("z"))],
+          accumTransform
+        );
         extendBBox(meshBbox, p);
         return p;
       });
@@ -349,7 +396,16 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
         const external = loadExternalDoc(zip, docCache, compPath);
         if (!external) return Promise.resolve();
         return external.docPromise.then(function (extDoc) {
-          return resolveObjectRecursive(zip, docCache, extDoc, childObjectId, combined, external.normalizedPath, onMesh, rootObjectId);
+          return resolveObjectRecursive(
+            zip,
+            docCache,
+            extDoc,
+            childObjectId,
+            combined,
+            external.normalizedPath,
+            onMesh,
+            rootObjectId
+          );
         });
       }
       return resolveObjectRecursive(zip, docCache, doc, childObjectId, combined, path, onMesh, rootObjectId);
@@ -380,7 +436,17 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
       }
     }
 
-    return resolveObjectRecursive(zip, docCache, doc, objectId, accumTransform, null, onMesh, undefined, ignoredComponents).then(function () {
+    return resolveObjectRecursive(
+      zip,
+      docCache,
+      doc,
+      objectId,
+      accumTransform,
+      null,
+      onMesh,
+      undefined,
+      ignoredComponents
+    ).then(function () {
       return { triangleCount: triangleCount, volumeMm3: volumeMm3, areaMm2: areaMm2, bbox: bbox };
     });
   }
@@ -430,15 +496,22 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
 
     // Sem <build>/<item> (raro): trata cada <object> de nível topo como se
     // fosse um item, sem transform.
-    const items = itemEls.length ? itemEls : Array.prototype.map.call(
-      doc.getElementsByTagName("object"),
-      function (o) {
-        return { getAttribute: function (name) { return name === "objectid" ? o.getAttribute("id") : null; } };
-      }
-    );
+    const items = itemEls.length
+      ? itemEls
+      : Array.prototype.map.call(doc.getElementsByTagName("object"), function (o) {
+          return {
+            getAttribute: function (name) {
+              return name === "objectid" ? o.getAttribute("id") : null;
+            }
+          };
+        });
 
-    const objectIds = items.map(function (item) { return item.getAttribute("objectid"); });
-    const translations = items.map(function (item) { return parseTransformAttr(item.getAttribute("transform")).t; });
+    const objectIds = items.map(function (item) {
+      return item.getAttribute("objectid");
+    });
+    const translations = items.map(function (item) {
+      return parseTransformAttr(item.getAttribute("transform")).t;
+    });
     const promises = items.map(function (item) {
       const transform = parseTransformAttr(item.getAttribute("transform"));
       const objectId = item.getAttribute("objectid");
@@ -475,8 +548,12 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
       });
       function scaleBBox(b) {
         return {
-          minX: b.minX * scale, minY: b.minY * scale, minZ: b.minZ * scale,
-          maxX: b.maxX * scale, maxY: b.maxY * scale, maxZ: b.maxZ * scale
+          minX: b.minX * scale,
+          minY: b.minY * scale,
+          minZ: b.minZ * scale,
+          maxX: b.maxX * scale,
+          maxY: b.maxY * scale,
+          maxZ: b.maxZ * scale
         };
       }
       return {
@@ -491,7 +568,11 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
         // `position` é a translação do item: a mesma que repositionByPlate
         // usa para achar a célula da grade.
         items: results.map(function (r, i) {
-          return { objectId: objectIds[i], bbox: scaleBBox(r.bbox), position: [translations[i][0] * scale, translations[i][1] * scale] };
+          return {
+            objectId: objectIds[i],
+            bbox: scaleBBox(r.bbox),
+            position: [translations[i][0] * scale, translations[i][1] * scale]
+          };
         })
       };
     });
@@ -509,15 +590,40 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // é o objectid do build item de nível topo (usado pra casar o triângulo com
   // a chapa/plate a que pertence, ver mapTrianglesToPlates) — os dois
   // divergem quando o object de topo é montado via <components> aninhados.
-  function resolveObjectTriangles(zip, docCache, doc, objectId, accumTransform, outTriangles, path, outOrigins, ignoredComponents) {
+  function resolveObjectTriangles(
+    zip,
+    docCache,
+    doc,
+    objectId,
+    accumTransform,
+    outTriangles,
+    path,
+    outOrigins,
+    ignoredComponents
+  ) {
     function onMesh(leafTriangles, localIndices, meshBbox, meshPath, meshObjectId, rootObjectId) {
       leafTriangles.forEach(function (tri, i) {
         outTriangles.push(tri);
-        outOrigins.push({ path: meshPath, objectId: meshObjectId, rootObjectId: rootObjectId, localIndex: localIndices[i] });
+        outOrigins.push({
+          path: meshPath,
+          objectId: meshObjectId,
+          rootObjectId: rootObjectId,
+          localIndex: localIndices[i]
+        });
       });
     }
 
-    return resolveObjectRecursive(zip, docCache, doc, objectId, accumTransform, path, onMesh, undefined, ignoredComponents);
+    return resolveObjectRecursive(
+      zip,
+      docCache,
+      doc,
+      objectId,
+      accumTransform,
+      path,
+      onMesh,
+      undefined,
+      ignoredComponents
+    );
   }
 
   // Extrai a malha de um pacote 3MF já aberto (JSZip) como array de
@@ -538,12 +644,15 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     const docCache = {};
     const buildEl = doc.getElementsByTagName("build")[0];
     const itemEls = buildEl ? directChildren(buildEl, "item") : [];
-    const items = itemEls.length ? itemEls : Array.prototype.map.call(
-      doc.getElementsByTagName("object"),
-      function (o) {
-        return { getAttribute: function (name) { return name === "objectid" ? o.getAttribute("id") : null; } };
-      }
-    );
+    const items = itemEls.length
+      ? itemEls
+      : Array.prototype.map.call(doc.getElementsByTagName("object"), function (o) {
+          return {
+            getAttribute: function (name) {
+              return name === "objectid" ? o.getAttribute("id") : null;
+            }
+          };
+        });
 
     const triangles = [];
     const origins = [];
@@ -561,7 +670,16 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
         const external = loadExternalDoc(zip, docCache, itemPath);
         if (!external) return Promise.resolve();
         return external.docPromise.then(function (extDoc) {
-          return resolveObjectTriangles(zip, docCache, extDoc, objectId, transform, triangles, external.normalizedPath, origins);
+          return resolveObjectTriangles(
+            zip,
+            docCache,
+            extDoc,
+            objectId,
+            transform,
+            triangles,
+            external.normalizedPath,
+            origins
+          );
         });
       }
       const ignored = nonSolidParts ? nonSolidParts.get(objectId) : undefined;
@@ -578,7 +696,9 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
           tri.forEach(function (p) {
             if (scaled.has(p)) return;
             scaled.add(p);
-            p[0] *= scale; p[1] *= scale; p[2] *= scale;
+            p[0] *= scale;
+            p[1] *= scale;
+            p[2] *= scale;
           });
         });
       }
@@ -617,7 +737,9 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     document.body.appendChild(a);
     a.click();
     a.remove();
-    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    setTimeout(function () {
+      URL.revokeObjectURL(url);
+    }, 1000);
   }
 
   function parse3MFProfile(configText) {
@@ -676,17 +798,21 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // bbox único pra todo o arquivo.
   function calculatePlates(items, plateAssignments) {
     if (!plateAssignments || !items) return null;
-    const plates = plateAssignments.map(function (ids, index) {
-      let bbox = null;
-      items.forEach(function (item) {
-        if (ids.indexOf(item.objectId) !== -1) {
-          // Mescla o bbox do item com o bbox acumulado da chapa
-          if (!bbox) bbox = item.bbox;
-          else if (item.bbox) bbox = mergeBBox(bbox, item.bbox);
-        }
+    const plates = plateAssignments
+      .map(function (ids, index) {
+        let bbox = null;
+        items.forEach(function (item) {
+          if (ids.indexOf(item.objectId) !== -1) {
+            // Mescla o bbox do item com o bbox acumulado da chapa
+            if (!bbox) bbox = item.bbox;
+            else if (item.bbox) bbox = mergeBBox(bbox, item.bbox);
+          }
+        });
+        return { index: index + 1, bbox: bbox };
+      })
+      .filter(function (plate) {
+        return plate.bbox;
       });
-      return { index: index + 1, bbox: bbox };
-    }).filter(function (plate) { return plate.bbox; });
     return plates.length > 1 ? plates : null;
   }
 
@@ -697,18 +823,22 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     const xs = [];
     const ys = [];
     [].concat(points || []).forEach(function (segment) {
-      String(segment).split(",").forEach(function (pair) {
-        const xy = pair.split("x").map(Number);
-        if (xy.length === 2 && !isNaN(xy[0]) && !isNaN(xy[1])) {
-          xs.push(xy[0]);
-          ys.push(xy[1]);
-        }
-      });
+      String(segment)
+        .split(",")
+        .forEach(function (pair) {
+          const xy = pair.split("x").map(Number);
+          if (xy.length === 2 && !isNaN(xy[0]) && !isNaN(xy[1])) {
+            xs.push(xy[0]);
+            ys.push(xy[1]);
+          }
+        });
     });
     if (!xs.length) return null;
     return {
-      x0: Math.min.apply(null, xs), x1: Math.max.apply(null, xs),
-      y0: Math.min.apply(null, ys), y1: Math.max.apply(null, ys)
+      x0: Math.min.apply(null, xs),
+      x1: Math.max.apply(null, xs),
+      y0: Math.min.apply(null, ys),
+      y1: Math.max.apply(null, ys)
     };
   }
 
@@ -719,9 +849,14 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     const m = pointBounds(printableArea);
     if (!m || !(m.x1 > m.x0 && m.y1 > m.y0)) return null;
     return {
-      x0: m.x0, x1: m.x1, y0: m.y0, y1: m.y1,
-      cx: (m.x0 + m.x1) / 2, cy: (m.y0 + m.y1) / 2,
-      stepX: 1.2 * (m.x1 - m.x0), stepY: 1.2 * (m.y1 - m.y0)
+      x0: m.x0,
+      x1: m.x1,
+      y0: m.y0,
+      y1: m.y1,
+      cx: (m.x0 + m.x1) / 2,
+      cy: (m.y0 + m.y1) / 2,
+      stepX: 1.2 * (m.x1 - m.x0),
+      stepY: 1.2 * (m.y1 - m.y0)
     };
   }
 
@@ -783,7 +918,10 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
       if (plates) {
         index = -1;
         for (let k = 0; k < plates.length; k++) {
-          if (plates[k].indexOf(item.objectId) !== -1) { index = k; break; }
+          if (plates[k].indexOf(item.objectId) !== -1) {
+            index = k;
+            break;
+          }
         }
       }
       if (index < 0 || index >= plateCount) return;
@@ -819,7 +957,8 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     if (!m) return null;
     [].concat(config.extruder_printable_area || []).forEach(function (area) {
       const e = pointBounds(area);
-      if (e) m = { x0: Math.max(m.x0, e.x0), x1: Math.min(m.x1, e.x1), y0: Math.max(m.y0, e.y0), y1: Math.min(m.y1, e.y1) };
+      if (e)
+        m = { x0: Math.max(m.x0, e.x0), x1: Math.min(m.x1, e.x1), y0: Math.max(m.y0, e.y0), y1: Math.min(m.y1, e.y1) };
     });
     if (!(m.x1 > m.x0 && m.y1 > m.y0)) return null;
     // A lista pode trazer vários retângulos emendados num contorno só, de 4
@@ -835,7 +974,8 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
       });
       for (let i = 0; i + 4 <= points.length; i += 4) {
         const e = pointBounds(points.slice(i, i + 4));
-        if (e && e.x1 > e.x0 && e.y1 > e.y0 && (e.x1 - e.x0) * (e.y1 - e.y0) < plateArea / 2) forbidden.push([e.x0, e.y0, e.x1, e.y1]);
+        if (e && e.x1 > e.x0 && e.y1 > e.y0 && (e.x1 - e.x0) * (e.y1 - e.y0) < plateArea / 2)
+          forbidden.push([e.x0, e.y0, e.x1, e.y1]);
       }
     });
     return { lim: m, forbidden: forbidden };
@@ -845,25 +985,51 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // girado no sentido anti-horário como no fatiador.
   function towerFootprint(config) {
     const width = Math.max(TOWER.side, firstNumber(config.prime_tower_width) || 0);
-    const angle = (firstNumber(config.wipe_tower_rotation_angle) || 0) * Math.PI / 180;
-    const c = Math.cos(angle), s = Math.sin(angle);
-    const corners = [[0, 0], [width, 0], [0, TOWER.side], [width, TOWER.side]].map(function (p) {
+    const angle = ((firstNumber(config.wipe_tower_rotation_angle) || 0) * Math.PI) / 180;
+    const c = Math.cos(angle),
+      s = Math.sin(angle);
+    const corners = [
+      [0, 0],
+      [width, 0],
+      [0, TOWER.side],
+      [width, TOWER.side]
+    ].map(function (p) {
       return [p[0] * c - p[1] * s, p[0] * s + p[1] * c];
     });
-    function round3(v) { return Math.round(v * 1000) / 1000; }
-    const xs = corners.map(function (p) { return p[0]; });
-    const ys = corners.map(function (p) { return p[1]; });
-    return [round3(Math.min.apply(null, xs)), round3(Math.min.apply(null, ys)), round3(Math.max.apply(null, xs)), round3(Math.max.apply(null, ys))];
+    function round3(v) {
+      return Math.round(v * 1000) / 1000;
+    }
+    const xs = corners.map(function (p) {
+      return p[0];
+    });
+    const ys = corners.map(function (p) {
+      return p[1];
+    });
+    return [
+      round3(Math.min.apply(null, xs)),
+      round3(Math.min.apply(null, ys)),
+      round3(Math.max.apply(null, xs)),
+      round3(Math.max.apply(null, ys))
+    ];
   }
 
   function towerSpot(config, pieces, candidates) {
     const region = towerRegion(config);
     if (!region) return null;
-    const lim = region.lim, M = TOWER.margin, F = TOWER.clearance, t = towerFootprint(config);
-    const obstacles = pieces.map(function (c) { return [c[0] - F, c[1] - F, c[2] + F, c[3] + F]; }).concat(region.forbidden);
+    const lim = region.lim,
+      M = TOWER.margin,
+      F = TOWER.clearance,
+      t = towerFootprint(config);
+    const obstacles = pieces
+      .map(function (c) {
+        return [c[0] - F, c[1] - F, c[2] + F, c[3] + F];
+      })
+      .concat(region.forbidden);
     // posições (x, y) em que a torre inteira, com a margem, fica na mesa
-    const xMin = lim.x0 - t[0] + M, xMax = lim.x1 - t[2] - M;
-    const yMin = lim.y0 - t[1] + M, yMax = lim.y1 - t[3] - M;
+    const xMin = lim.x0 - t[0] + M,
+      xMax = lim.x1 - t[2] - M;
+    const yMin = lim.y0 - t[1] + M,
+      yMax = lim.y1 - t[3] - M;
     // área da torre (com a margem) em cima de peças ou de áreas proibidas
     function overlap(x, y) {
       let total = 0;
@@ -884,20 +1050,27 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     }
     // o ponto livre mais perto da referência; mesa cheia: o que menos cobre
     const ref = valid[0] || [xMin, yMax];
-    let best = null, minOverlap = Infinity, minDist = Infinity;
+    let best = null,
+      minOverlap = Infinity,
+      minDist = Infinity;
     for (let x = xMin; x <= xMax; x += TOWER.step) {
       for (let y = yMin; y <= yMax; y += TOWER.step) {
         const covered = overlap(x, y);
         const dist = (x - ref[0]) * (x - ref[0]) + (y - ref[1]) * (y - ref[1]);
         if (covered < minOverlap || (covered === minOverlap && dist < minDist)) {
-          best = [x, y]; minOverlap = covered; minDist = dist;
+          best = [x, y];
+          minOverlap = covered;
+          minDist = dist;
         }
       }
     }
     if (best) return best;
     // mesa menor que a torre: fica na referência, só puxada para dentro
     if (!valid.length) return null;
-    return [Math.min(Math.max(ref[0], xMin), Math.max(xMin, xMax)), Math.min(Math.max(ref[1], yMin), Math.max(yMin, yMax))];
+    return [
+      Math.min(Math.max(ref[0], xMin), Math.max(xMin, xMax)),
+      Math.min(Math.max(ref[1], yMin), Math.max(yMin, yMax))
+    ];
   }
 
   // `sourceConfig` é o project_settings.config original (torre do autor, mesa
@@ -907,9 +1080,11 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // sem torre: desligada ou com um filamento só, não há troca e o fatiador
   // não a imprime.
   function placeTowers(sourceConfig, targetConfig, targetBase, footprints) {
-    const enabled = String([].concat(targetConfig.enable_prime_tower == null ? "1" : targetConfig.enable_prime_tower)[0]) !== "0";
+    const enabled =
+      String([].concat(targetConfig.enable_prime_tower == null ? "1" : targetConfig.enable_prime_tower)[0]) !== "0";
     const filamentCount = [].concat(targetConfig.filament_colour || []).length;
-    if (!enabled || filamentCount < 2 || sourceConfig.wipe_tower_x == null || sourceConfig.wipe_tower_y == null) return null;
+    if (!enabled || filamentCount < 2 || sourceConfig.wipe_tower_x == null || sourceConfig.wipe_tower_y == null)
+      return null;
     const a = plateGrid(sourceConfig.printable_area);
     const b = plateGrid(targetConfig.printable_area);
     if (!a || !b) return null;
@@ -921,8 +1096,10 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     // Sem lugar calculado (região da torre inválida no perfil), a torre só
     // acompanha as peças, como em repositionTowers.
     const simple = repositionTowers(sourceConfig, sourceConfig.printable_area, targetConfig.printable_area);
-    const simpleX = [].concat(simple.wipe_tower_x), simpleY = [].concat(simple.wipe_tower_y);
-    const newX = [], newY = [];
+    const simpleX = [].concat(simple.wipe_tower_x),
+      simpleY = [].concat(simple.wipe_tower_y);
+    const newX = [],
+      newY = [];
     for (let i = 0; i < xs.length; i++) {
       let author = [parseFloat(xs[i]) + b.cx - a.cx, parseFloat(ys[Math.min(i, ys.length - 1)]) + b.cy - a.cy];
       if (isNaN(author[0]) || isNaN(author[1])) author = null;
@@ -953,7 +1130,9 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     }
     function moveAll(values, delta, minimum, maximum) {
       if (!Array.isArray(values)) return move(values, delta, minimum, maximum);
-      return values.map(function (v) { return move(v, delta, minimum, maximum); });
+      return values.map(function (v) {
+        return move(v, delta, minimum, maximum);
+      });
     }
 
     return {
@@ -965,33 +1144,65 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // Opções de processo que o Bambu Studio grava com um valor por variante de
   // bico (print_extruder_variant).
   const PROCESS_OPTIONS_PER_VARIANT = [
-    "bridge_speed", "default_acceleration", "enable_height_slowdown",
-    "enable_overhang_speed", "gap_infill_speed", "initial_layer_acceleration",
-    "initial_layer_infill_speed", "initial_layer_speed",
-    "initial_layer_travel_acceleration", "inner_wall_acceleration",
-    "inner_wall_speed", "internal_solid_infill_speed", "outer_wall_acceleration",
-    "outer_wall_speed", "overhang_1_4_speed", "overhang_2_4_speed",
-    "overhang_3_4_speed", "overhang_4_4_speed", "overhang_totally_speed",
-    "slowdown_end_acc", "slowdown_end_height", "slowdown_end_speed",
-    "slowdown_start_acc", "slowdown_start_height", "slowdown_start_speed",
-    "small_perimeter_speed", "small_perimeter_threshold",
-    "sparse_infill_acceleration", "sparse_infill_speed", "support_interface_speed",
-    "support_speed", "top_solid_infill_flow_ratio", "top_surface_acceleration",
-    "top_surface_speed", "travel_acceleration", "travel_short_distance_acceleration",
-    "travel_speed", "travel_speed_z", "vertical_shell_speed"
+    "bridge_speed",
+    "default_acceleration",
+    "enable_height_slowdown",
+    "enable_overhang_speed",
+    "gap_infill_speed",
+    "initial_layer_acceleration",
+    "initial_layer_infill_speed",
+    "initial_layer_speed",
+    "initial_layer_travel_acceleration",
+    "inner_wall_acceleration",
+    "inner_wall_speed",
+    "internal_solid_infill_speed",
+    "outer_wall_acceleration",
+    "outer_wall_speed",
+    "overhang_1_4_speed",
+    "overhang_2_4_speed",
+    "overhang_3_4_speed",
+    "overhang_4_4_speed",
+    "overhang_totally_speed",
+    "slowdown_end_acc",
+    "slowdown_end_height",
+    "slowdown_end_speed",
+    "slowdown_start_acc",
+    "slowdown_start_height",
+    "slowdown_start_speed",
+    "small_perimeter_speed",
+    "small_perimeter_threshold",
+    "sparse_infill_acceleration",
+    "sparse_infill_speed",
+    "support_interface_speed",
+    "support_speed",
+    "top_solid_infill_flow_ratio",
+    "top_surface_acceleration",
+    "top_surface_speed",
+    "travel_acceleration",
+    "travel_short_distance_acceleration",
+    "travel_speed",
+    "travel_speed_z",
+    "vertical_shell_speed"
   ];
 
   // Opções de filamento por variante de bico sem o prefixo filament_.
   const FILAMENT_OPTIONS_PER_VARIANT = [
-    "long_retractions_when_ec", "nozzle_temperature", "nozzle_temperature_initial_layer",
-    "override_process_overhang_speed", "retraction_distances_when_ec",
-    "slow_down_min_speed", "volumetric_speed_coefficients"
+    "long_retractions_when_ec",
+    "nozzle_temperature",
+    "nozzle_temperature_initial_layer",
+    "override_process_overhang_speed",
+    "retraction_distances_when_ec",
+    "slow_down_min_speed",
+    "volumetric_speed_coefficients"
   ];
 
   // Mapa de filamento por bico do Bambu Studio (H2D, H2C), sem sentido numa
   // impressora que não os tem.
   const NOZZLE_MAPS = [
-    "filament_nozzle_map", "filament_volume_map", "filament_extruder_compatibility", "enable_filament_dynamic_map"
+    "filament_nozzle_map",
+    "filament_volume_map",
+    "filament_extruder_compatibility",
+    "enable_filament_dynamic_map"
   ];
 
   // O Bambu Studio grava um valor por variante de bico (Standard, High
@@ -1041,18 +1252,28 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
         const same = pev.indexOf(variant);
         return same === -1 ? 0 : same;
       });
-      const identical = chosen.length === pev.length && chosen.every(function (i, j) {
-        return i === j && (!did || !pid || pid[i] === did[j]);
-      });
+      const identical =
+        chosen.length === pev.length &&
+        chosen.every(function (i, j) {
+          return i === j && (!did || !pid || pid[i] === did[j]);
+        });
       if (!identical) {
         PROCESS_OPTIONS_PER_VARIANT.forEach(function (k) {
           const v = adjusted[k];
           if (!Array.isArray(v) || v.length !== pev.length) return;
           const singleValue = Object.prototype.hasOwnProperty.call(targetBase, k) && !Array.isArray(targetBase[k]);
-          adjusted[k] = singleValue ? v[chosen[0]] : chosen.map(function (i) { return v[i]; });
+          adjusted[k] = singleValue
+            ? v[chosen[0]]
+            : chosen.map(function (i) {
+                return v[i];
+              });
         });
         adjusted.print_extruder_variant = dev.slice();
-        adjusted.print_extruder_id = did ? did.slice() : chosen.map(function (i) { return pid ? pid[i] : "1"; });
+        adjusted.print_extruder_id = did
+          ? did.slice()
+          : chosen.map(function (i) {
+              return pid ? pid[i] : "1";
+            });
       }
     }
   }
@@ -1060,7 +1281,11 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // filament_self_index diz de que filamento é cada valor. Ficam os valores
   // das variantes do destino, ou o primeiro de cada filamento.
   function adjustFilamentVariants(adjusted, config, targetBase) {
-    const targetVariants = targetBase.printer_extruder_variant || targetBase.extruder_variant_list || targetBase.print_extruder_variant || [];
+    const targetVariants =
+      targetBase.printer_extruder_variant ||
+      targetBase.extruder_variant_list ||
+      targetBase.print_extruder_variant ||
+      [];
     const fev = config.filament_extruder_variant;
     const fsi = config.filament_self_index;
     if (Array.isArray(fev) && Array.isArray(fsi) && fev.length === fsi.length) {
@@ -1077,7 +1302,9 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
       const newVariants = [];
       const newIndexes = [];
       order.forEach(function (s, f) {
-        const fromTarget = byFilament[s].filter(function (i) { return targetVariants.indexOf(fev[i]) !== -1; });
+        const fromTarget = byFilament[s].filter(function (i) {
+          return targetVariants.indexOf(fev[i]) !== -1;
+        });
         if (!fromTarget.length) {
           keep.push(byFilament[s][0]);
           newVariants.push(targetVariants[0] || fev[byFilament[s][0]]);
@@ -1090,13 +1317,19 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
           newIndexes.push(String(f + 1));
         });
       });
-      const changed = keep.length !== fev.length || newVariants.some(function (v, i) { return v !== fev[i]; });
+      const changed =
+        keep.length !== fev.length ||
+        newVariants.some(function (v, i) {
+          return v !== fev[i];
+        });
       if (changed) {
         Object.keys(adjusted).forEach(function (k) {
           const v = adjusted[k];
           if (!Array.isArray(v) || v.length !== fev.length) return;
           if (k.indexOf("filament_") !== 0 && FILAMENT_OPTIONS_PER_VARIANT.indexOf(k) === -1) return;
-          adjusted[k] = keep.map(function (i) { return v[i]; });
+          adjusted[k] = keep.map(function (i) {
+            return v[i];
+          });
         });
         adjusted.filament_extruder_variant = newVariants;
         adjusted.filament_self_index = newIndexes;
@@ -1111,7 +1344,9 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // o fatiador faz ao importar o projeto. Devolve uma cópia de `config`.
   function adjustFlushPerNozzle(config, targetBase) {
     const adjusted = {};
-    Object.keys(config).forEach(function (k) { adjusted[k] = config[k]; });
+    Object.keys(config).forEach(function (k) {
+      adjusted[k] = config[k];
+    });
     if (!Array.isArray(targetBase.flush_multiplier)) return adjusted;
     const nozzleCount = targetBase.flush_multiplier.length;
 
@@ -1157,7 +1392,9 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // caso de rootObjectId sem match nenhum.
   function mapTrianglesToPlates(triangleOrigins, plates) {
     const byPlate = new Map();
-    plates.forEach(function (plate) { byPlate.set(plate.index, []); });
+    plates.forEach(function (plate) {
+      byPlate.set(plate.index, []);
+    });
 
     const countById = new Map();
     plates.forEach(function (plate) {
@@ -1195,7 +1432,12 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     for (let t = 0; t < triangleOrigins.length; t++) {
       const o = triangleOrigins[t];
       const previous = t > 0 ? triangleOrigins[t - 1] : null;
-      const continues = o && previous && o.path === previous.path && o.objectId === previous.objectId && o.localIndex > previous.localIndex;
+      const continues =
+        o &&
+        previous &&
+        o.path === previous.path &&
+        o.objectId === previous.objectId &&
+        o.localIndex > previous.localIndex;
       if (!continues) {
         starts.push(t);
         keys.push(o ? o.path + "|" + o.objectId : null);
@@ -1241,7 +1483,9 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
 
   function triangleCopies(copyMap, t) {
     const indices = [];
-    forEachCopy(copyMap, t, function (index) { indices.push(index); });
+    forEachCopy(copyMap, t, function (index) {
+      indices.push(index);
+    });
     return indices;
   }
 
@@ -1264,7 +1508,9 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     calculatePlates: calculatePlates,
     countTriangles3MF: countTriangles3MF,
     countTrianglesSTL: countTrianglesSTL,
-    hasNonSolidParts: function (modelSettingsText) { return !!parseNonSolidParts(modelSettingsText); },
+    hasNonSolidParts: function (modelSettingsText) {
+      return !!parseNonSolidParts(modelSettingsText);
+    },
     repositionByPlate: repositionByPlate,
     repositionTowers: repositionTowers,
     adjustNozzleVariants: adjustNozzleVariants,

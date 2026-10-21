@@ -30,6 +30,8 @@ jobs:
         run: npm ci
       - name: Lint JS
         run: npm run lint
+      - name: Check JS formatting
+        run: npm run format:check
       - name: Run JS unit tests
         run: npm test
       - name: Setup Ruby

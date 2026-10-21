@@ -7,7 +7,7 @@ const headed = process.env.HEADED === "1";
 
 const browser = await chromium.launch({
   channel: headed ? "chrome" : undefined,
-  headless: !headed,
+  headless: !headed
 });
 const page = await browser.newPage();
 
@@ -25,7 +25,7 @@ page.on("pageerror", (err) => {
 page.on("requestfailed", (req) => {
   page._logs.push({
     kind: "requestfailed",
-    text: `${req.method()} ${req.url()} -> ${req.failure()?.errorText}`,
+    text: `${req.method()} ${req.url()} -> ${req.failure()?.errorText}`
   });
 });
 

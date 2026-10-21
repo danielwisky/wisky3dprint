@@ -28,7 +28,16 @@ window.Wisky3D = window.Wisky3D || {};
   function calculateItem(e) {
     const labor = e.manualHours * e.hourlyRate;
 
-    if (!isFinite(e.weightG) || e.weightG <= 0 || e.hours <= 0 || !isFinite(e.filamentPricePerKg) || e.filamentPricePerKg <= 0 || labor < 0 || e.marginPct < 0 || e.lossPct < 0) {
+    if (
+      !isFinite(e.weightG) ||
+      e.weightG <= 0 ||
+      e.hours <= 0 ||
+      !isFinite(e.filamentPricePerKg) ||
+      e.filamentPricePerKg <= 0 ||
+      labor < 0 ||
+      e.marginPct < 0 ||
+      e.lossPct < 0
+    ) {
       return null;
     }
 
@@ -92,9 +101,7 @@ window.Wisky3D = window.Wisky3D || {};
 
     const layerCount = Math.ceil(p.modelHeightMm / p.layerHeight);
     const flowMm3S = p.speed * p.layerHeight * p.extrusionWidth;
-    const totalMin = flowMm3S > 0
-      ? (materialVolumeMm3 / flowMm3S + layerCount * p.overheadPerLayer) / 60
-      : 0;
+    const totalMin = flowMm3S > 0 ? (materialVolumeMm3 / flowMm3S + layerCount * p.overheadPerLayer) / 60 : 0;
 
     // Arredonda o total antes de separar em horas/minutos. Arredondar cada
     // parte isoladamente pode gerar "60min" (ex.: 179.6min viraria 2h 60min).
@@ -120,10 +127,24 @@ window.Wisky3D = window.Wisky3D || {};
   }
 
   const CSV_HEADER = [
-    "Peça", "Quantidade", "Filamento", "Energia", "Desgaste da máquina",
-    "Peças e insumos", "Subtotal", "Perda (%)", "Perda",
-    "Margem (%)", "Margem", "Horas manuais", "Valor da hora", "Mão de obra",
-    "Embalagem", "Frete", "Valor unitário", "Valor total"
+    "Peça",
+    "Quantidade",
+    "Filamento",
+    "Energia",
+    "Desgaste da máquina",
+    "Peças e insumos",
+    "Subtotal",
+    "Perda (%)",
+    "Perda",
+    "Margem (%)",
+    "Margem",
+    "Horas manuais",
+    "Valor da hora",
+    "Mão de obra",
+    "Embalagem",
+    "Frete",
+    "Valor unitário",
+    "Valor total"
   ];
 
   function generateCsv(items) {
@@ -132,22 +153,42 @@ window.Wisky3D = window.Wisky3D || {};
 
     items.forEach(function (item, i) {
       total += item.itemTotal;
-      lines.push([itemName(item, i), item.quantity].concat([
-        item.filamentCost, item.energy, item.wear, item.hardware,
-        item.subtotal, item.lossPct, item.loss, item.marginPct, item.margin,
-        item.manualHours, item.hourlyRate, item.labor, item.packaging,
-        item.shipping, item.unitTotal, item.itemTotal
-      ].map(csvNum)));
+      lines.push(
+        [itemName(item, i), item.quantity].concat(
+          [
+            item.filamentCost,
+            item.energy,
+            item.wear,
+            item.hardware,
+            item.subtotal,
+            item.lossPct,
+            item.loss,
+            item.marginPct,
+            item.margin,
+            item.manualHours,
+            item.hourlyRate,
+            item.labor,
+            item.packaging,
+            item.shipping,
+            item.unitTotal,
+            item.itemTotal
+          ].map(csvNum)
+        )
+      );
     });
 
-    const totalLine = CSV_HEADER.map(function () { return ""; });
+    const totalLine = CSV_HEADER.map(function () {
+      return "";
+    });
     totalLine[0] = "Total geral";
     totalLine[totalLine.length - 1] = csvNum(total);
     lines.push(totalLine);
 
-    return lines.map(function (line) {
-      return line.map(csvField).join(";");
-    }).join("\r\n");
+    return lines
+      .map(function (line) {
+        return line.map(csvField).join(";");
+      })
+      .join("\r\n");
   }
 
   window.Wisky3D.QuoteCalculations = {

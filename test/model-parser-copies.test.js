@@ -4,10 +4,7 @@ const path = require("node:path");
 const fs = require("node:fs");
 const { DOMParser } = require("@xmldom/xmldom");
 
-const source = fs.readFileSync(
-  path.join(__dirname, "..", "assets", "js", "model-parser.js"),
-  "utf8"
-);
+const source = fs.readFileSync(path.join(__dirname, "..", "assets", "js", "model-parser.js"), "utf8");
 global.window = global;
 global.DOMParser = DOMParser;
 new Function(source)();

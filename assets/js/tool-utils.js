@@ -1,9 +1,9 @@
 (function () {
-// ---------------------------------------------------------------------------
-// BLOCO: utilitários compartilhados pelas ferramentas (Orçamento, Conversor
-// 3MF e Colorir 3MF): upload por input/arrastar, leitura de pacote 3MF e
-// descarte de carregamentos atrasados.
-// ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // BLOCO: utilitários compartilhados pelas ferramentas (Orçamento, Conversor
+  // 3MF e Colorir 3MF): upload por input/arrastar, leitura de pacote 3MF e
+  // descarte de carregamentos atrasados.
+  // ---------------------------------------------------------------------------
 
   window.Wisky3D = window.Wisky3D || {};
 
@@ -40,8 +40,12 @@
   function createSequencer() {
     let current = 0;
     return {
-      next: function () { return ++current; },
-      isCurrent: function (id) { return id === current; }
+      next: function () {
+        return ++current;
+      },
+      isCurrent: function (id) {
+        return id === current;
+      }
     };
   }
 
@@ -63,7 +67,12 @@
       const modelSettingsFile = ModelParser.findUniqueFile(zip, "model_settings.config");
       const sliceInfoFile = ModelParser.findUniqueFile(zip, "slice_info.config");
 
-      return Promise.all([readText(modelFile), readText(configFile), readText(modelSettingsFile), readText(sliceInfoFile)]).then(function (r) {
+      return Promise.all([
+        readText(modelFile),
+        readText(configFile),
+        readText(modelSettingsFile),
+        readText(sliceInfoFile)
+      ]).then(function (r) {
         return {
           zip: zip,
           modelPath: modelFile ? modelFile.name : null,

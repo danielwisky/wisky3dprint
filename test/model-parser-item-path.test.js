@@ -4,10 +4,7 @@ const path = require("node:path");
 const fs = require("node:fs");
 const { DOMParser } = require("@xmldom/xmldom");
 
-const source = fs.readFileSync(
-  path.join(__dirname, "..", "assets", "js", "model-parser.js"),
-  "utf8"
-);
+const source = fs.readFileSync(path.join(__dirname, "..", "assets", "js", "model-parser.js"), "utf8");
 global.window = global;
 global.DOMParser = DOMParser;
 new Function(source)();
@@ -33,7 +30,11 @@ function fakeZip(files) {
   return {
     file: function (p) {
       if (!(p in files)) return null;
-      return { async: function () { return Promise.resolve(files[p]); } };
+      return {
+        async: function () {
+          return Promise.resolve(files[p]);
+        }
+      };
     }
   };
 }
@@ -86,7 +87,11 @@ test("extractTriangles3MF resolve <item p:path> pro arquivo externo em vez do ob
       "3D/Objects/object_1.model",
       "2º item (com p:path) deve vir do arquivo externo, não ser confundido com o object id=1 do root"
     );
-    assert.equal(result.triangles[1][0][0], 50, "geometria do 2º item deve ser a do arquivo externo (x=50), não a do root (x=0)");
+    assert.equal(
+      result.triangles[1][0][0],
+      50,
+      "geometria do 2º item deve ser a do arquivo externo (x=50), não a do root (x=0)"
+    );
   });
 });
 
@@ -130,6 +135,10 @@ test("extractTriangles3MF converte unidade escalando cada vértice uma vez só, 
   return ModelParser.extractTriangles3MF(fakeZip({}), rootModel, "3D/3dmodel.model").then((result) => {
     const coordinates = result.triangles.flat().flat();
     assert.equal(Math.max(...coordinates), 10, "1 cm vira 10 mm");
-    assert.deepEqual(result.triangles[3], [[10, 0, 0], [0, 10, 0], [0, 0, 10]]);
+    assert.deepEqual(result.triangles[3], [
+      [10, 0, 0],
+      [0, 10, 0],
+      [0, 0, 10]
+    ]);
   });
 });

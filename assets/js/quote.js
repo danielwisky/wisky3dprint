@@ -1,7 +1,7 @@
 (function () {
-// ---------------------------------------------------------------------------
-// BLOCO: Calculadora de orçamento: itens, custos, upload de modelo, PDF/CSV
-// ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // BLOCO: Calculadora de orçamento: itens, custos, upload de modelo, PDF/CSV
+  // ---------------------------------------------------------------------------
 
   const ModelParser = window.Wisky3D && window.Wisky3D.ModelParser;
   const ToolUtils = window.Wisky3D && window.Wisky3D.ToolUtils;
@@ -192,9 +192,10 @@
 
     renderTiers(item);
 
-    out.textContent = item.quantity > 1
-      ? fmt.format(item.itemTotal) + " (" + item.quantity + " × " + fmt.format(item.unitTotal) + ")"
-      : fmt.format(item.itemTotal);
+    out.textContent =
+      item.quantity > 1
+        ? fmt.format(item.itemTotal) + " (" + item.quantity + " × " + fmt.format(item.unitTotal) + ")"
+        : fmt.format(item.itemTotal);
     out.classList.add("has-value");
     addBtn.disabled = false;
   }
@@ -207,8 +208,12 @@
 
     const tiers = String(d.marginTiersPct || "")
       .split(",")
-      .map(function (s) { return parseFloat(s); })
-      .filter(function (n) { return isFinite(n); });
+      .map(function (s) {
+        return parseFloat(s);
+      })
+      .filter(function (n) {
+        return isFinite(n);
+      });
 
     if (!tiers.length || !fullMode) {
       tiersBox.hidden = true;
@@ -219,7 +224,13 @@
     tiersCols.innerHTML = "";
 
     tiers.forEach(function (marginPct, i) {
-      const unit = Calculations.unitTotalWithMargin(item.subtotalWithLoss, marginPct, item.labor, item.packaging, item.shipping);
+      const unit = Calculations.unitTotalWithMargin(
+        item.subtotalWithLoss,
+        marginPct,
+        item.labor,
+        item.packaging,
+        item.shipping
+      );
       const col = document.createElement("button");
       col.type = "button";
       col.className = "calc-tier";
@@ -234,7 +245,7 @@
 
       const label = document.createElement("span");
       label.className = "calc-tier-label";
-      label.textContent = labels[i] || (marginPct + "%");
+      label.textContent = labels[i] || marginPct + "%";
 
       const pct = document.createElement("span");
       pct.className = "calc-tier-pct";
@@ -270,7 +281,9 @@
   }
 
   function sumItems() {
-    return items.reduce(function (total, item) { return total + item.itemTotal; }, 0);
+    return items.reduce(function (total, item) {
+      return total + item.itemTotal;
+    }, 0);
   }
 
   // Usado tanto na lista de itens quanto no orçamento impresso. Retorna o
@@ -409,8 +422,12 @@
     // Colunas de Embalagem/Frete só aparecem no orçamento impresso se algum
     // item do orçamento de fato usa esses valores. Evita poluir a tabela
     // com colunas zeradas.
-    const hasPackaging = items.some(function (item) { return item.packaging > 0; });
-    const hasShipping = items.some(function (item) { return item.shipping > 0; });
+    const hasPackaging = items.some(function (item) {
+      return item.packaging > 0;
+    });
+    const hasShipping = items.some(function (item) {
+      return item.shipping > 0;
+    });
     printThPackaging.hidden = !hasPackaging;
     printThShipping.hidden = !hasShipping;
 
@@ -451,13 +468,21 @@
   // Safari em modo privado (e storage desabilitado) lança ao acessar
   // localStorage. Protege igual ao padrão já usado em main.js.
   function lsGet(key) {
-    try { return localStorage.getItem(key); } catch (e) { return null; }
+    try {
+      return localStorage.getItem(key);
+    } catch (e) {
+      return null;
+    }
   }
   function lsSet(key, value) {
-    try { localStorage.setItem(key, value); } catch (e) {}
+    try {
+      localStorage.setItem(key, value);
+    } catch (e) {}
   }
   function lsRemove(key) {
-    try { localStorage.removeItem(key); } catch (e) {}
+    try {
+      localStorage.removeItem(key);
+    } catch (e) {}
   }
 
   // Campos opcionais: 0 no _config.yml significa "deixar em branco".
@@ -642,7 +667,9 @@
     const walls = parseInt(wallsInput.value, 10) || parseInt(d.walls, 10) || 0;
 
     if (!isFinite(density) || density <= 0) {
-      showModelError("Não encontramos a densidade do material nesse arquivo. Selecione o material (ou informe a densidade manualmente) para calcular o peso.");
+      showModelError(
+        "Não encontramos a densidade do material nesse arquivo. Selecione o material (ou informe a densidade manualmente) para calcular o peso."
+      );
       timeHint.hidden = true;
       return;
     }
@@ -691,11 +718,15 @@
       return;
     }
     if (triangleCount > ToolUtils.MAX_TRIANGLES) {
-      showModelError("Modelo muito complexo para calcular no navegador. Tente simplificar a malha ou informe peso/tempo manualmente.");
+      showModelError(
+        "Modelo muito complexo para calcular no navegador. Tente simplificar a malha ou informe peso/tempo manualmente."
+      );
       return;
     }
     if (volumeMm3 <= 0) {
-      showModelError("Malha inválida ou não fechada (non-manifold). Tente exportar novamente do seu software de modelagem.");
+      showModelError(
+        "Malha inválida ou não fechada (non-manifold). Tente exportar novamente do seu software de modelagem."
+      );
       return;
     }
 
@@ -707,9 +738,12 @@
 
     modelNameOut.textContent = fileName;
     modelDimsOut.textContent =
-      (bbox.maxX - bbox.minX).toFixed(1) + " × " +
-      (bbox.maxY - bbox.minY).toFixed(1) + " × " +
-      (bbox.maxZ - bbox.minZ).toFixed(1) + " mm";
+      (bbox.maxX - bbox.minX).toFixed(1) +
+      " × " +
+      (bbox.maxY - bbox.minY).toFixed(1) +
+      " × " +
+      (bbox.maxZ - bbox.minZ).toFixed(1) +
+      " mm";
     modelVolumeOut.textContent = (volumeMm3 / 1000).toFixed(2) + " cm³";
     if (fileProfile) {
       modelDensityOut.textContent = fileProfile.density + " g/cm³";
@@ -740,9 +774,15 @@
   let modelLastFocus = null;
 
   function modalFocusables() {
-    return Array.prototype.slice.call(
-      modelModalDialog.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')
-    ).filter(function (el) { return el.offsetParent !== null; });
+    return Array.prototype.slice
+      .call(
+        modelModalDialog.querySelectorAll(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      )
+      .filter(function (el) {
+        return el.offsetParent !== null;
+      });
   }
 
   function openModelModal() {
@@ -846,11 +886,11 @@
       const triangles = ModelParser.parseSTL(buffer);
       const stats = triangles.length
         ? {
-          triangleCount: triangles.length,
-          bbox: ModelParser.computeBoundingBox(triangles),
-          volumeMm3: ModelParser.computeMeshVolumeMm3(triangles),
-          areaMm2: ModelParser.computeMeshAreaMm2(triangles)
-        }
+            triangleCount: triangles.length,
+            bbox: ModelParser.computeBoundingBox(triangles),
+            volumeMm3: ModelParser.computeMeshVolumeMm3(triangles),
+            areaMm2: ModelParser.computeMeshAreaMm2(triangles)
+          }
         : { triangleCount: 0, bbox: ModelParser.emptyBbox(), volumeMm3: 0, areaMm2: 0 };
       return { stats: stats, profile: null };
     });
@@ -883,6 +923,4 @@
     e.preventDefault();
     if (current) addBtn.click();
   });
-
 })();
-

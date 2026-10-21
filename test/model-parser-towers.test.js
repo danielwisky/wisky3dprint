@@ -4,10 +4,7 @@ const path = require("node:path");
 const fs = require("node:fs");
 const { DOMParser } = require("@xmldom/xmldom");
 
-const source = fs.readFileSync(
-  path.join(__dirname, "..", "assets", "js", "model-parser.js"),
-  "utf8"
-);
+const source = fs.readFileSync(path.join(__dirname, "..", "assets", "js", "model-parser.js"), "utf8");
 global.window = global;
 global.DOMParser = DOMParser;
 new Function(source)();
@@ -34,13 +31,16 @@ function sourceConfig(towersX, towersY) {
 
 // Config já convertida para a mesa de 220 (hardware do destino, processo da origem).
 function targetConfig(extra) {
-  return Object.assign({
-    printable_area: PLATE_220,
-    prime_tower_width: "35",
-    wipe_tower_rotation_angle: "0",
-    enable_prime_tower: "1",
-    filament_colour: ["#FFFFFF", "#000000"]
-  }, extra || {});
+  return Object.assign(
+    {
+      printable_area: PLATE_220,
+      prime_tower_width: "35",
+      wipe_tower_rotation_angle: "0",
+      enable_prime_tower: "1",
+      filament_colour: ["#FFFFFF", "#000000"]
+    },
+    extra || {}
+  );
 }
 
 const FACTORY = { wipe_tower_x: ["15"], wipe_tower_y: ["170"] };
@@ -64,7 +64,13 @@ test("footprintsByPlate leva cada item para as coordenadas da própria mesa no d
 });
 
 test("footprintsByPlate sem atribuição de mesas põe todos os itens na mesa 1", () => {
-  const footprints = footprintsByPlate([{ objectId: "1", bbox: bbox(100, 100, 150, 150) }], null, PLATE_256, PLATE_220, 1);
+  const footprints = footprintsByPlate(
+    [{ objectId: "1", bbox: bbox(100, 100, 150, 150) }],
+    null,
+    PLATE_256,
+    PLATE_220,
+    1
+  );
 
   assert.deepEqual(footprints, [[[82, 82, 132, 132]]]);
 });
@@ -83,11 +89,19 @@ test("placeTowers usa a posição de fábrica quando a do autor cai em cima de u
 });
 
 test("placeTowers procura o ponto livre mais perto quando autor e fábrica estão ocupados", () => {
-  const pieces = [[0, 0, 100, 100], [0, 120, 220, 220]];
+  const pieces = [
+    [0, 0, 100, 100],
+    [0, 120, 220, 220]
+  ];
   const towers = placeTowers(sourceConfig(["40"], ["40"]), targetConfig(), FACTORY, [pieces]);
 
   const side = 40;
-  pieces.forEach((p) => assert.ok(!overlaps([towers.wipe_tower_x[0], towers.wipe_tower_y[0]], p, side), `torre em ${towers.wipe_tower_x[0]},${towers.wipe_tower_y[0]} encosta em ${p}`));
+  pieces.forEach((p) =>
+    assert.ok(
+      !overlaps([towers.wipe_tower_x[0], towers.wipe_tower_y[0]], p, side),
+      `torre em ${towers.wipe_tower_x[0]},${towers.wipe_tower_y[0]} encosta em ${p}`
+    )
+  );
   const [x, y] = [Number(towers.wipe_tower_x[0]), Number(towers.wipe_tower_y[0])];
   assert.ok(x >= 6 && x + side <= 214 && y >= 6 && y + side <= 214, `torre fora da mesa: ${x},${y}`);
 });
@@ -106,15 +120,24 @@ test("placeTowers respeita bed_exclude_area do destino", () => {
 });
 
 test("placeTowers calcula uma posição por mesa", () => {
-  const towers = placeTowers(sourceConfig(["40", "150"], ["40", "150"]), targetConfig(), FACTORY, [[[0, 0, 100, 100]], []]);
+  const towers = placeTowers(sourceConfig(["40", "150"], ["40", "150"]), targetConfig(), FACTORY, [
+    [[0, 0, 100, 100]],
+    []
+  ]);
 
   assert.deepEqual(towers.wipe_tower_x, ["15", "132"]);
   assert.deepEqual(towers.wipe_tower_y, ["170", "132"]);
 });
 
 test("placeTowers devolve null com torre desligada ou um filamento só", () => {
-  assert.equal(placeTowers(sourceConfig(["40"], ["40"]), targetConfig({ enable_prime_tower: "0" }), FACTORY, [[]]), null);
-  assert.equal(placeTowers(sourceConfig(["40"], ["40"]), targetConfig({ filament_colour: ["#FFFFFF"] }), FACTORY, [[]]), null);
+  assert.equal(
+    placeTowers(sourceConfig(["40"], ["40"]), targetConfig({ enable_prime_tower: "0" }), FACTORY, [[]]),
+    null
+  );
+  assert.equal(
+    placeTowers(sourceConfig(["40"], ["40"]), targetConfig({ filament_colour: ["#FFFFFF"] }), FACTORY, [[]]),
+    null
+  );
 });
 
 test("footprintsByPlate usa a posição do item (como repositionByPlate), não o centro do bbox", () => {
@@ -136,7 +159,12 @@ test("placeTowers volta ao deslocamento simples quando o perfil não tem região
 });
 
 test("placeTowers aceita bed_exclude_area com os pontos num texto só", () => {
-  const towers = placeTowers(sourceConfig(["40"], ["40"]), targetConfig({ bed_exclude_area: ["0x0,80x0,80x80,0x80"] }), { wipe_tower_x: ["22"], wipe_tower_y: ["22"] }, [[]]);
+  const towers = placeTowers(
+    sourceConfig(["40"], ["40"]),
+    targetConfig({ bed_exclude_area: ["0x0,80x0,80x80,0x80"] }),
+    { wipe_tower_x: ["22"], wipe_tower_y: ["22"] },
+    [[]]
+  );
 
   const [x, y] = [Number(towers.wipe_tower_x[0]), Number(towers.wipe_tower_y[0])];
   assert.ok(!(x < 86 && y < 86), `torre na área proibida: ${x},${y}`);

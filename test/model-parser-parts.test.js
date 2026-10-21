@@ -4,10 +4,7 @@ const path = require("node:path");
 const fs = require("node:fs");
 const { DOMParser } = require("@xmldom/xmldom");
 
-const source = fs.readFileSync(
-  path.join(__dirname, "..", "assets", "js", "model-parser.js"),
-  "utf8"
-);
+const source = fs.readFileSync(path.join(__dirname, "..", "assets", "js", "model-parser.js"), "utf8");
 global.window = global;
 global.DOMParser = DOMParser;
 new Function(source)();
@@ -32,9 +29,31 @@ function fakeZip() {
 
 // Cubo fechado de aresta `a` com o canto em (0,0,0).
 function cube(id, a) {
-  const v = [[0,0,0],[a,0,0],[a,a,0],[0,a,0],[0,0,a],[a,0,a],[a,a,a],[0,a,a]];
-  const t = [[0,2,1],[0,3,2],[4,5,6],[4,6,7],[0,1,5],[0,5,4],[1,2,6],[1,6,5],[2,3,7],[2,7,6],[3,0,4],[3,4,7]];
-  return `<object id="${id}" type="model"><mesh><vertices>${v.map(([x,y,z]) => `<vertex x="${x}" y="${y}" z="${z}"/>`).join("")}</vertices><triangles>${t.map(([a1,b,c]) => `<triangle v1="${a1}" v2="${b}" v3="${c}"/>`).join("")}</triangles></mesh></object>`;
+  const v = [
+    [0, 0, 0],
+    [a, 0, 0],
+    [a, a, 0],
+    [0, a, 0],
+    [0, 0, a],
+    [a, 0, a],
+    [a, a, a],
+    [0, a, a]
+  ];
+  const t = [
+    [0, 2, 1],
+    [0, 3, 2],
+    [4, 5, 6],
+    [4, 6, 7],
+    [0, 1, 5],
+    [0, 5, 4],
+    [1, 2, 6],
+    [1, 6, 5],
+    [2, 3, 7],
+    [2, 7, 6],
+    [3, 0, 4],
+    [3, 4, 7]
+  ];
+  return `<object id="${id}" type="model"><mesh><vertices>${v.map(([x, y, z]) => `<vertex x="${x}" y="${y}" z="${z}"/>`).join("")}</vertices><triangles>${t.map(([a1, b, c]) => `<triangle v1="${a1}" v2="${b}" v3="${c}"/>`).join("")}</triangles></mesh></object>`;
 }
 
 const MODEL = `<?xml version="1.0" encoding="UTF-8"?>
@@ -89,7 +108,7 @@ test("parse3MFPackage mantém parte normal_part e ignora model_settings inválid
 });
 
 test("parse3MFPackage não aplica as partes de model_settings a item com p:path (ids de outro arquivo)", () => {
-  const external = MODEL.replace("<build><item objectid=\"4\"/></build>", "<build/>");
+  const external = MODEL.replace('<build><item objectid="4"/></build>', "<build/>");
   const root = `<?xml version="1.0" encoding="UTF-8"?>
 <model unit="millimeter" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" xmlns:p="http://schemas.microsoft.com/3dmanufacturing/production/2015/06">
   <resources/>

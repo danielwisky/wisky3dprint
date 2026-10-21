@@ -46,7 +46,7 @@ window.Wisky3D.parsePtBrMeasure = function (value) {
 // weightG, hours, filamentPricePerKg, powerW, kwhRate, wear (custo fixo de desgaste da impressora)
 window.Wisky3D.calculateBaseSubtotal = function (params) {
   const filamentCost = (params.weightG / 1000) * params.filamentPricePerKg;
-  const energy = (params.powerW * params.hours / 1000) * params.kwhRate;
+  const energy = ((params.powerW * params.hours) / 1000) * params.kwhRate;
   const wear = params.wear;
   return {
     filamentCost: filamentCost,

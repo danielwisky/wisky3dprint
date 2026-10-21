@@ -4,10 +4,7 @@ const path = require("node:path");
 const fs = require("node:fs");
 const { DOMParser } = require("@xmldom/xmldom");
 
-const source = fs.readFileSync(
-  path.join(__dirname, "..", "assets", "js", "model-parser.js"),
-  "utf8"
-);
+const source = fs.readFileSync(path.join(__dirname, "..", "assets", "js", "model-parser.js"), "utf8");
 global.window = global;
 global.DOMParser = DOMParser;
 new Function(source)();
@@ -162,9 +159,7 @@ test("calculatePlates descarta chapas sem bbox", () => {
 });
 
 test("calculatePlates com plateAssignments null retorna null", () => {
-  const items = [
-    { objectId: "1", bbox: { minX: 0, minY: 0, minZ: 0, maxX: 10, maxY: 10, maxZ: 10 } }
-  ];
+  const items = [{ objectId: "1", bbox: { minX: 0, minY: 0, minZ: 0, maxX: 10, maxY: 10, maxZ: 10 } }];
 
   const result = window.Wisky3D.ModelParser.calculatePlates(items, null);
 

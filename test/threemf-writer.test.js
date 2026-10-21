@@ -8,16 +8,10 @@ global.window = global;
 global.DOMParser = DOMParser;
 global.XMLSerializer = XMLSerializer;
 
-const modelParserSource = fs.readFileSync(
-  path.join(__dirname, "..", "assets", "js", "model-parser.js"),
-  "utf8"
-);
+const modelParserSource = fs.readFileSync(path.join(__dirname, "..", "assets", "js", "model-parser.js"), "utf8");
 new Function(modelParserSource)();
 
-const writerSource = fs.readFileSync(
-  path.join(__dirname, "..", "assets", "js", "threemf-writer.js"),
-  "utf8"
-);
+const writerSource = fs.readFileSync(path.join(__dirname, "..", "assets", "js", "threemf-writer.js"), "utf8");
 new Function(writerSource)();
 
 const ThreeMFWriter = window.Wisky3D.ThreeMFWriter;
@@ -64,7 +58,12 @@ test("buildModelFromScratch: 1 object gera 1 <object>, 1 <item> e triângulos co
   const objects = [
     {
       objectId: 2,
-      vertices: [[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]],
+      vertices: [
+        [0, 0, 0],
+        [1, 0, 0],
+        [0, 1, 0],
+        [0, 0, 1]
+      ],
       triangles: [
         { v1: 0, v2: 1, v3: 2, color: [255, 0, 0] },
         { v1: 0, v2: 1, v3: 3, color: [0, 255, 0] },
@@ -103,12 +102,20 @@ test("buildModelFromScratch: 2 objects geram 2 <object>, 2 <item> e colorgroup �
   const objects = [
     {
       objectId: 2,
-      vertices: [[0, 0, 0], [1, 0, 0], [0, 1, 0]],
+      vertices: [
+        [0, 0, 0],
+        [1, 0, 0],
+        [0, 1, 0]
+      ],
       triangles: [{ v1: 0, v2: 1, v3: 2, color: [255, 0, 0] }]
     },
     {
       objectId: 3,
-      vertices: [[2, 0, 0], [3, 0, 0], [2, 1, 0]],
+      vertices: [
+        [2, 0, 0],
+        [3, 0, 0],
+        [2, 1, 0]
+      ],
       triangles: [
         { v1: 0, v2: 1, v3: 2, color: [0, 0, 255] },
         { v1: 0, v2: 1, v3: 2, color: [255, 0, 0] }
@@ -157,7 +164,11 @@ test("rebuildProjectSettings: 1 filamento -> 3 cores redimensiona só campos de 
     filament_dev_ams_drying_temperature: ["55", "55", "55", "55"],
     layer_height: "0.2"
   };
-  const palette = [[128, 128, 128], [255, 0, 0], [0, 0, 255]];
+  const palette = [
+    [128, 128, 128],
+    [255, 0, 0],
+    [0, 0, 255]
+  ];
   const rebuilt = ThreeMFWriter.rebuildProjectSettings(cfg, palette);
 
   assert.deepEqual(rebuilt.filament_type, ["PLA", "PLA", "PLA"]);
@@ -178,7 +189,10 @@ test("rebuildProjectSettings: 4 filamentos (AMS) não mexe em printable_area", (
     filament_type: ["PLA", "PETG", "PLA", "PLA"],
     printable_area: area.slice()
   };
-  const rebuilt = ThreeMFWriter.rebuildProjectSettings(cfg, [[128, 128, 128], [255, 0, 0]]);
+  const rebuilt = ThreeMFWriter.rebuildProjectSettings(cfg, [
+    [128, 128, 128],
+    [255, 0, 0]
+  ]);
 
   assert.deepEqual(rebuilt.printable_area, area);
   assert.deepEqual(rebuilt.filament_type, ["PLA", "PLA"]);

@@ -1,0 +1,11 @@
+_site/
+node_modules/
+vendor/
+.claude/
+**/.venv/
+sw-orcamento.js
+*.html
+*.scss
+*.md
+*.yml
+*.json

@@ -4,10 +4,7 @@ const path = require("node:path");
 const fs = require("node:fs");
 const { DOMParser } = require("@xmldom/xmldom");
 
-const source = fs.readFileSync(
-  path.join(__dirname, "..", "assets", "js", "model-parser.js"),
-  "utf8"
-);
+const source = fs.readFileSync(path.join(__dirname, "..", "assets", "js", "model-parser.js"), "utf8");
 global.window = global;
 global.DOMParser = DOMParser;
 new Function(source)();
@@ -147,7 +144,20 @@ test("uma matriz de purga e um multiplicador por bico do destino", () => {
     flush_multiplier: ["1.2"]
   };
   const adjusted = adjustFlushPerNozzle(project, { flush_multiplier: ["1", "1", "1"] });
-  assert.deepEqual(adjusted.flush_volumes_matrix, ["0", "100", "200", "0", "0", "100", "200", "0", "0", "100", "200", "0"]);
+  assert.deepEqual(adjusted.flush_volumes_matrix, [
+    "0",
+    "100",
+    "200",
+    "0",
+    "0",
+    "100",
+    "200",
+    "0",
+    "0",
+    "100",
+    "200",
+    "0"
+  ]);
   assert.deepEqual(adjusted.flush_multiplier, ["1.2", "1.2", "1.2"]);
 });
 
@@ -163,7 +173,11 @@ test("destino de um bico fica com a primeira matriz de purga", () => {
 });
 
 test("sem quantidade de bicos no perfil, a purga não muda", () => {
-  const project = { filament_colour: ["#FFFFFF", "#000000"], flush_volumes_matrix: ["0", "100", "200", "0"], flush_multiplier: "1" };
+  const project = {
+    filament_colour: ["#FFFFFF", "#000000"],
+    flush_volumes_matrix: ["0", "100", "200", "0"],
+    flush_multiplier: "1"
+  };
   assert.deepEqual(adjustFlushPerNozzle(project, {}), project);
 });
 

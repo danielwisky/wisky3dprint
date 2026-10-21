@@ -4,10 +4,7 @@ const path = require("node:path");
 const fs = require("node:fs");
 const { DOMParser } = require("@xmldom/xmldom");
 
-const source = fs.readFileSync(
-  path.join(__dirname, "..", "assets", "js", "model-parser.js"),
-  "utf8"
-);
+const source = fs.readFileSync(path.join(__dirname, "..", "assets", "js", "model-parser.js"), "utf8");
 global.window = global;
 global.DOMParser = DOMParser;
 new Function(source)();
@@ -57,10 +54,10 @@ test("repositionByPlate mantém cada peça na mesma célula da grade de mesas", 
 
   // passo da grade no destino: 1,2 × 220 = 264
   const expected = {
-    "4": [110 + 21.1, 110 - 22.6],
-    "2": [110 + 264 + 8.7, 110 - 62.8],
-    "8": [110 - 13.3, 110 - 264 - 33.2],
-    "10": [110 + 264 - 8.6, 110 - 264 - 27.9]
+    4: [110 + 21.1, 110 - 22.6],
+    2: [110 + 264 + 8.7, 110 - 62.8],
+    8: [110 - 13.3, 110 - 264 - 33.2],
+    10: [110 + 264 - 8.6, 110 - 264 - 27.9]
   };
   Object.keys(expected).forEach((id) => {
     const [x, y] = translation(adjusted, id);
@@ -74,7 +71,10 @@ test("repositionByPlate preserva rotação/escala do item e não mexe em compone
 
   const adjusted = repositionByPlate(xml, PLATE_256, PLATE_220);
 
-  assert.match(adjusted, /<item objectid="1" transform="0\.707107 -0\.707107 0 0\.707107 0\.707107 0 0 0 1\.5 110 110 3\.25"/);
+  assert.match(
+    adjusted,
+    /<item objectid="1" transform="0\.707107 -0\.707107 0 0\.707107 0\.707107 0 0 0 1\.5 110 110 3\.25"/
+  );
   assert.match(adjusted, /<component objectid="9" transform="1 0 0 0 1 0 0 0 1 5 6 7"\/>/);
 });
 

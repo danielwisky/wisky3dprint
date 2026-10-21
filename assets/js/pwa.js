@@ -37,14 +37,17 @@
     const isIPadOS13Plus = window.navigator.platform === "MacIntel" && window.navigator.maxTouchPoints > 1;
     const isIOS = /iPad|iPhone|iPod/.test(ua) || isIPadOS13Plus;
     const isAndroid = /Android/.test(ua);
-    const alreadyDismissed = lsGet(INSTALL_TIP_DISMISSED_KEY) === "1" || lsGet(INSTALL_TIP_DISMISSED_KEY_LEGACY) === "1";
+    const alreadyDismissed =
+      lsGet(INSTALL_TIP_DISMISSED_KEY) === "1" || lsGet(INSTALL_TIP_DISMISSED_KEY_LEGACY) === "1";
 
     if (!alreadyInstalled && !alreadyDismissed) {
       if (isIOS) {
-        installTipText.textContent = "📲 Adicione esta ferramenta à tela de início e use como app, até offline: toque em Compartilhar na barra do Safari e depois em \"Adicionar à Tela de Início\".";
+        installTipText.textContent =
+          '📲 Adicione esta ferramenta à tela de início e use como app, até offline: toque em Compartilhar na barra do Safari e depois em "Adicionar à Tela de Início".';
         installTip.hidden = false;
       } else if (isAndroid) {
-        installTipText.textContent = "📲 Adicione esta ferramenta à tela de início e use como app, até offline: toque no menu (⋮) do navegador e depois em \"Instalar app\" ou \"Adicionar à tela inicial\".";
+        installTipText.textContent =
+          '📲 Adicione esta ferramenta à tela de início e use como app, até offline: toque no menu (⋮) do navegador e depois em "Instalar app" ou "Adicionar à tela inicial".';
         installTip.hidden = false;
       }
     }
@@ -87,37 +90,40 @@
         });
       }
 
-      navigator.serviceWorker.register(swUrl, { scope: swScope }).then(function (reg) {
-        // reg.waiting já está pronto (instalado numa aba anterior). Mostra
-        // o aviso na hora, sem esperar um "statechange" que não vai ocorrer.
-        if (reg.waiting && navigator.serviceWorker.controller) {
-          showUpdateToast(reg.waiting);
-        }
-        reg.addEventListener("updatefound", function () {
-          const worker = reg.installing;
-          if (!worker) return;
-          worker.addEventListener("statechange", function () {
-            if (worker.state === "installed" && navigator.serviceWorker.controller) {
-              showUpdateToast(worker);
-            }
+      navigator.serviceWorker
+        .register(swUrl, { scope: swScope })
+        .then(function (reg) {
+          // reg.waiting já está pronto (instalado numa aba anterior). Mostra
+          // o aviso na hora, sem esperar um "statechange" que não vai ocorrer.
+          if (reg.waiting && navigator.serviceWorker.controller) {
+            showUpdateToast(reg.waiting);
+          }
+          reg.addEventListener("updatefound", function () {
+            const worker = reg.installing;
+            if (!worker) return;
+            worker.addEventListener("statechange", function () {
+              if (worker.state === "installed" && navigator.serviceWorker.controller) {
+                showUpdateToast(worker);
+              }
+            });
           });
-        });
 
-        // No iPhone, reabrir o app pelo ícone costuma só retomar a aba
-        // suspensa em segundo plano, sem navegação nova, e é só numa
-        // navegação que o navegador checa atualização sozinho. Forçamos a
-        // checagem quando o app volta ao primeiro plano ou a conexão volta.
-        function checkForUpdate() {
-          reg.update().catch(function () {});
-        }
-        document.addEventListener("visibilitychange", function () {
-          if (document.visibilityState === "visible") checkForUpdate();
-        });
-        window.addEventListener("online", checkForUpdate);
-        // Reforço pra quem deixa o app aberto e em primeiro plano por muito
-        // tempo (ex.: numa recepção), sem nunca sair de foco ou reconectar.
-        setInterval(checkForUpdate, 60 * 60 * 1000);
-      }).catch(function () {});
+          // No iPhone, reabrir o app pelo ícone costuma só retomar a aba
+          // suspensa em segundo plano, sem navegação nova, e é só numa
+          // navegação que o navegador checa atualização sozinho. Forçamos a
+          // checagem quando o app volta ao primeiro plano ou a conexão volta.
+          function checkForUpdate() {
+            reg.update().catch(function () {});
+          }
+          document.addEventListener("visibilitychange", function () {
+            if (document.visibilityState === "visible") checkForUpdate();
+          });
+          window.addEventListener("online", checkForUpdate);
+          // Reforço pra quem deixa o app aberto e em primeiro plano por muito
+          // tempo (ex.: numa recepção), sem nunca sair de foco ou reconectar.
+          setInterval(checkForUpdate, 60 * 60 * 1000);
+        })
+        .catch(function () {});
 
       // Na primeira visita não há worker antigo: o novo ativa direto, o
       // clients.claim() dispara controllerchange e recarregar aqui perderia
