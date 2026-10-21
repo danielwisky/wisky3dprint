@@ -15,7 +15,7 @@
     })();
 
     (function () {
-      var ativo = false;
+      var enabled = false;
       try {
         if (new URLSearchParams(location.search).has('acesso-vip')) localStorage.setItem('ferramentas', '1');
         {%- if page.pwa %}
@@ -25,9 +25,9 @@
         // localStorage do Safari.
         localStorage.setItem('ferramentas', '1');
         {%- endif %}
-        ativo = localStorage.getItem('ferramentas') === '1';
+        enabled = localStorage.getItem('ferramentas') === '1';
       } catch (e) {}
-      if (ativo) document.documentElement.setAttribute('data-ferramentas', '');
+      if (enabled) document.documentElement.setAttribute('data-tools', '');
     })();
   </script>
 

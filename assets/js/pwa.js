@@ -14,42 +14,45 @@
     } catch (e) {}
   }
 
-  var installTip = document.getElementById("pwa-install-tip");
-  var installTipTexto = document.getElementById("pwa-install-tip-texto");
-  var installTipFechar = document.getElementById("pwa-install-tip-fechar");
-  var updateToast = document.getElementById("pwa-update-toast");
-  var updateToastBtn = document.getElementById("pwa-update-btn");
+  const installTip = document.getElementById("pwa-install-tip");
+  const installTipText = document.getElementById("pwa-install-tip-text");
+  const installTipClose = document.getElementById("pwa-install-tip-close");
+  const updateToast = document.getElementById("pwa-update-toast");
+  const updateToastBtn = document.getElementById("pwa-update-btn");
 
   // Dica de instalação (Adicionar à Tela de Início): iOS não expõe evento
   // de instalação, então o único jeito é orientar o passo a passo manual.
   // Android tem o prompt nativo do Chrome, mas nem todo navegador/versão
   // mostra automaticamente. A dica cobre esse caso também.
-  var INSTALL_TIP_DISMISSED_KEY = "wisky3d:installTipFechada";
-  var INSTALL_TIP_DISMISSED_KEY_LEGADO = "orcamentoCalc:installTipFechada";
+  const INSTALL_TIP_DISMISSED_KEY = "wisky3d:installTipFechada";
+  const INSTALL_TIP_DISMISSED_KEY_LEGACY = "orcamentoCalc:installTipFechada";
 
-  if (installTip && installTipTexto && installTipFechar) {
-    var jaInstalado =
+  if (installTip && installTipText && installTipClose) {
+    const alreadyInstalled =
       (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) ||
       window.navigator.standalone === true;
-    var ua = window.navigator.userAgent || "";
+    const ua = window.navigator.userAgent || "";
     // Desde o iPadOS 13, o Safari do iPad manda UA de desktop ("Macintosh"),
     // sem "iPad". Só dá pra distinguir de um Mac de verdade pelo touch.
-    var isIPadOS13Mais = window.navigator.platform === "MacIntel" && window.navigator.maxTouchPoints > 1;
-    var isIOS = /iPad|iPhone|iPod/.test(ua) || isIPadOS13Mais;
-    var isAndroid = /Android/.test(ua);
-    var jaFechada = lsGet(INSTALL_TIP_DISMISSED_KEY) === "1" || lsGet(INSTALL_TIP_DISMISSED_KEY_LEGADO) === "1";
+    const isIPadOS13Plus = window.navigator.platform === "MacIntel" && window.navigator.maxTouchPoints > 1;
+    const isIOS = /iPad|iPhone|iPod/.test(ua) || isIPadOS13Plus;
+    const isAndroid = /Android/.test(ua);
+    const alreadyDismissed =
+      lsGet(INSTALL_TIP_DISMISSED_KEY) === "1" || lsGet(INSTALL_TIP_DISMISSED_KEY_LEGACY) === "1";
 
-    if (!jaInstalado && !jaFechada) {
+    if (!alreadyInstalled && !alreadyDismissed) {
       if (isIOS) {
-        installTipTexto.textContent = "📲 Adicione esta ferramenta à tela de início e use como app, até offline: toque em Compartilhar na barra do Safari e depois em \"Adicionar à Tela de Início\".";
+        installTipText.textContent =
+          '📲 Adicione esta ferramenta à tela de início e use como app, até offline: toque em Compartilhar na barra do Safari e depois em "Adicionar à Tela de Início".';
         installTip.hidden = false;
       } else if (isAndroid) {
-        installTipTexto.textContent = "📲 Adicione esta ferramenta à tela de início e use como app, até offline: toque no menu (⋮) do navegador e depois em \"Instalar app\" ou \"Adicionar à tela inicial\".";
+        installTipText.textContent =
+          '📲 Adicione esta ferramenta à tela de início e use como app, até offline: toque no menu (⋮) do navegador e depois em "Instalar app" ou "Adicionar à tela inicial".';
         installTip.hidden = false;
       }
     }
 
-    installTipFechar.addEventListener("click", function () {
+    installTipClose.addEventListener("click", function () {
       installTip.hidden = true;
       lsSet(INSTALL_TIP_DISMISSED_KEY, "1");
     });
@@ -57,8 +60,8 @@
 
   // URL/escopo do service worker vêm do dataset do próprio bloco (renderizado
   // via Liquid), pra respeitar site.baseurl sem precisar de um <form> na página.
-  var swUrl = installTip && installTip.dataset.swUrl;
-  var swScope = installTip && installTip.dataset.swScope;
+  const swUrl = installTip && installTip.dataset.swUrl;
+  const swScope = installTip && installTip.dataset.swScope;
 
   // Registra o service worker do app instalável, com escopo cobrindo as
   // ferramentas do site (Orçamento e Conversor 3MF).
@@ -72,52 +75,55 @@
       // enquanto o toast da primeira ainda está esperando o clique, o
       // navegador descarta o worker antigo. Sem isso, o clique em
       // "Atualizar" ficaria mandando mensagem pra um worker morto.
-      var workerAtual = null;
-      var atualizacaoPedida = false;
-      function mostrarToastAtualizacao(worker) {
+      let currentWorker = null;
+      let updateRequested = false;
+      function showUpdateToast(worker) {
         if (!worker || !updateToast || !updateToastBtn) return;
-        workerAtual = worker;
+        currentWorker = worker;
         updateToast.hidden = false;
       }
       if (updateToastBtn) {
         updateToastBtn.addEventListener("click", function () {
-          if (!workerAtual) return;
-          atualizacaoPedida = true;
-          workerAtual.postMessage("skipWaiting");
+          if (!currentWorker) return;
+          updateRequested = true;
+          currentWorker.postMessage("skipWaiting");
         });
       }
 
-      navigator.serviceWorker.register(swUrl, { scope: swScope }).then(function (reg) {
-        // reg.waiting já está pronto (instalado numa aba anterior). Mostra
-        // o aviso na hora, sem esperar um "statechange" que não vai ocorrer.
-        if (reg.waiting && navigator.serviceWorker.controller) {
-          mostrarToastAtualizacao(reg.waiting);
-        }
-        reg.addEventListener("updatefound", function () {
-          var worker = reg.installing;
-          if (!worker) return;
-          worker.addEventListener("statechange", function () {
-            if (worker.state === "installed" && navigator.serviceWorker.controller) {
-              mostrarToastAtualizacao(worker);
-            }
+      navigator.serviceWorker
+        .register(swUrl, { scope: swScope })
+        .then(function (reg) {
+          // reg.waiting já está pronto (instalado numa aba anterior). Mostra
+          // o aviso na hora, sem esperar um "statechange" que não vai ocorrer.
+          if (reg.waiting && navigator.serviceWorker.controller) {
+            showUpdateToast(reg.waiting);
+          }
+          reg.addEventListener("updatefound", function () {
+            const worker = reg.installing;
+            if (!worker) return;
+            worker.addEventListener("statechange", function () {
+              if (worker.state === "installed" && navigator.serviceWorker.controller) {
+                showUpdateToast(worker);
+              }
+            });
           });
-        });
 
-        // No iPhone, reabrir o app pelo ícone costuma só retomar a aba
-        // suspensa em segundo plano, sem navegação nova, e é só numa
-        // navegação que o navegador checa atualização sozinho. Forçamos a
-        // checagem quando o app volta ao primeiro plano ou a conexão volta.
-        function verificarAtualizacao() {
-          reg.update().catch(function () {});
-        }
-        document.addEventListener("visibilitychange", function () {
-          if (document.visibilityState === "visible") verificarAtualizacao();
-        });
-        window.addEventListener("online", verificarAtualizacao);
-        // Reforço pra quem deixa o app aberto e em primeiro plano por muito
-        // tempo (ex.: numa recepção), sem nunca sair de foco ou reconectar.
-        setInterval(verificarAtualizacao, 60 * 60 * 1000);
-      }).catch(function () {});
+          // No iPhone, reabrir o app pelo ícone costuma só retomar a aba
+          // suspensa em segundo plano, sem navegação nova, e é só numa
+          // navegação que o navegador checa atualização sozinho. Forçamos a
+          // checagem quando o app volta ao primeiro plano ou a conexão volta.
+          function checkForUpdate() {
+            reg.update().catch(function () {});
+          }
+          document.addEventListener("visibilitychange", function () {
+            if (document.visibilityState === "visible") checkForUpdate();
+          });
+          window.addEventListener("online", checkForUpdate);
+          // Reforço pra quem deixa o app aberto e em primeiro plano por muito
+          // tempo (ex.: numa recepção), sem nunca sair de foco ou reconectar.
+          setInterval(checkForUpdate, 60 * 60 * 1000);
+        })
+        .catch(function () {});
 
       // Na primeira visita não há worker antigo: o novo ativa direto, o
       // clients.claim() dispara controllerchange e recarregar aqui perderia
@@ -125,11 +131,11 @@
       // Só recarrega numa troca de versão de verdade: a página já era
       // controlada ao abrir (outra aba pediu a atualização) ou o usuário
       // tocou em "Atualizar" nesta aba.
-      var tinhaController = !!navigator.serviceWorker.controller;
-      var recarregando = false;
+      const hadController = !!navigator.serviceWorker.controller;
+      let reloading = false;
       navigator.serviceWorker.addEventListener("controllerchange", function () {
-        if ((!tinhaController && !atualizacaoPedida) || recarregando) return;
-        recarregando = true;
+        if ((!hadController && !updateRequested) || reloading) return;
+        reloading = true;
         window.location.reload();
       });
     });

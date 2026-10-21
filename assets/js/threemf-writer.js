@@ -1,27 +1,27 @@
 window.Wisky3D = window.Wisky3D || {};
 
 (function () {
-// ---------------------------------------------------------------------------
-// BLOCO: Escrita/exportação de 3MF (cores por triângulo, project_settings.config
-// e model_settings.config do Bambu Studio/OrcaSlicer, montagem de pacote do
-// zero). Extraído de colorir-3mf.js pra ser reaproveitado por outras
-// ferramentas que também precisam gerar/editar .3mf coloridos, sem duplicar
-// essa lógica. Assume que model-parser.js já foi carregado antes (mesma
-// ordem de <script> das páginas que usam este módulo), pra usar
-// ModelParser.directChild/directChildren/findObjectElement.
-// ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // BLOCO: Escrita/exportação de 3MF (cores por triângulo, project_settings.config
+  // e model_settings.config do Bambu Studio/OrcaSlicer, montagem de pacote do
+  // zero). Extraído de colorize-3mf.js pra ser reaproveitado por outras
+  // ferramentas que também precisam gerar/editar .3mf coloridos, sem duplicar
+  // essa lógica. Assume que model-parser.js já foi carregado antes (mesma
+  // ordem de <script> das páginas que usam este módulo), pra usar
+  // ModelParser.directChild/directChildren/findObjectElement.
+  // ---------------------------------------------------------------------------
 
-  var ModelParser = window.Wisky3D.ModelParser;
+  const ModelParser = window.Wisky3D.ModelParser;
 
-  var NS_MATERIAL = "http://schemas.microsoft.com/3dmanufacturing/material/2015/02";
+  const NS_MATERIAL = "http://schemas.microsoft.com/3dmanufacturing/material/2015/02";
 
   // Cor default (cinza) usada pela ferramenta de colorir pra área ainda não
   // pintada. Exportada como ThreeMFWriter.DEFAULT_COLOR (fonte única) porque
-  // injetarCoresNoXml usa esse valor pra decidir se um triângulo foi "pintado
+  // injectColorsIntoXml usa esse valor pra decidir se um triângulo foi "pintado
   // de verdade" (recebe paint_color) ou ficou com a cor default do objeto
-  // (não recebe, herda o extrusor/filamento padrão) — colorir-3mf.js reusa a
+  // (não recebe, herda o extrusor/filamento padrão) — colorize-3mf.js reusa a
   // mesma constante em vez de declarar seu próprio literal.
-  var DEFAULT_COLOR = [176, 176, 190];
+  const DEFAULT_COLOR = [176, 176, 190];
 
   function toHexByte(n) {
     return n.toString(16).padStart(2, "0");
@@ -31,7 +31,7 @@ window.Wisky3D = window.Wisky3D || {};
     return "#" + toHexByte(c[0]) + toHexByte(c[1]) + toHexByte(c[2]) + "ff";
   }
 
-  function rgbParaHexBambu(c) {
+  function rgbToHexBambu(c) {
     return ("#" + toHexByte(c[0]) + toHexByte(c[1]) + toHexByte(c[2])).toUpperCase();
   }
 
@@ -44,23 +44,25 @@ window.Wisky3D = window.Wisky3D || {};
   // um "escape" 11 seguido de nibbles de extensão, cada 0xF valendo +15 até o
   // nibble final somar o resto), tudo em uma string hex com os nibbles em
   // ordem invertida (o último caractere é o primeiro nibble do fluxo).
-  function filamentIndexParaPaintColor(indice1Based) {
-    var nibbles = [];
-    if (indice1Based < 3) {
-      nibbles.push(indice1Based << 2);
+  function filamentIndexToPaintColor(index1Based) {
+    const nibbles = [];
+    if (index1Based < 3) {
+      nibbles.push(index1Based << 2);
     } else {
       nibbles.push(3 << 2);
-      var resto = indice1Based - 3;
-      while (resto >= 15) {
+      let remainder = index1Based - 3;
+      while (remainder >= 15) {
         nibbles.push(15);
-        resto -= 15;
+        remainder -= 15;
       }
-      nibbles.push(resto);
+      nibbles.push(remainder);
     }
     return nibbles
       .slice()
       .reverse()
-      .map(function (n) { return n.toString(16).toUpperCase(); })
+      .map(function (n) {
+        return n.toString(16).toUpperCase();
+      })
       .join("");
   }
 
@@ -68,18 +70,18 @@ window.Wisky3D = window.Wisky3D || {};
   // distinta (r,g,b) um índice sequencial na ordem de primeira aparição,
   // usada tanto para montar o <m:colorgroup> ao remendar um .3mf existente
   // quanto ao gerar um pacote novo do zero a partir de um STL.
-  function criarIndexadorDeCores() {
-    var colorToIndex = new Map();
-    var cores = [];
+  function createColorIndexer() {
+    const colorToIndex = new Map();
+    const colors = [];
     return {
-      cores: cores,
-      indiceDaCor: function (r, g, b) {
-        var chave = r + "," + g + "," + b;
-        var idx = colorToIndex.get(chave);
+      colors: colors,
+      indexOfColor: function (r, g, b) {
+        const key = r + "," + g + "," + b;
+        let idx = colorToIndex.get(key);
         if (idx === undefined) {
-          idx = cores.length;
-          cores.push([r, g, b]);
-          colorToIndex.set(chave, idx);
+          idx = colors.length;
+          colors.push([r, g, b]);
+          colorToIndex.set(key, idx);
         }
         return idx;
       }
@@ -90,11 +92,11 @@ window.Wisky3D = window.Wisky3D || {};
   // achar <m:colorgroup> já existentes no arquivo, cujo prefixo pode variar
   // (ou nem existir, se o pacote original declarou a extensão com outro
   // prefixo/namespace default).
-  function filhosDiretosPorNomeLocal(el, nomeLocal) {
-    var out = [];
-    for (var i = 0; i < el.childNodes.length; i++) {
-      var n = el.childNodes[i];
-      if (n.nodeType === 1 && n.localName && n.localName.toLowerCase() === nomeLocal) out.push(n);
+  function directChildrenByLocalName(el, localName) {
+    const out = [];
+    for (let i = 0; i < el.childNodes.length; i++) {
+      const n = el.childNodes[i];
+      if (n.nodeType === 1 && n.localName && n.localName.toLowerCase() === localName) out.push(n);
     }
     return out;
   }
@@ -105,67 +107,67 @@ window.Wisky3D = window.Wisky3D || {};
   // quando o pacote tem slots de filamento configurados, também paint_color,
   // sem o qual Bambu Studio/OrcaSlicer não mostram a cor). Tudo mais no XML
   // (metadados, outros objects, extensões desconhecidas) permanece intacto.
-  function injetarCoresNoXml(xmlText, porObjeto, slotPorCor) {
-    var doc = new DOMParser().parseFromString(xmlText, "application/xml");
-    var modelEl = doc.documentElement;
+  function injectColorsIntoXml(xmlText, byObject, slotByColor) {
+    const doc = new DOMParser().parseFromString(xmlText, "application/xml");
+    const modelEl = doc.documentElement;
 
     if (!modelEl.getAttribute("xmlns:m")) {
       modelEl.setAttribute("xmlns:m", NS_MATERIAL);
     }
 
-    var resourcesEl = ModelParser.directChild(modelEl, "resources");
+    const resourcesEl = ModelParser.directChild(modelEl, "resources");
     if (!resourcesEl) return xmlText;
 
-    var idsUsados = new Set();
-    (function coletarIds(el) {
-      for (var i = 0; i < el.childNodes.length; i++) {
-        var n = el.childNodes[i];
+    const usedIds = new Set();
+    (function collectIds(el) {
+      for (let i = 0; i < el.childNodes.length; i++) {
+        const n = el.childNodes[i];
         if (n.nodeType === 1) {
-          var id = n.getAttribute && n.getAttribute("id");
-          if (id) idsUsados.add(id);
-          coletarIds(n);
+          const id = n.getAttribute && n.getAttribute("id");
+          if (id) usedIds.add(id);
+          collectIds(n);
         }
       }
     })(resourcesEl);
 
-    var colorGroupId = 900001;
-    while (idsUsados.has(String(colorGroupId))) colorGroupId++;
+    let colorGroupId = 900001;
+    while (usedIds.has(String(colorGroupId))) colorGroupId++;
 
-    var indexador = criarIndexadorDeCores();
-    var cores = indexador.cores;
-    var indiceDaCor = indexador.indiceDaCor;
+    const indexer = createColorIndexer();
+    const colors = indexer.colors;
+    const indexOfColor = indexer.indexOfColor;
 
-    porObjeto.forEach(function (lista, objectId) {
-      var objectEl = ModelParser.findObjectElement(doc, objectId);
+    byObject.forEach(function (list, objectId) {
+      const objectEl = ModelParser.findObjectElement(doc, objectId);
       if (!objectEl) return;
-      var meshEl = ModelParser.directChild(objectEl, "mesh");
+      const meshEl = ModelParser.directChild(objectEl, "mesh");
       if (!meshEl) return;
-      var trianglesEl = ModelParser.directChild(meshEl, "triangles");
+      const trianglesEl = ModelParser.directChild(meshEl, "triangles");
       if (!trianglesEl) return;
-      var triEls = ModelParser.directChildren(trianglesEl, "triangle");
-      lista.forEach(function (item) {
-        var triEl = triEls[item.localIndex];
+      const triEls = ModelParser.directChildren(trianglesEl, "triangle");
+      list.forEach(function (item) {
+        const triEl = triEls[item.localIndex];
         if (!triEl) return;
-        var pIndex = indiceDaCor(item.r, item.g, item.b);
+        const pIndex = indexOfColor(item.r, item.g, item.b);
         triEl.setAttribute("pid", String(colorGroupId));
         triEl.setAttribute("p1", String(pIndex));
         // Sempre limpa o paint_color que já existia no triângulo (pintura
         // feita antes, direto no Bambu Studio) para a exportação refletir só
         // o que foi pintado nesta ferramenta, sem misturar as duas pinturas.
         triEl.removeAttribute("paint_color");
-        var foiPintado = item.r !== DEFAULT_COLOR[0] || item.g !== DEFAULT_COLOR[1] || item.b !== DEFAULT_COLOR[2];
-        if (slotPorCor && foiPintado) {
-          var slot = slotPorCor.get(item.r + "," + item.g + "," + item.b);
-          if (slot) triEl.setAttribute("paint_color", filamentIndexParaPaintColor(slot));
+        const wasPainted = item.r !== DEFAULT_COLOR[0] || item.g !== DEFAULT_COLOR[1] || item.b !== DEFAULT_COLOR[2];
+        if (slotByColor && wasPainted) {
+          const slot = slotByColor.get(item.r + "," + item.g + "," + item.b);
+          if (slot) triEl.setAttribute("paint_color", filamentIndexToPaintColor(slot));
         }
       });
     });
 
-    if (cores.length) {
-      var colorGroupEl = doc.createElementNS(NS_MATERIAL, "m:colorgroup");
+    if (colors.length) {
+      const colorGroupEl = doc.createElementNS(NS_MATERIAL, "m:colorgroup");
       colorGroupEl.setAttribute("id", String(colorGroupId));
-      cores.forEach(function (c) {
-        var colorEl = doc.createElementNS(NS_MATERIAL, "m:color");
+      colors.forEach(function (c) {
+        const colorEl = doc.createElementNS(NS_MATERIAL, "m:color");
         colorEl.setAttribute("color", rgbToHex3mf(c));
         colorGroupEl.appendChild(colorEl);
       });
@@ -178,27 +180,27 @@ window.Wisky3D = window.Wisky3D || {};
     // documento. Sem isso, cada export acumula um novo colorgroup morto no
     // <resources>. Preserva colorgroups ainda referenciados por outra coisa
     // (ex.: pid de object para cor padrão do objeto inteiro).
-    var pidsEmUso = new Set();
-    (function coletarPids(el) {
-      for (var i = 0; i < el.childNodes.length; i++) {
-        var n = el.childNodes[i];
+    const pidsInUse = new Set();
+    (function collectPids(el) {
+      for (let i = 0; i < el.childNodes.length; i++) {
+        const n = el.childNodes[i];
         if (n.nodeType === 1) {
-          var pid = n.getAttribute && n.getAttribute("pid");
-          if (pid) pidsEmUso.add(pid);
-          coletarPids(n);
+          const pid = n.getAttribute && n.getAttribute("pid");
+          if (pid) pidsInUse.add(pid);
+          collectPids(n);
         }
       }
     })(modelEl);
-    filhosDiretosPorNomeLocal(resourcesEl, "colorgroup").forEach(function (cg) {
-      var id = cg.getAttribute("id");
-      if (id && !pidsEmUso.has(id)) resourcesEl.removeChild(cg);
+    directChildrenByLocalName(resourcesEl, "colorgroup").forEach(function (cg) {
+      const id = cg.getAttribute("id");
+      if (id && !pidsInUse.has(id)) resourcesEl.removeChild(cg);
     });
 
     // Serializar o Document inteiro (em vez de só o elemento raiz) já inclui
     // a declaração <?xml ...?> em navegadores baseados em Chromium. Repeti-la
     // aqui geraria uma segunda declaração e um XML inválido.
-    var serializado = new XMLSerializer().serializeToString(doc);
-    return /^<\?xml/.test(serializado) ? serializado : '<?xml version="1.0" encoding="UTF-8"?>\n' + serializado;
+    const serialized = new XMLSerializer().serializeToString(doc);
+    return /^<\?xml/.test(serialized) ? serialized : '<?xml version="1.0" encoding="UTF-8"?>\n' + serialized;
   }
 
   // Reconstrói Metadata/project_settings.config para ter exatamente um slot de
@@ -215,55 +217,76 @@ window.Wisky3D = window.Wisky3D || {};
   // extrusor/bico/mesa/processo também podem ter o mesmo tamanho que o número
   // de filamentos (ex.: 1 filamento e 1 extrusor, ou printable_area com 4
   // pontos num projeto com 4 filamentos) e não podem ser tocados.
-  var PREFIXO_CAMPO_FILAMENTO = "filament_";
-  var CAMPOS_FILAMENTO_EXCLUIDOS_PREFIXOS = ["filament_dev_"];
-  var CAMPOS_FILAMENTO_EXCLUIDOS = ["filament_nozzle_map", "filament_volume_map"];
-  var CAMPOS_FILAMENTO_AVULSOS = [
-    "nozzle_temperature", "nozzle_temperature_initial_layer",
-    "nozzle_temperature_range_low", "nozzle_temperature_range_high",
-    "cool_plate_temp", "cool_plate_temp_initial_layer",
-    "eng_plate_temp", "eng_plate_temp_initial_layer",
-    "hot_plate_temp", "hot_plate_temp_initial_layer",
-    "textured_plate_temp", "textured_plate_temp_initial_layer",
-    "supertack_plate_temp", "supertack_plate_temp_initial_layer",
-    "chamber_temperatures", "temperature_vitrification",
-    "fan_max_speed", "fan_min_speed", "fan_cooling_layer_time",
-    "close_fan_the_first_x_layers", "full_fan_speed_layer",
-    "overhang_fan_speed", "overhang_fan_threshold", "enable_overhang_bridge_fan",
-    "reduce_fan_stop_start_freq", "additional_cooling_fan_speed",
-    "slow_down_for_layer_cooling", "slow_down_layer_time", "slow_down_min_speed",
-    "activate_air_filtration", "during_print_exhaust_fan_speed",
+  const FILAMENT_FIELD_PREFIX = "filament_";
+  const EXCLUDED_FILAMENT_FIELD_PREFIXES = ["filament_dev_"];
+  const EXCLUDED_FILAMENT_FIELDS = ["filament_nozzle_map", "filament_volume_map"];
+  const EXTRA_FILAMENT_FIELDS = [
+    "nozzle_temperature",
+    "nozzle_temperature_initial_layer",
+    "nozzle_temperature_range_low",
+    "nozzle_temperature_range_high",
+    "cool_plate_temp",
+    "cool_plate_temp_initial_layer",
+    "eng_plate_temp",
+    "eng_plate_temp_initial_layer",
+    "hot_plate_temp",
+    "hot_plate_temp_initial_layer",
+    "textured_plate_temp",
+    "textured_plate_temp_initial_layer",
+    "supertack_plate_temp",
+    "supertack_plate_temp_initial_layer",
+    "chamber_temperatures",
+    "temperature_vitrification",
+    "fan_max_speed",
+    "fan_min_speed",
+    "fan_cooling_layer_time",
+    "close_fan_the_first_x_layers",
+    "full_fan_speed_layer",
+    "overhang_fan_speed",
+    "overhang_fan_threshold",
+    "enable_overhang_bridge_fan",
+    "reduce_fan_stop_start_freq",
+    "additional_cooling_fan_speed",
+    "slow_down_for_layer_cooling",
+    "slow_down_layer_time",
+    "slow_down_min_speed",
+    "activate_air_filtration",
+    "during_print_exhaust_fan_speed",
     "complete_print_exhaust_fan_speed",
-    "pressure_advance", "enable_pressure_advance", "default_filament_colour"
+    "pressure_advance",
+    "enable_pressure_advance",
+    "default_filament_colour"
   ];
 
-  function ehCampoFilamento(chave) {
-    if (CAMPOS_FILAMENTO_AVULSOS.indexOf(chave) !== -1) return true;
-    if (chave.indexOf(PREFIXO_CAMPO_FILAMENTO) !== 0) return false;
-    if (CAMPOS_FILAMENTO_EXCLUIDOS.indexOf(chave) !== -1) return false;
-    return !CAMPOS_FILAMENTO_EXCLUIDOS_PREFIXOS.some(function (prefixo) {
-      return chave.indexOf(prefixo) === 0;
+  function isFilamentField(key) {
+    if (EXTRA_FILAMENT_FIELDS.indexOf(key) !== -1) return true;
+    if (key.indexOf(FILAMENT_FIELD_PREFIX) !== 0) return false;
+    if (EXCLUDED_FILAMENT_FIELDS.indexOf(key) !== -1) return false;
+    return !EXCLUDED_FILAMENT_FIELD_PREFIXES.some(function (prefix) {
+      return key.indexOf(prefix) === 0;
     });
   }
 
-  function reconstruirProjectSettings(cfgOriginal, paleta) {
-    var nAntigo = Array.isArray(cfgOriginal.filament_colour) ? cfgOriginal.filament_colour.length : 0;
-    if (!nAntigo) return null;
+  function rebuildProjectSettings(originalCfg, palette) {
+    const oldCount = Array.isArray(originalCfg.filament_colour) ? originalCfg.filament_colour.length : 0;
+    if (!oldCount) return null;
 
-    var cfg = JSON.parse(JSON.stringify(cfgOriginal));
-    var n = paleta.length;
+    const cfg = JSON.parse(JSON.stringify(originalCfg));
+    const n = palette.length;
 
-    Object.keys(cfg).forEach(function (chave) {
-      var valor = cfg[chave];
-      if (Array.isArray(valor) && valor.length === nAntigo && ehCampoFilamento(chave)) {
-        cfg[chave] = new Array(n).fill(valor[0]);
+    Object.keys(cfg).forEach(function (key) {
+      const value = cfg[key];
+      if (Array.isArray(value) && value.length === oldCount && isFilamentField(key)) {
+        cfg[key] = new Array(n).fill(value[0]);
       }
     });
 
-    cfg.filament_colour = paleta.map(rgbParaHexBambu);
+    cfg.filament_colour = palette.map(rgbToHexBambu);
     cfg.filament_multi_colour = cfg.filament_colour.slice();
     cfg.filament_colour_type = new Array(n).fill("1");
-    cfg.filament_self_index = paleta.map(function (_, i) { return String(i + 1); });
+    cfg.filament_self_index = palette.map(function (_, i) {
+      return String(i + 1);
+    });
     cfg.filament_map = new Array(n).fill("1");
 
     return cfg;
@@ -275,12 +298,12 @@ window.Wisky3D = window.Wisky3D || {};
   // object para o slot 1 (o cinza). O slot original podia apontar para um
   // índice que deixou de existir (ou que agora é outra cor) depois da
   // reconstrução da paleta.
-  function ajustarFilamentMapsNoModelSettings(xmlText, n) {
-    var mapaFilamentos = new Array(n).fill("1").join(" ");
-    var mapaVolumes = new Array(n).fill("0").join(" ");
+  function adjustFilamentMapsInModelSettings(xmlText, n) {
+    const filamentMap = new Array(n).fill("1").join(" ");
+    const volumeMap = new Array(n).fill("0").join(" ");
     return xmlText
-      .replace(/(<metadata\s+key="filament_maps"\s+value=")[^"]*(")/g, "$1" + mapaFilamentos + "$2")
-      .replace(/(<metadata\s+key="filament_volume_maps"\s+value=")[^"]*(")/g, "$1" + mapaVolumes + "$2")
+      .replace(/(<metadata\s+key="filament_maps"\s+value=")[^"]*(")/g, "$1" + filamentMap + "$2")
+      .replace(/(<metadata\s+key="filament_volume_maps"\s+value=")[^"]*(")/g, "$1" + volumeMap + "$2")
       .replace(/(<metadata\s+key="extruder"\s+value=")[^"]*(")/g, "$11$2");
   }
 
@@ -288,49 +311,69 @@ window.Wisky3D = window.Wisky3D || {};
   // caminho usado quando a origem foi um .stl), com um ou mais <object>. Um
   // único <m:colorgroup id="1"> compartilhado entre todos os objects (com
   // todas as cores distintas de todos eles), um <object> por item de
-  // `objetos` com sua própria malha, e um <item> por object no <build>.
-  // `objetos`: [{ objectId, vertices: [[x,y,z],...],
-  // triangulos: [{v1, v2, v3, color: [r,g,b]}, ...] }, ...].
+  // `objects` com sua própria malha, e um <item> por object no <build>.
+  // `objects`: [{ objectId, vertices: [[x,y,z],...],
+  // triangles: [{v1, v2, v3, color: [r,g,b]}, ...] }, ...].
   // contentTypesXml/relsXml não dependem de quantos objects existem.
-  function montarModeloDoZero(objetos) {
-    var indexador = criarIndexadorDeCores();
-    var cores = indexador.cores;
-    var indiceDaCor = indexador.indiceDaCor;
+  function buildModelFromScratch(objects) {
+    const indexer = createColorIndexer();
+    const colors = indexer.colors;
+    const indexOfColor = indexer.indexOfColor;
 
-    var objectsXml = objetos.map(function (obj) {
-      var linhasVertices = obj.vertices.map(function (v) {
-        return '<vertex x="' + v[0] + '" y="' + v[1] + '" z="' + v[2] + '"/>';
-      });
-      var linhasTriangulos = obj.triangulos.map(function (t) {
-        var pIndex = indiceDaCor(t.color[0], t.color[1], t.color[2]);
-        return '<triangle v1="' + t.v1 + '" v2="' + t.v2 + '" v3="' + t.v3 + '" pid="1" p1="' + pIndex + '"/>';
-      });
-      return (
-        '    <object id="' + obj.objectId + '" type="model">\n' +
-        "      <mesh>\n" +
-        "        <vertices>\n" +
-        linhasVertices.map(function (l) { return "          " + l + "\n"; }).join("") +
-        "        </vertices>\n" +
-        "        <triangles>\n" +
-        linhasTriangulos.map(function (l) { return "          " + l + "\n"; }).join("") +
-        "        </triangles>\n" +
-        "      </mesh>\n" +
-        "    </object>\n"
-      );
-    }).join("");
+    const objectsXml = objects
+      .map(function (obj) {
+        const vertexLines = obj.vertices.map(function (v) {
+          return '<vertex x="' + v[0] + '" y="' + v[1] + '" z="' + v[2] + '"/>';
+        });
+        const triangleLines = obj.triangles.map(function (t) {
+          const pIndex = indexOfColor(t.color[0], t.color[1], t.color[2]);
+          return '<triangle v1="' + t.v1 + '" v2="' + t.v2 + '" v3="' + t.v3 + '" pid="1" p1="' + pIndex + '"/>';
+        });
+        return (
+          '    <object id="' +
+          obj.objectId +
+          '" type="model">\n' +
+          "      <mesh>\n" +
+          "        <vertices>\n" +
+          vertexLines
+            .map(function (l) {
+              return "          " + l + "\n";
+            })
+            .join("") +
+          "        </vertices>\n" +
+          "        <triangles>\n" +
+          triangleLines
+            .map(function (l) {
+              return "          " + l + "\n";
+            })
+            .join("") +
+          "        </triangles>\n" +
+          "      </mesh>\n" +
+          "    </object>\n"
+        );
+      })
+      .join("");
 
-    var itemsXml = objetos.map(function (obj) {
-      return '    <item objectid="' + obj.objectId + '"/>\n';
-    }).join("");
+    const itemsXml = objects
+      .map(function (obj) {
+        return '    <item objectid="' + obj.objectId + '"/>\n';
+      })
+      .join("");
 
-    var linhasCores = cores.map(function (c) { return '<m:color color="' + rgbToHex3mf(c) + '"/>'; });
+    const colorLines = colors.map(function (c) {
+      return '<m:color color="' + rgbToHex3mf(c) + '"/>';
+    });
 
-    var modelXml =
+    const modelXml =
       '<?xml version="1.0" encoding="UTF-8"?>\n' +
       '<model unit="millimeter" xml:lang="pt-BR" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" xmlns:m="http://schemas.microsoft.com/3dmanufacturing/material/2015/02">\n' +
       "  <resources>\n" +
       '    <m:colorgroup id="1">\n' +
-      linhasCores.map(function (l) { return "      " + l + "\n"; }).join("") +
+      colorLines
+        .map(function (l) {
+          return "      " + l + "\n";
+        })
+        .join("") +
       "    </m:colorgroup>\n" +
       objectsXml +
       "  </resources>\n" +
@@ -339,14 +382,14 @@ window.Wisky3D = window.Wisky3D || {};
       "  </build>\n" +
       "</model>\n";
 
-    var contentTypesXml =
+    const contentTypesXml =
       '<?xml version="1.0" encoding="UTF-8"?>\n' +
       '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">\n' +
       '  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>\n' +
       '  <Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/>\n' +
       "</Types>\n";
 
-    var relsXml =
+    const relsXml =
       '<?xml version="1.0" encoding="UTF-8"?>\n' +
       '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">\n' +
       '  <Relationship Target="/3D/3dmodel.model" Id="rel0" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/>\n' +
@@ -358,11 +401,11 @@ window.Wisky3D = window.Wisky3D || {};
   window.Wisky3D.ThreeMFWriter = {
     DEFAULT_COLOR: DEFAULT_COLOR,
     toHexByte: toHexByte,
-    filamentIndexParaPaintColor: filamentIndexParaPaintColor,
-    criarIndexadorDeCores: criarIndexadorDeCores,
-    injetarCoresNoXml: injetarCoresNoXml,
-    reconstruirProjectSettings: reconstruirProjectSettings,
-    ajustarFilamentMapsNoModelSettings: ajustarFilamentMapsNoModelSettings,
-    montarModeloDoZero: montarModeloDoZero
+    filamentIndexToPaintColor: filamentIndexToPaintColor,
+    createColorIndexer: createColorIndexer,
+    injectColorsIntoXml: injectColorsIntoXml,
+    rebuildProjectSettings: rebuildProjectSettings,
+    adjustFilamentMapsInModelSettings: adjustFilamentMapsInModelSettings,
+    buildModelFromScratch: buildModelFromScratch
   };
 })();

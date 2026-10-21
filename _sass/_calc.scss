@@ -147,7 +147,7 @@
     display: none;
   }
 }
-.calc-modelo-preview {
+.calc-model-preview {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
@@ -161,12 +161,12 @@
     display: none;
   }
 }
-.calc-modelo-preview-nome {
+.calc-model-preview-name {
   color: var(--text);
   font-size: 0.9rem;
   word-break: break-word;
 }
-.calc-modelo-preview-row {
+.calc-model-preview-row {
   display: flex;
   justify-content: space-between;
   gap: 1rem;
@@ -177,11 +177,11 @@
     text-align: right;
   }
 }
-.calc-modelo-erro {
+.calc-model-error {
   font-size: 0.85rem;
   color: #e05656;
 }
-.calc-modelo-concluir {
+.calc-model-done {
   display: flex;
   justify-content: flex-end;
 
@@ -189,13 +189,13 @@
     display: none;
   }
 }
-.calc-modelo-trigger {
+.calc-model-trigger {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 0.6rem;
 }
-.calc-modelo-badge {
+.calc-model-badge {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -210,7 +210,7 @@
     display: none;
   }
 }
-.calc-modelo-badge-btn {
+.calc-model-badge-btn {
   border: none;
   background: none;
   padding: 0.5rem 0.2rem;
@@ -221,7 +221,7 @@
   color: var(--cyan);
   cursor: pointer;
 }
-.calc-modelo-badge-remover {
+.calc-model-badge-remove {
   color: #e05656;
 }
 .calc-modal-backdrop {
@@ -318,7 +318,7 @@
   border-top: 1px dashed var(--border);
 }
 // Se a Embalagem estiver oculta (valor 0), o Frete assume o divisor do grupo.
-#orcamento-calc-b-embalagem-row[hidden] + #orcamento-calc-b-frete-row {
+#quote-calc-b-packaging-row[hidden] + #quote-calc-b-shipping-row {
   margin-top: 0.4rem;
   padding-top: 0.6rem;
   border-top: 1px dashed var(--border);
@@ -326,8 +326,8 @@
 // Embalagem/Frete não representam o "total antes do total" (papel da Mão de
 // obra) — mesmo virando :last-child do bloco quando um dos dois some (valor 0),
 // não devem herdar o destaque em negrito.
-#orcamento-calc-b-embalagem-row:last-child,
-#orcamento-calc-b-frete-row:last-child {
+#quote-calc-b-packaging-row:last-child,
+#quote-calc-b-shipping-row:last-child {
   color: var(--muted);
   font-weight: 400;
 }
@@ -404,13 +404,13 @@
 
 .calc-add-btn { width: 100%; margin-top: 1.25rem; }
 
-.calc-itens {
+.calc-items {
   margin-top: 1.5rem;
   padding-top: 1.5rem;
   border-top: 1px solid var(--border);
 }
-.calc-itens h2 { margin: 0 0 0.75rem; font-size: 0.95rem; }
-.calc-itens-list {
+.calc-items h2 { margin: 0 0 0.75rem; font-size: 0.95rem; }
+.calc-items-list {
   list-style: none;
   margin: 0 0 1rem;
   padding: 0;
@@ -428,7 +428,7 @@
 }
 .calc-item-info { flex: 1; display: flex; flex-direction: column; gap: 0.15rem; font-size: 0.85rem; }
 .calc-item-meta { font-size: 0.75rem; color: var(--muted); }
-.calc-item-valor { font-weight: 600; font-size: 0.85rem; white-space: nowrap; }
+.calc-item-value { font-weight: 600; font-size: 0.85rem; white-space: nowrap; }
 .calc-item-remove {
   display: flex;
   align-items: center;
@@ -444,22 +444,22 @@
   line-height: 1;
 }
 .calc-item-remove:hover { color: var(--text); background: var(--surface); }
-.calc-desconto {
+.calc-discount {
   margin-bottom: 1rem;
 }
-.calc-desconto label {
+.calc-discount label {
   display: block;
   font-size: 0.85rem;
   color: var(--muted);
   font-weight: 600;
   margin-bottom: 0.4rem;
 }
-.calc-desconto-fields {
+.calc-discount-fields {
   display: flex;
   gap: 0.6rem;
 }
-.calc-desconto-fields input,
-.calc-desconto-fields select {
+.calc-discount-fields input,
+.calc-discount-fields select {
   padding: 0.7rem 0.9rem;
   background: var(--surface-soft);
   border: 1px solid var(--border-strong);
@@ -467,43 +467,43 @@
   color: var(--text);
   font: inherit;
 }
-.calc-desconto-fields input:focus-visible,
-.calc-desconto-fields select:focus-visible {
+.calc-discount-fields input:focus-visible,
+.calc-discount-fields select:focus-visible {
   outline: 2px solid var(--cyan);
   outline-offset: 2px;
   border-color: var(--cyan);
 }
-#orcamento-calc-desconto-valor { width: 5rem; flex: none; }
-#orcamento-calc-desconto-tipo { flex: none; }
-#orcamento-calc-desconto-texto { flex: 1; min-width: 0; }
+#quote-calc-discount-value { width: 5rem; flex: none; }
+#quote-calc-discount-type { flex: none; }
+#quote-calc-discount-text { flex: 1; min-width: 0; }
 @media (max-width: 520px) {
-  .calc-desconto-fields { flex-wrap: wrap; }
-  #orcamento-calc-desconto-texto { flex-basis: 100%; }
+  .calc-discount-fields { flex-wrap: wrap; }
+  #quote-calc-discount-text { flex-basis: 100%; }
 }
-.calc-desconto-label-texto {
+.calc-discount-label-text {
   font-weight: 400;
   opacity: 0.75;
 }
-#orcamento-calc-desconto-breakdown .calc-breakdown-row:last-child {
+#quote-calc-discount-breakdown .calc-breakdown-row:last-child {
   font-weight: 400;
   color: var(--muted);
 }
-.calc-itens-total-breakdown {
+.calc-items-total-breakdown {
   padding: 0.25rem 1rem;
   background: var(--surface-soft);
   border-radius: 14px;
   margin-bottom: 0.5rem;
 }
-.calc-itens-total {
+.calc-items-total {
   display: flex;
   justify-content: space-between;
   padding: 0.75rem 0;
   border-top: 1px solid var(--border);
   font-weight: 700;
 }
-.calc-itens-actions { display: flex; gap: 0.75rem; margin-top: 1rem; }
+.calc-items-actions { display: flex; gap: 0.75rem; margin-top: 1rem; }
 @media (max-width: 520px) {
-  .calc-itens-actions { flex-direction: column; }
+  .calc-items-actions { flex-direction: column; }
 }
 
 .calc-logo-options {
@@ -575,7 +575,7 @@
 }
 .calc-install-tip[hidden] { display: none; }
 .calc-install-tip p { margin: 0; flex: 1; line-height: 1.4; }
-.calc-install-tip-fechar {
+.calc-install-tip-close {
   border: none;
   background: transparent;
   color: var(--muted);
@@ -585,7 +585,7 @@
   padding: 0.15rem 0.35rem;
 }
 
-.calc-modo-toggle {
+.calc-mode-toggle {
   display: flex;
   gap: 0.35rem;
   max-width: 640px;
@@ -595,7 +595,7 @@
   border: 1px solid var(--border);
   border-radius: 999px;
 }
-.calc-modo-btn {
+.calc-mode-btn {
   flex: 1;
   padding: 0.55rem 1rem;
   border: none;
@@ -608,27 +608,27 @@
   cursor: pointer;
   transition: background 0.2s ease, color 0.2s ease;
 }
-.calc-modo-btn.is-active {
+.calc-mode-btn.is-active {
   background: var(--gradient);
   color: var(--on-accent);
 }
 
-.calc-field-avancado[hidden] { display: none; }
+.calc-field-advanced[hidden] { display: none; }
 .calc-field-hint-full { grid-column: 1 / -1; }
 
-.calc-faixas {
+.calc-tiers {
   margin-top: 1.5rem;
 }
-.calc-faixas .calc-section-title { margin-bottom: 0.75rem; }
-.calc-faixas-cols {
+.calc-tiers .calc-section-title { margin-bottom: 0.75rem; }
+.calc-tiers-cols {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 0.75rem;
 }
 @media (max-width: 520px) {
-  .calc-faixas-cols { grid-template-columns: 1fr; }
+  .calc-tiers-cols { grid-template-columns: 1fr; }
 }
-.calc-faixa {
+.calc-tier {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -643,23 +643,23 @@
   cursor: pointer;
   transition: border-color 0.2s ease, background 0.2s ease;
 }
-.calc-faixa:hover {
+.calc-tier:hover {
   border-color: var(--cyan);
 }
-.calc-faixa.is-active {
+.calc-tier.is-active {
   border-color: var(--cyan);
   background: color-mix(in srgb, var(--cyan) 10%, var(--surface-soft));
 }
-.calc-faixa-label {
+.calc-tier-label {
   font-size: 0.8rem;
   font-weight: 700;
   color: var(--text);
 }
-.calc-faixa-pct {
+.calc-tier-pct {
   font-size: 0.75rem;
   color: var(--muted);
 }
-.calc-faixa-valor {
+.calc-tier-value {
   margin-top: 0.15rem;
   font-size: 1.1rem;
   font-weight: 800;
@@ -768,32 +768,32 @@
 }
 .faq-answer p { margin: 0; }
 
-.depoimentos-grid {
+.testimonials-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 1.25rem;
 }
-.depoimento-card {
+.testimonial-card {
   margin: 0;
   padding: 1.5rem;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 16px;
 }
-.depoimento-card blockquote {
+.testimonial-card blockquote {
   margin: 0 0 1rem;
   color: var(--text);
   line-height: 1.6;
 }
-.depoimento-card blockquote::before { content: "\201C"; color: var(--cyan); font-weight: 800; }
-.depoimento-card figcaption { color: var(--muted); font-weight: 600; font-size: 0.9rem; }
+.testimonial-card blockquote::before { content: "\201C"; color: var(--cyan); font-weight: 800; }
+.testimonial-card figcaption { color: var(--muted); font-weight: 600; font-size: 0.9rem; }
 
-.parceiros-grid {
+.partners-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 1.25rem;
 }
-.parceiro-card {
+.partner-card {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -804,7 +804,7 @@
   border-radius: 16px;
   text-align: center;
 }
-.parceiro-card-logo {
+.partner-card-logo {
   width: 88px;
   height: 88px;
   border-radius: 50%;
@@ -814,16 +814,16 @@
   align-items: center;
   justify-content: center;
 }
-.parceiro-card-logo img {
+.partner-card-logo img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-.parceiro-card-nome {
+.partner-card-name {
   margin: 0;
   font-size: 1.05rem;
 }
-.parceiro-card-links {
+.partner-card-links {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;

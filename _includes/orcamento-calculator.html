@@ -1,45 +1,45 @@
 {% include pwa-toast.html %}
 
-<div class="calc-modo-toggle" id="orcamento-calc-modo-toggle" role="group" aria-label="Modo da calculadora">
-  <button type="button" id="orcamento-calc-modo-simples" class="calc-modo-btn is-active" aria-pressed="true">Simples</button>
-  <button type="button" id="orcamento-calc-modo-completo" class="calc-modo-btn" aria-pressed="false">Completo</button>
+<div class="calc-mode-toggle" id="quote-calc-mode-toggle" role="group" aria-label="Modo da calculadora">
+  <button type="button" id="quote-calc-mode-simple" class="calc-mode-btn is-active" aria-pressed="true">Simples</button>
+  <button type="button" id="quote-calc-mode-full" class="calc-mode-btn" aria-pressed="false">Completo</button>
 </div>
 
-<form id="orcamento-calc" class="calc reveal"
-  data-potencia-w="{{ site.calculadora.potencia_w }}"
-  data-tarifa-kwh="{{ site.calculadora.tarifa_kwh }}"
-  data-desgaste="{{ site.calculadora.desgaste }}"
-  data-valor-maquina="{{ site.calculadora.valor_maquina }}"
-  data-vida-util-h="{{ site.calculadora.vida_util_h }}"
-  data-hora-trabalho="{{ site.calculadora.hora_trabalho }}"
-  data-faixas-margem-pct="{{ site.calculadora.faixas_margem_pct | join: ',' }}"
-  data-margem-pct="{{ site.calculadora.margem_pct }}"
-  data-perda-pct="{{ site.calculadora.perda_pct }}"
-  data-paredes="{{ site.calculadora.paredes }}"
-  data-altura-camada-mm="{{ site.calculadora.altura_camada_mm }}"
-  data-velocidade-mm-s="{{ site.calculadora.velocidade_mm_s }}"
-  data-largura-extrusao-mm="{{ site.calculadora.largura_extrusao_mm }}"
-  data-overhead-camada-s="{{ site.calculadora.overhead_camada_s }}">
+<form id="quote-calc" class="calc reveal"
+  data-power-w="{{ site.calculadora.potencia_w }}"
+  data-tariff-kwh="{{ site.calculadora.tarifa_kwh }}"
+  data-wear="{{ site.calculadora.desgaste }}"
+  data-machine-value="{{ site.calculadora.valor_maquina }}"
+  data-lifespan-h="{{ site.calculadora.vida_util_h }}"
+  data-labor-rate="{{ site.calculadora.hora_trabalho }}"
+  data-margin-tiers-pct="{{ site.calculadora.faixas_margem_pct | join: ',' }}"
+  data-margin-pct="{{ site.calculadora.margem_pct }}"
+  data-loss-pct="{{ site.calculadora.perda_pct }}"
+  data-walls="{{ site.calculadora.paredes }}"
+  data-layer-height-mm="{{ site.calculadora.altura_camada_mm }}"
+  data-speed-mm-s="{{ site.calculadora.velocidade_mm_s }}"
+  data-extrusion-width-mm="{{ site.calculadora.largura_extrusao_mm }}"
+  data-layer-overhead-s="{{ site.calculadora.overhead_camada_s }}">
   <div class="calc-section">
     <h2 class="calc-section-title">Peça</h2>
     <div class="calc-fields">
       <div class="calc-field calc-field-full">
-        <label for="orcamento-calc-nome">Nome da peça</label>
-        <input type="text" id="orcamento-calc-nome" name="nome" autocomplete="off" placeholder="ex: Goku">
+        <label for="quote-calc-name">Nome da peça</label>
+        <input type="text" id="quote-calc-name" name="nome" autocomplete="off" placeholder="ex: Goku">
       </div>
       <div class="calc-field">
-        <label for="orcamento-calc-quantidade">Quantidade</label>
-        <input type="number" id="orcamento-calc-quantidade" name="quantidade" min="1" step="1" inputmode="numeric" autocomplete="off" value="1">
+        <label for="quote-calc-quantity">Quantidade</label>
+        <input type="number" id="quote-calc-quantity" name="quantidade" min="1" step="1" inputmode="numeric" autocomplete="off" value="1">
       </div>
 
-      <div class="calc-field calc-field-full calc-field-modelo">
+      <div class="calc-field calc-field-full calc-field-model">
         <label>Modelo 3D</label>
-        <div class="calc-modelo-trigger">
-          <button type="button" id="orcamento-calc-modelo-abrir" class="btn btn-ghost">Adicionar arquivo do modelo (STL/3MF)</button>
-          <div class="calc-modelo-badge" id="orcamento-calc-modelo-badge" hidden>
-            <span id="orcamento-calc-modelo-badge-nome">—</span>
-            <button type="button" id="orcamento-calc-modelo-editar" class="calc-modelo-badge-btn">Editar</button>
-            <button type="button" id="orcamento-calc-modelo-remover" class="calc-modelo-badge-btn calc-modelo-badge-remover" aria-label="Remover modelo">Remover</button>
+        <div class="calc-model-trigger">
+          <button type="button" id="quote-calc-model-open" class="btn btn-ghost">Adicionar arquivo do modelo (STL/3MF)</button>
+          <div class="calc-model-badge" id="quote-calc-model-badge" hidden>
+            <span id="quote-calc-model-badge-name">—</span>
+            <button type="button" id="quote-calc-model-edit" class="calc-model-badge-btn">Editar</button>
+            <button type="button" id="quote-calc-model-remove" class="calc-model-badge-btn calc-model-badge-remove" aria-label="Remover modelo">Remover</button>
           </div>
         </div>
         <p class="calc-field-hint">Envie o arquivo pra estimar peso e tempo de impressão automaticamente, ou preencha manualmente abaixo.</p>
@@ -51,16 +51,16 @@
     <h2 class="calc-section-title">Impressão</h2>
     <div class="calc-fields">
       <div class="calc-field">
-        <label for="orcamento-calc-peso">Peso da peça (g) <span class="calc-auto-tag" id="orcamento-calc-peso-auto-tag" hidden>calculado do modelo</span></label>
-        <input type="text" id="orcamento-calc-peso" name="peso" inputmode="decimal" autocomplete="off" placeholder="ex: 50">
+        <label for="quote-calc-weight">Peso da peça (g) <span class="calc-auto-tag" id="quote-calc-weight-auto-tag" hidden>calculado do modelo</span></label>
+        <input type="text" id="quote-calc-weight" name="peso" inputmode="decimal" autocomplete="off" placeholder="ex: 50">
       </div>
       <div class="calc-field">
-        <label for="orcamento-calc-horas">Tempo de impressão <span class="calc-auto-tag" id="orcamento-calc-tempo-auto-tag" hidden>calculado do modelo</span></label>
+        <label for="quote-calc-hours">Tempo de impressão <span class="calc-auto-tag" id="quote-calc-time-auto-tag" hidden>calculado do modelo</span></label>
         <div class="calc-fields calc-fields-time">
-          <input type="number" id="orcamento-calc-horas" name="horas" min="0" inputmode="numeric" autocomplete="off" placeholder="Horas">
-          <input type="number" id="orcamento-calc-minutos" name="minutos" min="0" max="59" inputmode="numeric" autocomplete="off" placeholder="Min">
+          <input type="number" id="quote-calc-hours" name="horas" min="0" inputmode="numeric" autocomplete="off" placeholder="Horas">
+          <input type="number" id="quote-calc-minutes" name="minutos" min="0" max="59" inputmode="numeric" autocomplete="off" placeholder="Min">
         </div>
-        <p class="calc-field-hint" id="orcamento-calc-tempo-hint" hidden>Tempo estimado com base na geometria do modelo; é aproximado e pode divergir do fatiador real.</p>
+        <p class="calc-field-hint" id="quote-calc-time-hint" hidden>Tempo estimado com base na geometria do modelo; é aproximado e pode divergir do fatiador real.</p>
       </div>
     </div>
   </div>
@@ -69,256 +69,256 @@
     <h2 class="calc-section-title">Custos e margem</h2>
     <div class="calc-fields">
       <div class="calc-field">
-        <label for="orcamento-calc-filamento">Preço do filamento (R$/kg)</label>
-        <input type="text" id="orcamento-calc-filamento" name="filamento" inputmode="decimal" autocomplete="off" placeholder="ex: {{ site.calculadora.custo_filamento_kg }}">
+        <label for="quote-calc-filament">Preço do filamento (R$/kg)</label>
+        <input type="text" id="quote-calc-filament" name="filamento" inputmode="decimal" autocomplete="off" placeholder="ex: {{ site.calculadora.custo_filamento_kg }}">
       </div>
       <div class="calc-field">
-        <label for="orcamento-calc-horas-manuais">Horas manuais (setup/acabamento)</label>
+        <label for="quote-calc-manual-hours">Horas manuais (setup/acabamento)</label>
         <div class="calc-fields calc-fields-time">
-          <input type="number" id="orcamento-calc-horas-manuais" name="horasManuais" min="0" inputmode="numeric" autocomplete="off" placeholder="Horas">
-          <input type="number" id="orcamento-calc-minutos-manuais" name="minutosManuais" min="0" max="59" inputmode="numeric" autocomplete="off" placeholder="Min">
+          <input type="number" id="quote-calc-manual-hours" name="horasManuais" min="0" inputmode="numeric" autocomplete="off" placeholder="Horas">
+          <input type="number" id="quote-calc-manual-minutes" name="minutosManuais" min="0" max="59" inputmode="numeric" autocomplete="off" placeholder="Min">
         </div>
       </div>
       <div class="calc-field">
-        <label for="orcamento-calc-valor-hora">Valor da hora (R$/h)</label>
-        <input type="text" id="orcamento-calc-valor-hora" name="valorHora" inputmode="decimal" autocomplete="off" placeholder="ex: {{ site.calculadora.hora_trabalho }}" value="{{ site.calculadora.hora_trabalho }}">
+        <label for="quote-calc-hourly-rate">Valor da hora (R$/h)</label>
+        <input type="text" id="quote-calc-hourly-rate" name="valorHora" inputmode="decimal" autocomplete="off" placeholder="ex: {{ site.calculadora.hora_trabalho }}" value="{{ site.calculadora.hora_trabalho }}">
       </div>
       <div class="calc-field">
-        <label for="orcamento-calc-margem">Margem (%)</label>
-        <input type="text" id="orcamento-calc-margem" name="margem" inputmode="decimal" autocomplete="off" value="{{ site.calculadora.margem_pct }}">
+        <label for="quote-calc-margin">Margem (%)</label>
+        <input type="text" id="quote-calc-margin" name="margem" inputmode="decimal" autocomplete="off" value="{{ site.calculadora.margem_pct }}">
       </div>
       <div class="calc-field">
-        <label for="orcamento-calc-perda">Perda / retrabalho (%)</label>
-        <input type="text" id="orcamento-calc-perda" name="perda" inputmode="decimal" autocomplete="off" value="{{ site.calculadora.perda_pct }}">
+        <label for="quote-calc-loss">Perda / retrabalho (%)</label>
+        <input type="text" id="quote-calc-loss" name="perda" inputmode="decimal" autocomplete="off" value="{{ site.calculadora.perda_pct }}">
       </div>
-      <div class="calc-field calc-field-avancado">
-        <label for="orcamento-calc-hardware">Peças e insumos (R$)</label>
-        <input type="text" id="orcamento-calc-hardware" name="hardware" inputmode="decimal" autocomplete="off" placeholder="ex: 15">
+      <div class="calc-field calc-field-advanced">
+        <label for="quote-calc-hardware">Peças e insumos (R$)</label>
+        <input type="text" id="quote-calc-hardware" name="hardware" inputmode="decimal" autocomplete="off" placeholder="ex: 15">
       </div>
-      <div class="calc-field calc-field-avancado">
-        <label for="orcamento-calc-embalagem">Embalagem (R$)</label>
-        <input type="text" id="orcamento-calc-embalagem" name="embalagem" inputmode="decimal" autocomplete="off" placeholder="ex: 5">
+      <div class="calc-field calc-field-advanced">
+        <label for="quote-calc-packaging">Embalagem (R$)</label>
+        <input type="text" id="quote-calc-packaging" name="embalagem" inputmode="decimal" autocomplete="off" placeholder="ex: 5">
       </div>
-      <div class="calc-field calc-field-avancado">
-        <label for="orcamento-calc-frete">Frete (R$)</label>
-        <input type="text" id="orcamento-calc-frete" name="frete" inputmode="decimal" autocomplete="off" placeholder="ex: 15">
+      <div class="calc-field calc-field-advanced">
+        <label for="quote-calc-shipping">Frete (R$)</label>
+        <input type="text" id="quote-calc-shipping" name="frete" inputmode="decimal" autocomplete="off" placeholder="ex: 15">
       </div>
-      <p class="calc-field-hint calc-field-hint-full calc-field-avancado">Peças e insumos: parafusos, ímãs, insertos etc. (entram na margem de lucro, como o filamento).<br>Embalagem (caixa, plástico bolha etc.) e frete são somados ao valor final sem incidência da margem de lucro.</p>
+      <p class="calc-field-hint calc-field-hint-full calc-field-advanced">Peças e insumos: parafusos, ímãs, insertos etc. (entram na margem de lucro, como o filamento).<br>Embalagem (caixa, plástico bolha etc.) e frete são somados ao valor final sem incidência da margem de lucro.</p>
     </div>
   </div>
 
-  <div class="calc-section calc-field-avancado">
+  <div class="calc-section calc-field-advanced">
     <h2 class="calc-section-title">Custos operacionais</h2>
     <div class="calc-fields">
       <div class="calc-field">
-        <label for="orcamento-calc-potencia">Potência da impressora (W)</label>
-        <input type="text" id="orcamento-calc-potencia" name="potencia" inputmode="decimal" autocomplete="off" placeholder="ex: {{ site.calculadora.potencia_w }}" value="{{ site.calculadora.potencia_w }}">
+        <label for="quote-calc-power">Potência da impressora (W)</label>
+        <input type="text" id="quote-calc-power" name="potencia" inputmode="decimal" autocomplete="off" placeholder="ex: {{ site.calculadora.potencia_w }}" value="{{ site.calculadora.potencia_w }}">
       </div>
       <div class="calc-field">
-        <label for="orcamento-calc-tarifa">Tarifa de energia (R$/kWh)</label>
-        <input type="text" id="orcamento-calc-tarifa" name="tarifa" inputmode="decimal" autocomplete="off" placeholder="ex: {{ site.calculadora.tarifa_kwh }}" value="{{ site.calculadora.tarifa_kwh }}">
+        <label for="quote-calc-tariff">Tarifa de energia (R$/kWh)</label>
+        <input type="text" id="quote-calc-tariff" name="tarifa" inputmode="decimal" autocomplete="off" placeholder="ex: {{ site.calculadora.tarifa_kwh }}" value="{{ site.calculadora.tarifa_kwh }}">
       </div>
       <p class="calc-field-hint calc-field-hint-full">Média Brasil: R$ 0,70 – R$ 0,90/kWh.</p>
       <div class="calc-field">
-        <label for="orcamento-calc-desgaste">Desgaste da máquina (R$/impressão)</label>
-        <input type="text" id="orcamento-calc-desgaste" name="desgaste" inputmode="decimal" autocomplete="off" placeholder="ex: {{ site.calculadora.desgaste }}" value="{{ site.calculadora.desgaste }}">
+        <label for="quote-calc-wear">Desgaste da máquina (R$/impressão)</label>
+        <input type="text" id="quote-calc-wear" name="desgaste" inputmode="decimal" autocomplete="off" placeholder="ex: {{ site.calculadora.desgaste }}" value="{{ site.calculadora.desgaste }}">
       </div>
       <p class="calc-field-hint calc-field-hint-full">Valor subjetivo (típico: R$ 1–5).</p>
       <div class="calc-field">
-        <label for="orcamento-calc-valor-maquina">Valor da máquina (R$)</label>
-        <input type="text" id="orcamento-calc-valor-maquina" name="valorMaquina" inputmode="decimal" autocomplete="off" placeholder="ex: 3000">
+        <label for="quote-calc-machine-value">Valor da máquina (R$)</label>
+        <input type="text" id="quote-calc-machine-value" name="valorMaquina" inputmode="decimal" autocomplete="off" placeholder="ex: 3000">
       </div>
       <div class="calc-field">
-        <label for="orcamento-calc-vida-util">Vida útil (h)</label>
-        <input type="text" id="orcamento-calc-vida-util" name="vidaUtil" inputmode="decimal" autocomplete="off" placeholder="ex: 8000">
+        <label for="quote-calc-lifespan">Vida útil (h)</label>
+        <input type="text" id="quote-calc-lifespan" name="vidaUtil" inputmode="decimal" autocomplete="off" placeholder="ex: 8000">
       </div>
       <p class="calc-field-hint calc-field-hint-full">Se preenchido, calcula o desgaste proporcional ao tempo de impressão (valor da máquina ÷ vida útil × horas) em vez do valor de desgaste da máquina informado acima.</p>
     </div>
   </div>
 
-  <div class="calc-breakdown" id="orcamento-calc-breakdown" hidden>
+  <div class="calc-breakdown" id="quote-calc-breakdown" hidden>
     <div class="calc-breakdown-row">
       <span>Filamento</span>
-      <span id="orcamento-calc-b-filamento">—</span>
+      <span id="quote-calc-b-filament">—</span>
     </div>
     <div class="calc-breakdown-row">
       <span>Energia</span>
-      <span id="orcamento-calc-b-energia">—</span>
+      <span id="quote-calc-b-energy">—</span>
     </div>
     <div class="calc-breakdown-row">
       <span>Desgaste da máquina</span>
-      <span id="orcamento-calc-b-desgaste">—</span>
+      <span id="quote-calc-b-wear">—</span>
     </div>
-    <div class="calc-breakdown-row" id="orcamento-calc-b-hardware-row" hidden>
+    <div class="calc-breakdown-row" id="quote-calc-b-hardware-row" hidden>
       <span>Peças e insumos</span>
-      <span id="orcamento-calc-b-hardware">—</span>
+      <span id="quote-calc-b-hardware">—</span>
     </div>
     <div class="calc-breakdown-row">
       <span>Subtotal</span>
-      <span id="orcamento-calc-b-subtotal">—</span>
+      <span id="quote-calc-b-subtotal">—</span>
     </div>
     <div class="calc-breakdown-row">
-      <span id="orcamento-calc-b-perda-label">Perda</span>
-      <span id="orcamento-calc-b-perda">—</span>
+      <span id="quote-calc-b-loss-label">Perda</span>
+      <span id="quote-calc-b-loss">—</span>
     </div>
     <div class="calc-breakdown-row">
-      <span id="orcamento-calc-b-margem-label">Margem</span>
-      <span id="orcamento-calc-b-margem">—</span>
+      <span id="quote-calc-b-margin-label">Margem</span>
+      <span id="quote-calc-b-margin">—</span>
     </div>
     <div class="calc-breakdown-row calc-breakdown-row--strong">
       <span>Mão de obra</span>
-      <span id="orcamento-calc-b-mao-de-obra">—</span>
+      <span id="quote-calc-b-labor">—</span>
     </div>
-    <div class="calc-breakdown-row calc-breakdown-row--group-start" id="orcamento-calc-b-embalagem-row" hidden>
+    <div class="calc-breakdown-row calc-breakdown-row--group-start" id="quote-calc-b-packaging-row" hidden>
       <span>Embalagem</span>
-      <span id="orcamento-calc-b-embalagem">—</span>
+      <span id="quote-calc-b-packaging">—</span>
     </div>
-    <div class="calc-breakdown-row" id="orcamento-calc-b-frete-row" hidden>
+    <div class="calc-breakdown-row" id="quote-calc-b-shipping-row" hidden>
       <span>Frete</span>
-      <span id="orcamento-calc-b-frete">—</span>
+      <span id="quote-calc-b-shipping">—</span>
     </div>
   </div>
 
-  <div class="calc-faixas calc-field-avancado" id="orcamento-calc-faixas" hidden>
+  <div class="calc-tiers calc-field-advanced" id="quote-calc-tiers" hidden>
     <h2 class="calc-section-title">Faixas de preço sugerido</h2>
-    <div class="calc-faixas-cols" id="orcamento-calc-faixas-cols"></div>
+    <div class="calc-tiers-cols" id="quote-calc-tiers-cols"></div>
   </div>
 
   <div class="calc-result-box">
     <span class="calc-result-label">Total do item</span>
-    <output id="orcamento-calc-result" class="calc-result" for="orcamento-calc-peso orcamento-calc-horas orcamento-calc-minutos orcamento-calc-filamento orcamento-calc-horas-manuais orcamento-calc-minutos-manuais orcamento-calc-valor-hora orcamento-calc-margem orcamento-calc-perda orcamento-calc-quantidade orcamento-calc-embalagem orcamento-calc-frete" aria-live="polite">Preencha os campos</output>
+    <output id="quote-calc-result" class="calc-result" for="quote-calc-weight quote-calc-hours quote-calc-minutes quote-calc-filament quote-calc-manual-hours quote-calc-manual-minutes quote-calc-hourly-rate quote-calc-margin quote-calc-loss quote-calc-quantity quote-calc-packaging quote-calc-shipping" aria-live="polite">Preencha os campos</output>
   </div>
 
-  <button type="button" id="orcamento-calc-add" class="btn btn-gradient calc-add-btn" disabled>Adicionar ao orçamento</button>
+  <button type="button" id="quote-calc-add" class="btn btn-gradient calc-add-btn" disabled>Adicionar ao orçamento</button>
 
-  <div class="calc-itens" id="orcamento-calc-itens" hidden>
+  <div class="calc-items" id="quote-calc-items" hidden>
     <h2>Itens do orçamento</h2>
-    <ul class="calc-itens-list" id="orcamento-calc-itens-list"></ul>
+    <ul class="calc-items-list" id="quote-calc-items-list"></ul>
 
-    <div class="calc-desconto">
-      <label for="orcamento-calc-desconto-valor">Desconto</label>
-      <div class="calc-desconto-fields">
-        <input type="text" id="orcamento-calc-desconto-valor" name="descontoValor" inputmode="decimal" autocomplete="off" placeholder="0">
-        <select id="orcamento-calc-desconto-tipo" name="descontoTipo">
+    <div class="calc-discount">
+      <label for="quote-calc-discount-value">Desconto</label>
+      <div class="calc-discount-fields">
+        <input type="text" id="quote-calc-discount-value" name="descontoValor" inputmode="decimal" autocomplete="off" placeholder="0">
+        <select id="quote-calc-discount-type" name="descontoTipo">
           <option value="pct">%</option>
-          <option value="valor">R$</option>
+          <option value="amount">R$</option>
         </select>
-        <input type="text" id="orcamento-calc-desconto-texto" name="descontoTexto" autocomplete="off" placeholder="Texto (opcional)">
+        <input type="text" id="quote-calc-discount-text" name="descontoTexto" autocomplete="off" placeholder="Texto (opcional)">
       </div>
     </div>
 
-    <div class="calc-itens-total-breakdown" id="orcamento-calc-desconto-breakdown" hidden>
+    <div class="calc-items-total-breakdown" id="quote-calc-discount-breakdown" hidden>
       <div class="calc-breakdown-row">
         <span>Subtotal</span>
-        <span id="orcamento-calc-itens-subtotal">—</span>
+        <span id="quote-calc-items-subtotal">—</span>
       </div>
       <div class="calc-breakdown-row">
-        <span id="orcamento-calc-desconto-label">Desconto</span>
-        <span id="orcamento-calc-desconto-out">—</span>
+        <span id="quote-calc-discount-label">Desconto</span>
+        <span id="quote-calc-discount-out">—</span>
       </div>
     </div>
-    <div class="calc-itens-total">
+    <div class="calc-items-total">
       <span>Total geral</span>
-      <span id="orcamento-calc-itens-total">—</span>
+      <span id="quote-calc-items-total">—</span>
     </div>
-    <div class="calc-itens-actions">
-      <button type="button" id="orcamento-calc-pdf" class="btn btn-gradient">Gerar PDF</button>
-      <button type="button" id="orcamento-calc-csv" class="btn btn-ghost">Exportar CSV</button>
-      <button type="button" id="orcamento-calc-clear" class="btn btn-ghost">Limpar orçamento</button>
+    <div class="calc-items-actions">
+      <button type="button" id="quote-calc-pdf" class="btn btn-gradient">Gerar PDF</button>
+      <button type="button" id="quote-calc-csv" class="btn btn-ghost">Exportar CSV</button>
+      <button type="button" id="quote-calc-clear" class="btn btn-ghost">Limpar orçamento</button>
     </div>
 
     <div class="calc-logo-options">
       <h2>Personalizar orçamento</h2>
       <p class="calc-logo-options-hint">Vai usar esta calculadora para o seu próprio negócio? Oculte o logotipo da Wisky 3D Print ou coloque o seu.</p>
-      <label class="calc-logo-option-checkbox" id="orcamento-calc-logo-hide-label" title="Marcado automaticamente enquanto você estiver usando uma logo própria">
-        <input type="checkbox" id="orcamento-calc-logo-hide">
+      <label class="calc-logo-option-checkbox" id="quote-calc-logo-hide-label" title="Marcado automaticamente enquanto você estiver usando uma logo própria">
+        <input type="checkbox" id="quote-calc-logo-hide">
         Ocultar logotipo Wisky 3D Print
       </label>
       <div class="calc-logo-option-row">
-        <label for="orcamento-calc-logo-upload" class="btn btn-ghost calc-logo-upload-btn">Usar minha própria logo</label>
-        <input type="file" id="orcamento-calc-logo-upload" accept="image/*" hidden>
-        <button type="button" id="orcamento-calc-logo-reset" class="btn btn-ghost">Restaurar logo padrão</button>
+        <label for="quote-calc-logo-upload" class="btn btn-ghost calc-logo-upload-btn">Usar minha própria logo</label>
+        <input type="file" id="quote-calc-logo-upload" accept="image/*" hidden>
+        <button type="button" id="quote-calc-logo-reset" class="btn btn-ghost">Restaurar logo padrão</button>
       </div>
-      <p class="calc-modelo-erro" id="orcamento-calc-logo-erro" role="alert" hidden></p>
+      <p class="calc-model-error" id="quote-calc-logo-error" role="alert" hidden></p>
     </div>
   </div>
 </form>
 
-<div class="calc-modal-backdrop" id="orcamento-calc-modelo-modal" hidden>
-  <div class="calc-modal" role="dialog" aria-modal="true" aria-labelledby="orcamento-calc-modelo-modal-title">
+<div class="calc-modal-backdrop" id="quote-calc-model-modal" hidden>
+  <div class="calc-modal" role="dialog" aria-modal="true" aria-labelledby="quote-calc-model-modal-title">
     <div class="calc-modal-header">
-      <h3 id="orcamento-calc-modelo-modal-title">Adicionar arquivo do modelo</h3>
-      <button type="button" id="orcamento-calc-modelo-fechar" class="calc-modal-close" aria-label="Fechar">&times;</button>
+      <h3 id="quote-calc-model-modal-title">Adicionar arquivo do modelo</h3>
+      <button type="button" id="quote-calc-model-close" class="calc-modal-close" aria-label="Fechar">&times;</button>
     </div>
     <div class="calc-modal-body">
       <div class="calc-field calc-field-full calc-field-upload">
-        <span class="calc-field-label-sr" id="orcamento-calc-modelo-upload-label">Arquivo do modelo (STL ou 3MF)</span>
-        <label for="orcamento-calc-modelo-upload" class="calc-dropzone" id="orcamento-calc-dropzone">
-          <span class="calc-dropzone-texto" id="orcamento-calc-dropzone-texto">Arraste o arquivo aqui ou <span class="calc-dropzone-link">escolha um arquivo</span></span>
-          <span class="calc-dropzone-loading" id="orcamento-calc-modelo-loading" hidden>Analisando modelo, aguarde...</span>
+        <span class="calc-field-label-sr" id="quote-calc-model-upload-label">Arquivo do modelo (STL ou 3MF)</span>
+        <label for="quote-calc-model-upload" class="calc-dropzone" id="quote-calc-dropzone">
+          <span class="calc-dropzone-text" id="quote-calc-dropzone-text">Arraste o arquivo aqui ou <span class="calc-dropzone-link">escolha um arquivo</span></span>
+          <span class="calc-dropzone-loading" id="quote-calc-model-loading" hidden>Analisando modelo, aguarde...</span>
         </label>
-        <input type="file" id="orcamento-calc-modelo-upload" accept=".stl,.3mf" aria-labelledby="orcamento-calc-modelo-upload-label">
+        <input type="file" id="quote-calc-model-upload" accept=".stl,.3mf" aria-labelledby="quote-calc-model-upload-label">
         <p class="calc-field-hint">Estima peso e tempo de impressão automaticamente a partir do modelo. Você pode ajustar os valores depois.</p>
       </div>
       <div class="calc-fields">
         <div class="calc-field">
-          <label for="orcamento-calc-material">Material</label>
-          <select id="orcamento-calc-material" name="material">
+          <label for="quote-calc-material">Material</label>
+          <select id="quote-calc-material" name="material">
             {% for m in site.calculadora.densidades_g_cm3 %}
-            <option value="{{ m[0] }}" data-densidade="{{ m[1] }}">{{ m[0] | upcase }}</option>
+            <option value="{{ m[0] }}" data-density="{{ m[1] }}">{{ m[0] | upcase }}</option>
             {% endfor %}
-            <option value="outro" data-densidade="">Outro (informar densidade)</option>
+            <option value="other" data-density="">Outro (informar densidade)</option>
           </select>
         </div>
-        <div class="calc-field" id="orcamento-calc-densidade-wrap" hidden>
-          <label for="orcamento-calc-densidade">Densidade (g/cm³)</label>
-          <input type="text" id="orcamento-calc-densidade" name="densidade" inputmode="decimal" autocomplete="off">
+        <div class="calc-field" id="quote-calc-density-wrap" hidden>
+          <label for="quote-calc-density">Densidade (g/cm³)</label>
+          <input type="text" id="quote-calc-density" name="densidade" inputmode="decimal" autocomplete="off">
         </div>
         <div class="calc-field">
-          <label for="orcamento-calc-infill">Infill (%)</label>
-          <input type="text" id="orcamento-calc-infill" name="infill" inputmode="decimal" autocomplete="off" value="{{ site.calculadora.infill_pct }}">
+          <label for="quote-calc-infill">Infill (%)</label>
+          <input type="text" id="quote-calc-infill" name="infill" inputmode="decimal" autocomplete="off" value="{{ site.calculadora.infill_pct }}">
         </div>
         <div class="calc-field">
-          <label for="orcamento-calc-paredes">Paredes (nº de perímetros)</label>
-          <input type="text" id="orcamento-calc-paredes" name="paredes" inputmode="numeric" autocomplete="off" value="{{ site.calculadora.paredes }}">
+          <label for="quote-calc-walls">Paredes (nº de perímetros)</label>
+          <input type="text" id="quote-calc-walls" name="paredes" inputmode="numeric" autocomplete="off" value="{{ site.calculadora.paredes }}">
         </div>
         <div class="calc-field">
-          <label for="orcamento-calc-altura-camada">Altura de camada (mm)</label>
-          <input type="text" id="orcamento-calc-altura-camada" name="alturaCamada" inputmode="decimal" autocomplete="off" value="{{ site.calculadora.altura_camada_mm }}">
+          <label for="quote-calc-layer-height">Altura de camada (mm)</label>
+          <input type="text" id="quote-calc-layer-height" name="alturaCamada" inputmode="decimal" autocomplete="off" value="{{ site.calculadora.altura_camada_mm }}">
         </div>
         <div class="calc-field">
-          <label for="orcamento-calc-velocidade">Velocidade média (mm/s)</label>
-          <input type="text" id="orcamento-calc-velocidade" name="velocidade" inputmode="decimal" autocomplete="off" value="{{ site.calculadora.velocidade_mm_s }}">
+          <label for="quote-calc-speed">Velocidade média (mm/s)</label>
+          <input type="text" id="quote-calc-speed" name="velocidade" inputmode="decimal" autocomplete="off" value="{{ site.calculadora.velocidade_mm_s }}">
         </div>
       </div>
-      <div class="calc-modelo-preview" id="orcamento-calc-modelo-preview" hidden>
-        <strong id="orcamento-calc-modelo-nome" class="calc-modelo-preview-nome">—</strong>
-        <div class="calc-modelo-preview-row">
+      <div class="calc-model-preview" id="quote-calc-model-preview" hidden>
+        <strong id="quote-calc-model-name" class="calc-model-preview-name">—</strong>
+        <div class="calc-model-preview-row">
           <span>Dimensões</span>
-          <span id="orcamento-calc-modelo-dims">—</span>
+          <span id="quote-calc-model-dims">—</span>
         </div>
-        <div class="calc-modelo-preview-row">
+        <div class="calc-model-preview-row">
           <span>Volume</span>
-          <span id="orcamento-calc-modelo-volume">—</span>
+          <span id="quote-calc-model-volume">—</span>
         </div>
-        <div class="calc-modelo-preview-row" id="orcamento-calc-modelo-densidade-row" hidden>
+        <div class="calc-model-preview-row" id="quote-calc-model-density-row" hidden>
           <span>Densidade do arquivo</span>
-          <span id="orcamento-calc-modelo-densidade">—</span>
+          <span id="quote-calc-model-density">—</span>
         </div>
       </div>
-      <p class="calc-modelo-erro" id="orcamento-calc-modelo-erro" role="alert" hidden></p>
-      <div class="calc-modelo-concluir" id="orcamento-calc-modelo-concluir-wrap" hidden>
-        <button type="button" id="orcamento-calc-modelo-concluir" class="btn btn-gradient">Concluir</button>
+      <p class="calc-model-error" id="quote-calc-model-error" role="alert" hidden></p>
+      <div class="calc-model-done" id="quote-calc-model-done-wrap" hidden>
+        <button type="button" id="quote-calc-model-done" class="btn btn-gradient">Concluir</button>
       </div>
     </div>
   </div>
 </div>
 
-<div class="calc-print" id="orcamento-calc-print" aria-hidden="true">
+<div class="calc-print" id="quote-calc-print" aria-hidden="true">
   <div class="calc-print-header">
     <div class="calc-print-brand-row">
-      <img src="{{ '/assets/img/logo-icon.png' | relative_url }}" data-default-src="{{ '/assets/img/logo-icon.png' | relative_url }}" alt="Wisky 3D Print" class="calc-print-logo" id="orcamento-calc-print-logo">
-      <span class="calc-print-brand" id="orcamento-calc-print-brand">Wisky 3D Print</span>
+      <img src="{{ '/assets/img/logo-icon.png' | relative_url }}" data-default-src="{{ '/assets/img/logo-icon.png' | relative_url }}" alt="Wisky 3D Print" class="calc-print-logo" id="quote-calc-print-logo">
+      <span class="calc-print-brand" id="quote-calc-print-brand">Wisky 3D Print</span>
     </div>
     <strong class="calc-print-title">Orçamento</strong>
   </div>
@@ -327,27 +327,27 @@
       <tr>
         <th>Peça</th>
         <th>Qtd</th>
-        <th id="orcamento-calc-print-th-embalagem" hidden>Embalagem</th>
-        <th id="orcamento-calc-print-th-frete" hidden>Frete</th>
+        <th id="quote-calc-print-th-packaging" hidden>Embalagem</th>
+        <th id="quote-calc-print-th-shipping" hidden>Frete</th>
         <th>Valor unit.</th>
         <th>Subtotal</th>
       </tr>
     </thead>
-    <tbody id="orcamento-calc-print-body"></tbody>
+    <tbody id="quote-calc-print-body"></tbody>
   </table>
-  <div class="calc-print-total-breakdown" id="orcamento-calc-print-desconto-breakdown" hidden>
+  <div class="calc-print-total-breakdown" id="quote-calc-print-discount-breakdown" hidden>
     <div class="calc-print-total-row">
       <span>Subtotal</span>
-      <span id="orcamento-calc-print-subtotal">—</span>
+      <span id="quote-calc-print-subtotal">—</span>
     </div>
     <div class="calc-print-total-row">
-      <span id="orcamento-calc-print-desconto-label">Desconto</span>
-      <span id="orcamento-calc-print-desconto">—</span>
+      <span id="quote-calc-print-discount-label">Desconto</span>
+      <span id="quote-calc-print-discount">—</span>
     </div>
   </div>
   <div class="calc-print-total">
     <span>Total</span>
-    <span id="orcamento-calc-print-total">—</span>
+    <span id="quote-calc-print-total">—</span>
   </div>
   <p class="calc-print-blessing">Deus seja louvado!</p>
 </div>

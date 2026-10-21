@@ -7,13 +7,13 @@ pwa: true
 ---
 
 <section class="section section-calc">
-  <div class="container cor3mf-container">
+  <div class="container colorize3mf-container">
     <header class="section-header section-header-center reveal">
       <h1>Colorir 3MF</h1>
       <p>
         Envie um STL ou 3MF sem cor, pinte as regiões que quiser girando o modelo em 3D e baixe já como um projeto 3MF colorido.
       </p>
-      <div class="conv3mf-privacidade">
+      <div class="convert3mf-privacy">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <rect x="4" y="10" width="16" height="10" rx="2"></rect>
           <path d="M8 10V7a4 4 0 0 1 8 0v3"></path>
@@ -43,6 +43,7 @@ pwa: true
 <script src="{{ '/assets/js/model-parser.js' | relative_url }}?v={{ '/assets/js/model-parser.js' | asset_hash }}" defer></script>
 <script src="{{ '/assets/js/tool-utils.js' | relative_url }}?v={{ '/assets/js/tool-utils.js' | asset_hash }}" defer></script>
 <script src="{{ '/assets/js/threemf-writer.js' | relative_url }}?v={{ '/assets/js/threemf-writer.js' | asset_hash }}" defer></script>
+<script src="{{ '/assets/js/colorize-calculations.js' | relative_url }}?v={{ '/assets/js/colorize-calculations.js' | asset_hash }}" defer></script>
 <script type="importmap">
 {
   "imports": {
@@ -51,5 +52,5 @@ pwa: true
   }
 }
 </script>
-<script type="module" src="{{ '/assets/js/colorir-3mf.js' | relative_url }}?v={{ '/assets/js/colorir-3mf.js' | asset_hash }}"></script>
+<script type="module" src="{{ '/assets/js/colorize-3mf.js' | relative_url }}?v={{ '/assets/js/colorize-3mf.js' | asset_hash }}"></script>
 <script src="{{ '/assets/js/pwa.js' | relative_url }}?v={{ '/assets/js/pwa.js' | asset_hash }}" defer></script>

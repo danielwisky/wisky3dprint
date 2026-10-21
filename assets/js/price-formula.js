@@ -1,15 +1,15 @@
 // ---------------------------------------------------------------------------
 // Fórmula de custo compartilhada entre a calculadora simples (home.js) e a
-// calculadora completa (orcamento.js): filamento + energia + desgaste.
+// calculadora completa (quote.js): filamento + energia + desgaste.
 // Precisa ser carregado antes dos dois.
 // ---------------------------------------------------------------------------
 
 window.Wisky3D = window.Wisky3D || {};
 
-window.Wisky3D.formatarMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+window.Wisky3D.currencyFormatter = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
-window.Wisky3D.parseNumeroPtBr = function (value) {
-  var str = String(value).trim();
+window.Wisky3D.parsePtBrNumber = function (value) {
+  const str = String(value).trim();
 
   if (str.indexOf(",") !== -1) {
     // Vírgula presente: formato pt-BR completo (ponto é separador de
@@ -23,35 +23,35 @@ window.Wisky3D.parseNumeroPtBr = function (value) {
   // toFixed()). Um grupo de milhar sempre tem exatamente 3 dígitos após
   // o ponto ("3.000"); se o último grupo tiver 1 ou 2 dígitos ("174.9"),
   // é decimal, não milhar.
-  var partes = str.split(".");
-  if (partes.length > 1 && partes[partes.length - 1].length !== 3) {
-    var decimal = partes.pop();
-    return parseFloat(partes.join("") + "." + decimal);
+  const parts = str.split(".");
+  if (parts.length > 1 && parts[parts.length - 1].length !== 3) {
+    const decimal = parts.pop();
+    return parseFloat(parts.join("") + "." + decimal);
   }
   return parseFloat(str.replace(/\./g, ""));
 };
 
 // Para campos de medida (densidade g/cm³, altura de camada mm, velocidade
 // mm/s): nunca precisam de separador de milhar, então um "." sem vírgula é
-// sempre decimal. Evita o caso ambíguo de parseNumeroPtBr onde um decimal de
+// sempre decimal. Evita o caso ambíguo de parsePtBrNumber onde um decimal de
 // 3 casas (ex.: densidade "1.250") seria lido como milhar (1250).
-window.Wisky3D.parseMedidaPtBr = function (value) {
-  var str = String(value).trim();
+window.Wisky3D.parsePtBrMeasure = function (value) {
+  const str = String(value).trim();
   if (str.indexOf(",") !== -1) {
     return parseFloat(str.replace(/\./g, "").replace(",", "."));
   }
   return parseFloat(str);
 };
 
-// pesoG, horas, filamentoKg, potenciaW, tarifaKwh, desgaste (custo fixo de desgaste da impressora)
-window.Wisky3D.calcularSubtotalBase = function (params) {
-  var custoFilamento = (params.pesoG / 1000) * params.filamentoKg;
-  var energia = (params.potenciaW * params.horas / 1000) * params.tarifaKwh;
-  var desgaste = params.desgaste;
+// weightG, hours, filamentPricePerKg, powerW, kwhRate, wear (custo fixo de desgaste da impressora)
+window.Wisky3D.calculateBaseSubtotal = function (params) {
+  const filamentCost = (params.weightG / 1000) * params.filamentPricePerKg;
+  const energy = ((params.powerW * params.hours) / 1000) * params.kwhRate;
+  const wear = params.wear;
   return {
-    custoFilamento: custoFilamento,
-    energia: energia,
-    desgaste: desgaste,
-    subtotal: custoFilamento + energia + desgaste
+    filamentCost: filamentCost,
+    energy: energy,
+    wear: wear,
+    subtotal: filamentCost + energy + wear
   };
 };

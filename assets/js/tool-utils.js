@@ -1,20 +1,20 @@
 (function () {
-// ---------------------------------------------------------------------------
-// BLOCO: utilitários compartilhados pelas ferramentas (Orçamento, Conversor
-// 3MF e Colorir 3MF): upload por input/arrastar, leitura de pacote 3MF e
-// descarte de carregamentos atrasados.
-// ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // BLOCO: utilitários compartilhados pelas ferramentas (Orçamento, Conversor
+  // 3MF e Colorir 3MF): upload por input/arrastar, leitura de pacote 3MF e
+  // descarte de carregamentos atrasados.
+  // ---------------------------------------------------------------------------
 
   window.Wisky3D = window.Wisky3D || {};
 
   // Liga o <input type="file"> e a área de arrastar a um único callback. O
   // input é limpo a cada escolha: sem isso, escolher de novo o mesmo arquivo
   // (ex.: depois de um erro) não dispara "change".
-  function ligarDropzone(dropzone, input, aoEscolher) {
+  function bindDropzone(dropzone, input, onSelect) {
     input.addEventListener("change", function () {
-      var file = input.files && input.files[0];
+      const file = input.files && input.files[0];
       input.value = "";
-      aoEscolher(file);
+      onSelect(file);
     });
 
     ["dragenter", "dragover"].forEach(function (evt) {
@@ -30,40 +30,49 @@
     });
     dropzone.addEventListener("drop", function (e) {
       e.preventDefault();
-      aoEscolher(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]);
+      onSelect(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]);
     });
   }
 
   // Cada carregamento novo invalida os anteriores: se o usuário solta um
   // segundo arquivo antes do primeiro terminar, o resultado atrasado do
   // primeiro é descartado em vez de sobrescrever o do segundo.
-  function criarSequenciador() {
-    var atual = 0;
+  function createSequencer() {
+    let current = 0;
     return {
-      proximo: function () { return ++atual; },
-      ehAtual: function (id) { return id === atual; }
+      next: function () {
+        return ++current;
+      },
+      isCurrent: function (id) {
+        return id === current;
+      }
     };
   }
 
   // Abre um .3mf e lê como texto os arquivos que as ferramentas usam. Qualquer
   // um deles pode faltar (null); cada ferramenta decide o que é obrigatório.
-  function lerPacote3MF(file) {
+  function read3MFPackage(file) {
     if (typeof JSZip === "undefined") {
       return Promise.reject(new Error("não foi possível carregar o leitor de 3MF, verifique sua conexão"));
     }
-    var ModelParser = window.Wisky3D.ModelParser;
+    const ModelParser = window.Wisky3D.ModelParser;
 
-    function texto(entry) {
+    function readText(entry) {
       return entry ? entry.async("text") : Promise.resolve(null);
     }
 
     return JSZip.loadAsync(file).then(function (zip) {
-      var modelFile = ModelParser.localizarModeloRaiz(zip);
-      var configFile = ModelParser.localizarArquivoUnico(zip, "project_settings.config");
-      var modelSettingsFile = ModelParser.localizarArquivoUnico(zip, "model_settings.config");
-      var sliceInfoFile = ModelParser.localizarArquivoUnico(zip, "slice_info.config");
+      const modelFile = ModelParser.findRootModel(zip);
+      const configFile = ModelParser.findUniqueFile(zip, "project_settings.config");
+      const modelSettingsFile = ModelParser.findUniqueFile(zip, "model_settings.config");
+      const sliceInfoFile = ModelParser.findUniqueFile(zip, "slice_info.config");
 
-      return Promise.all([texto(modelFile), texto(configFile), texto(modelSettingsFile), texto(sliceInfoFile)]).then(function (r) {
+      return Promise.all([
+        readText(modelFile),
+        readText(configFile),
+        readText(modelSettingsFile),
+        readText(sliceInfoFile)
+      ]).then(function (r) {
         return {
           zip: zip,
           modelPath: modelFile ? modelFile.name : null,
@@ -82,12 +91,12 @@
   // Acima disso o navegador corre risco de travar a aba: cada triângulo custa
   // uns 290 bytes no Colorir (3,7 milhões ocupam ~1 GB). Vale para o
   // Orçamento e o Colorir.
-  var MAX_TRIANGULOS = 6000000;
+  const MAX_TRIANGLES = 6000000;
 
   window.Wisky3D.ToolUtils = {
-    MAX_TRIANGULOS: MAX_TRIANGULOS,
-    ligarDropzone: ligarDropzone,
-    criarSequenciador: criarSequenciador,
-    lerPacote3MF: lerPacote3MF
+    MAX_TRIANGLES: MAX_TRIANGLES,
+    bindDropzone: bindDropzone,
+    createSequencer: createSequencer,
+    read3MFPackage: read3MFPackage
   };
 })();
