@@ -11,9 +11,9 @@ window.Wisky3D = window.Wisky3D || {};
 // ModelParser.directChild/directChildren/findObjectElement.
 // ---------------------------------------------------------------------------
 
-  var ModelParser = window.Wisky3D.ModelParser;
+  const ModelParser = window.Wisky3D.ModelParser;
 
-  var NS_MATERIAL = "http://schemas.microsoft.com/3dmanufacturing/material/2015/02";
+  const NS_MATERIAL = "http://schemas.microsoft.com/3dmanufacturing/material/2015/02";
 
   // Cor default (cinza) usada pela ferramenta de colorir pra área ainda não
   // pintada. Exportada como ThreeMFWriter.DEFAULT_COLOR (fonte única) porque
@@ -21,7 +21,7 @@ window.Wisky3D = window.Wisky3D || {};
   // de verdade" (recebe paint_color) ou ficou com a cor default do objeto
   // (não recebe, herda o extrusor/filamento padrão) — colorize-3mf.js reusa a
   // mesma constante em vez de declarar seu próprio literal.
-  var DEFAULT_COLOR = [176, 176, 190];
+  const DEFAULT_COLOR = [176, 176, 190];
 
   function toHexByte(n) {
     return n.toString(16).padStart(2, "0");
@@ -45,12 +45,12 @@ window.Wisky3D = window.Wisky3D || {};
   // nibble final somar o resto), tudo em uma string hex com os nibbles em
   // ordem invertida (o último caractere é o primeiro nibble do fluxo).
   function filamentIndexToPaintColor(index1Based) {
-    var nibbles = [];
+    const nibbles = [];
     if (index1Based < 3) {
       nibbles.push(index1Based << 2);
     } else {
       nibbles.push(3 << 2);
-      var remainder = index1Based - 3;
+      let remainder = index1Based - 3;
       while (remainder >= 15) {
         nibbles.push(15);
         remainder -= 15;
@@ -69,13 +69,13 @@ window.Wisky3D = window.Wisky3D || {};
   // usada tanto para montar o <m:colorgroup> ao remendar um .3mf existente
   // quanto ao gerar um pacote novo do zero a partir de um STL.
   function createColorIndexer() {
-    var colorToIndex = new Map();
-    var colors = [];
+    const colorToIndex = new Map();
+    const colors = [];
     return {
       colors: colors,
       indexOfColor: function (r, g, b) {
-        var key = r + "," + g + "," + b;
-        var idx = colorToIndex.get(key);
+        const key = r + "," + g + "," + b;
+        let idx = colorToIndex.get(key);
         if (idx === undefined) {
           idx = colors.length;
           colors.push([r, g, b]);
@@ -91,9 +91,9 @@ window.Wisky3D = window.Wisky3D || {};
   // (ou nem existir, se o pacote original declarou a extensão com outro
   // prefixo/namespace default).
   function directChildrenByLocalName(el, localName) {
-    var out = [];
-    for (var i = 0; i < el.childNodes.length; i++) {
-      var n = el.childNodes[i];
+    const out = [];
+    for (let i = 0; i < el.childNodes.length; i++) {
+      const n = el.childNodes[i];
       if (n.nodeType === 1 && n.localName && n.localName.toLowerCase() === localName) out.push(n);
     }
     return out;
@@ -106,66 +106,66 @@ window.Wisky3D = window.Wisky3D || {};
   // sem o qual Bambu Studio/OrcaSlicer não mostram a cor). Tudo mais no XML
   // (metadados, outros objects, extensões desconhecidas) permanece intacto.
   function injectColorsIntoXml(xmlText, byObject, slotByColor) {
-    var doc = new DOMParser().parseFromString(xmlText, "application/xml");
-    var modelEl = doc.documentElement;
+    const doc = new DOMParser().parseFromString(xmlText, "application/xml");
+    const modelEl = doc.documentElement;
 
     if (!modelEl.getAttribute("xmlns:m")) {
       modelEl.setAttribute("xmlns:m", NS_MATERIAL);
     }
 
-    var resourcesEl = ModelParser.directChild(modelEl, "resources");
+    const resourcesEl = ModelParser.directChild(modelEl, "resources");
     if (!resourcesEl) return xmlText;
 
-    var usedIds = new Set();
+    const usedIds = new Set();
     (function collectIds(el) {
-      for (var i = 0; i < el.childNodes.length; i++) {
-        var n = el.childNodes[i];
+      for (let i = 0; i < el.childNodes.length; i++) {
+        const n = el.childNodes[i];
         if (n.nodeType === 1) {
-          var id = n.getAttribute && n.getAttribute("id");
+          const id = n.getAttribute && n.getAttribute("id");
           if (id) usedIds.add(id);
           collectIds(n);
         }
       }
     })(resourcesEl);
 
-    var colorGroupId = 900001;
+    let colorGroupId = 900001;
     while (usedIds.has(String(colorGroupId))) colorGroupId++;
 
-    var indexer = createColorIndexer();
-    var colors = indexer.colors;
-    var indexOfColor = indexer.indexOfColor;
+    const indexer = createColorIndexer();
+    const colors = indexer.colors;
+    const indexOfColor = indexer.indexOfColor;
 
     byObject.forEach(function (list, objectId) {
-      var objectEl = ModelParser.findObjectElement(doc, objectId);
+      const objectEl = ModelParser.findObjectElement(doc, objectId);
       if (!objectEl) return;
-      var meshEl = ModelParser.directChild(objectEl, "mesh");
+      const meshEl = ModelParser.directChild(objectEl, "mesh");
       if (!meshEl) return;
-      var trianglesEl = ModelParser.directChild(meshEl, "triangles");
+      const trianglesEl = ModelParser.directChild(meshEl, "triangles");
       if (!trianglesEl) return;
-      var triEls = ModelParser.directChildren(trianglesEl, "triangle");
+      const triEls = ModelParser.directChildren(trianglesEl, "triangle");
       list.forEach(function (item) {
-        var triEl = triEls[item.localIndex];
+        const triEl = triEls[item.localIndex];
         if (!triEl) return;
-        var pIndex = indexOfColor(item.r, item.g, item.b);
+        const pIndex = indexOfColor(item.r, item.g, item.b);
         triEl.setAttribute("pid", String(colorGroupId));
         triEl.setAttribute("p1", String(pIndex));
         // Sempre limpa o paint_color que já existia no triângulo (pintura
         // feita antes, direto no Bambu Studio) para a exportação refletir só
         // o que foi pintado nesta ferramenta, sem misturar as duas pinturas.
         triEl.removeAttribute("paint_color");
-        var wasPainted = item.r !== DEFAULT_COLOR[0] || item.g !== DEFAULT_COLOR[1] || item.b !== DEFAULT_COLOR[2];
+        const wasPainted = item.r !== DEFAULT_COLOR[0] || item.g !== DEFAULT_COLOR[1] || item.b !== DEFAULT_COLOR[2];
         if (slotByColor && wasPainted) {
-          var slot = slotByColor.get(item.r + "," + item.g + "," + item.b);
+          const slot = slotByColor.get(item.r + "," + item.g + "," + item.b);
           if (slot) triEl.setAttribute("paint_color", filamentIndexToPaintColor(slot));
         }
       });
     });
 
     if (colors.length) {
-      var colorGroupEl = doc.createElementNS(NS_MATERIAL, "m:colorgroup");
+      const colorGroupEl = doc.createElementNS(NS_MATERIAL, "m:colorgroup");
       colorGroupEl.setAttribute("id", String(colorGroupId));
       colors.forEach(function (c) {
-        var colorEl = doc.createElementNS(NS_MATERIAL, "m:color");
+        const colorEl = doc.createElementNS(NS_MATERIAL, "m:color");
         colorEl.setAttribute("color", rgbToHex3mf(c));
         colorGroupEl.appendChild(colorEl);
       });
@@ -178,26 +178,26 @@ window.Wisky3D = window.Wisky3D || {};
     // documento. Sem isso, cada export acumula um novo colorgroup morto no
     // <resources>. Preserva colorgroups ainda referenciados por outra coisa
     // (ex.: pid de object para cor padrão do objeto inteiro).
-    var pidsInUse = new Set();
+    const pidsInUse = new Set();
     (function collectPids(el) {
-      for (var i = 0; i < el.childNodes.length; i++) {
-        var n = el.childNodes[i];
+      for (let i = 0; i < el.childNodes.length; i++) {
+        const n = el.childNodes[i];
         if (n.nodeType === 1) {
-          var pid = n.getAttribute && n.getAttribute("pid");
+          const pid = n.getAttribute && n.getAttribute("pid");
           if (pid) pidsInUse.add(pid);
           collectPids(n);
         }
       }
     })(modelEl);
     directChildrenByLocalName(resourcesEl, "colorgroup").forEach(function (cg) {
-      var id = cg.getAttribute("id");
+      const id = cg.getAttribute("id");
       if (id && !pidsInUse.has(id)) resourcesEl.removeChild(cg);
     });
 
     // Serializar o Document inteiro (em vez de só o elemento raiz) já inclui
     // a declaração <?xml ...?> em navegadores baseados em Chromium. Repeti-la
     // aqui geraria uma segunda declaração e um XML inválido.
-    var serialized = new XMLSerializer().serializeToString(doc);
+    const serialized = new XMLSerializer().serializeToString(doc);
     return /^<\?xml/.test(serialized) ? serialized : '<?xml version="1.0" encoding="UTF-8"?>\n' + serialized;
   }
 
@@ -215,10 +215,10 @@ window.Wisky3D = window.Wisky3D || {};
   // extrusor/bico/mesa/processo também podem ter o mesmo tamanho que o número
   // de filamentos (ex.: 1 filamento e 1 extrusor, ou printable_area com 4
   // pontos num projeto com 4 filamentos) e não podem ser tocados.
-  var FILAMENT_FIELD_PREFIX = "filament_";
-  var EXCLUDED_FILAMENT_FIELD_PREFIXES = ["filament_dev_"];
-  var EXCLUDED_FILAMENT_FIELDS = ["filament_nozzle_map", "filament_volume_map"];
-  var EXTRA_FILAMENT_FIELDS = [
+  const FILAMENT_FIELD_PREFIX = "filament_";
+  const EXCLUDED_FILAMENT_FIELD_PREFIXES = ["filament_dev_"];
+  const EXCLUDED_FILAMENT_FIELDS = ["filament_nozzle_map", "filament_volume_map"];
+  const EXTRA_FILAMENT_FIELDS = [
     "nozzle_temperature", "nozzle_temperature_initial_layer",
     "nozzle_temperature_range_low", "nozzle_temperature_range_high",
     "cool_plate_temp", "cool_plate_temp_initial_layer",
@@ -247,14 +247,14 @@ window.Wisky3D = window.Wisky3D || {};
   }
 
   function rebuildProjectSettings(originalCfg, palette) {
-    var oldCount = Array.isArray(originalCfg.filament_colour) ? originalCfg.filament_colour.length : 0;
+    const oldCount = Array.isArray(originalCfg.filament_colour) ? originalCfg.filament_colour.length : 0;
     if (!oldCount) return null;
 
-    var cfg = JSON.parse(JSON.stringify(originalCfg));
-    var n = palette.length;
+    const cfg = JSON.parse(JSON.stringify(originalCfg));
+    const n = palette.length;
 
     Object.keys(cfg).forEach(function (key) {
-      var value = cfg[key];
+      const value = cfg[key];
       if (Array.isArray(value) && value.length === oldCount && isFilamentField(key)) {
         cfg[key] = new Array(n).fill(value[0]);
       }
@@ -276,8 +276,8 @@ window.Wisky3D = window.Wisky3D || {};
   // índice que deixou de existir (ou que agora é outra cor) depois da
   // reconstrução da paleta.
   function adjustFilamentMapsInModelSettings(xmlText, n) {
-    var filamentMap = new Array(n).fill("1").join(" ");
-    var volumeMap = new Array(n).fill("0").join(" ");
+    const filamentMap = new Array(n).fill("1").join(" ");
+    const volumeMap = new Array(n).fill("0").join(" ");
     return xmlText
       .replace(/(<metadata\s+key="filament_maps"\s+value=")[^"]*(")/g, "$1" + filamentMap + "$2")
       .replace(/(<metadata\s+key="filament_volume_maps"\s+value=")[^"]*(")/g, "$1" + volumeMap + "$2")
@@ -293,16 +293,16 @@ window.Wisky3D = window.Wisky3D || {};
   // triangles: [{v1, v2, v3, color: [r,g,b]}, ...] }, ...].
   // contentTypesXml/relsXml não dependem de quantos objects existem.
   function buildModelFromScratch(objects) {
-    var indexer = createColorIndexer();
-    var colors = indexer.colors;
-    var indexOfColor = indexer.indexOfColor;
+    const indexer = createColorIndexer();
+    const colors = indexer.colors;
+    const indexOfColor = indexer.indexOfColor;
 
-    var objectsXml = objects.map(function (obj) {
-      var vertexLines = obj.vertices.map(function (v) {
+    const objectsXml = objects.map(function (obj) {
+      const vertexLines = obj.vertices.map(function (v) {
         return '<vertex x="' + v[0] + '" y="' + v[1] + '" z="' + v[2] + '"/>';
       });
-      var triangleLines = obj.triangles.map(function (t) {
-        var pIndex = indexOfColor(t.color[0], t.color[1], t.color[2]);
+      const triangleLines = obj.triangles.map(function (t) {
+        const pIndex = indexOfColor(t.color[0], t.color[1], t.color[2]);
         return '<triangle v1="' + t.v1 + '" v2="' + t.v2 + '" v3="' + t.v3 + '" pid="1" p1="' + pIndex + '"/>';
       });
       return (
@@ -319,13 +319,13 @@ window.Wisky3D = window.Wisky3D || {};
       );
     }).join("");
 
-    var itemsXml = objects.map(function (obj) {
+    const itemsXml = objects.map(function (obj) {
       return '    <item objectid="' + obj.objectId + '"/>\n';
     }).join("");
 
-    var colorLines = colors.map(function (c) { return '<m:color color="' + rgbToHex3mf(c) + '"/>'; });
+    const colorLines = colors.map(function (c) { return '<m:color color="' + rgbToHex3mf(c) + '"/>'; });
 
-    var modelXml =
+    const modelXml =
       '<?xml version="1.0" encoding="UTF-8"?>\n' +
       '<model unit="millimeter" xml:lang="pt-BR" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" xmlns:m="http://schemas.microsoft.com/3dmanufacturing/material/2015/02">\n' +
       "  <resources>\n" +
@@ -339,14 +339,14 @@ window.Wisky3D = window.Wisky3D || {};
       "  </build>\n" +
       "</model>\n";
 
-    var contentTypesXml =
+    const contentTypesXml =
       '<?xml version="1.0" encoding="UTF-8"?>\n' +
       '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">\n' +
       '  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>\n' +
       '  <Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/>\n' +
       "</Types>\n";
 
-    var relsXml =
+    const relsXml =
       '<?xml version="1.0" encoding="UTF-8"?>\n' +
       '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">\n' +
       '  <Relationship Target="/3D/3dmodel.model" Id="rel0" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/>\n' +

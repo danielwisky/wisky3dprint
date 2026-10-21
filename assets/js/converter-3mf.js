@@ -8,28 +8,28 @@
 // assets/data/printer-profiles.json.
 // ---------------------------------------------------------------------------
 
-  var root = document.getElementById("convert3mf");
+  const root = document.getElementById("convert3mf");
   if (!root) return;
 
-  var ModelParser = window.Wisky3D && window.Wisky3D.ModelParser;
-  var ToolUtils = window.Wisky3D && window.Wisky3D.ToolUtils;
+  const ModelParser = window.Wisky3D && window.Wisky3D.ModelParser;
+  const ToolUtils = window.Wisky3D && window.Wisky3D.ToolUtils;
 
-  var dropzone = document.getElementById("convert3mf-dropzone");
-  var upload = document.getElementById("convert3mf-upload");
-  var loadingEl = document.getElementById("convert3mf-loading");
-  var errorEl = document.getElementById("convert3mf-error");
-  var panel = document.getElementById("convert3mf-panel");
-  var sourceNameEl = document.getElementById("convert3mf-source-name");
-  var sourceSubEl = document.getElementById("convert3mf-source-sub");
-  var sourcePaletteEl = document.getElementById("convert3mf-source-palette");
-  var targetsEl = document.getElementById("convert3mf-targets");
-  var targetsCountEl = document.getElementById("convert3mf-targets-count");
-  var noResultEl = document.getElementById("convert3mf-no-result");
-  var searchEl = document.getElementById("convert3mf-search");
-  var warningEl = document.getElementById("convert3mf-warning");
-  var selectedEl = document.getElementById("convert3mf-selected");
-  var generateBtn = document.getElementById("convert3mf-generate");
-  var outEl = document.getElementById("convert3mf-out");
+  const dropzone = document.getElementById("convert3mf-dropzone");
+  const upload = document.getElementById("convert3mf-upload");
+  const loadingEl = document.getElementById("convert3mf-loading");
+  const errorEl = document.getElementById("convert3mf-error");
+  const panel = document.getElementById("convert3mf-panel");
+  const sourceNameEl = document.getElementById("convert3mf-source-name");
+  const sourceSubEl = document.getElementById("convert3mf-source-sub");
+  const sourcePaletteEl = document.getElementById("convert3mf-source-palette");
+  const targetsEl = document.getElementById("convert3mf-targets");
+  const targetsCountEl = document.getElementById("convert3mf-targets-count");
+  const noResultEl = document.getElementById("convert3mf-no-result");
+  const searchEl = document.getElementById("convert3mf-search");
+  const warningEl = document.getElementById("convert3mf-warning");
+  const selectedEl = document.getElementById("convert3mf-selected");
+  const generateBtn = document.getElementById("convert3mf-generate");
+  const outEl = document.getElementById("convert3mf-out");
 
   if (!ModelParser || !ToolUtils) {
     errorEl.textContent = "Não foi possível carregar o conversor. Recarregue a página e tente novamente.";
@@ -37,22 +37,22 @@
     return;
   }
 
-  var loads = ToolUtils.createSequencer();
+  const loads = ToolUtils.createSequencer();
 
   // Guarda os dados do último arquivo processado pra poder re-renderizar o
   // grid de destinos quando o usuário digita na busca, sem reler o 3MF.
-  var targetsData = null; // { profiles, detectedKey, bbox, plateBoxes }
+  let targetsData = null; // { profiles, detectedKey, bbox, plateBoxes }
 
   // Prefixos de campos que descrevem o hardware da impressora de destino
   // (mesa, extrusores, gcode de máquina, AMS), únicos sobrescritos pelo
   // perfil de destino. Todo o resto do projeto original do usuário é mantido.
-  var TARGET_FIELD_PREFIXES = [
+  const TARGET_FIELD_PREFIXES = [
     "printer_", "machine_", "extruder_", "bed_", "printable_", "ams_"
   ];
 
   // Campos avulsos (sem prefixo comum) que também descrevem o hardware da
   // impressora de destino: bico, mesa, gcodes de máquina e compatibilidade.
-  var TARGET_FIELDS = [
+  const TARGET_FIELDS = [
     "nozzle_diameter", "nozzle_type", "nozzle_height", "nozzle_volume",
     "nozzle_volume_type", "nozzle_hrc", "required_nozzle_HRC", "nozzle_flush_dataset",
     "thumbnails", "thumbnails_format", "host_type", "gcode_flavor", "silent_mode",
@@ -71,7 +71,7 @@
   // fatiador troca quando o usuário muda de impressora no projeto. Ficam de
   // fora as já cobertas pelos prefixos e pela lista acima, e "inherits", que
   // também é opção de processo.
-  var SLICER_PRINTER_OPTIONS = [
+  const SLICER_PRINTER_OPTIONS = [
     "adaptive_bed_mesh_margin", "auxiliary_fan", "bbl_use_printhost",
     "belt_frame_tilt_angle", "belt_frame_tilt_decouple", "belt_printer",
     "belt_printer_infinite_y", "belt_slice_rotation",
@@ -128,7 +128,7 @@
   // esquentam a próxima cabeça antes da troca; com os valores de uma
   // impressora de um bico só ela fica fria e não extruda a outra cor.
   // exclude_object depende do firmware.
-  var TOOLHEAD_CHANGE_OPTIONS = [
+  const TOOLHEAD_CHANGE_OPTIONS = [
     "ooze_prevention", "standby_temperature_delta", "preheat_time", "preheat_steps",
     "enable_tower_interface_features", "exclude_object"
   ];
@@ -139,7 +139,7 @@
   // destino grava ao exportar ({v} = slicerVersion). O mesmo valor vai
   // para o campo "version" do project_settings.config e para o
   // X-BBL-Client-Version do slice_info.config.
-  var APPLICATION_BY_BRAND = {
+  const APPLICATION_BY_BRAND = {
     "Bambu Lab": "BambuStudio-{v}",
     "Flashforge": "BambuStudio-{v}",
     "WonderMaker": "OrcaSlicer-{v}",
@@ -153,7 +153,7 @@
   // O "version" dos perfis Flashforge é o do pacote de perfis (01.10.x), não
   // o do Flash Studio, que compara com a versão do OrcaSlicer em que se
   // baseia (2.3.x).
-  var SLICER_VERSION_BY_BRAND = {
+  const SLICER_VERSION_BY_BRAND = {
     "Flashforge": "2.3.0"
   };
 
@@ -166,7 +166,7 @@
   // valor do perfil de destino diz qual família ele usa. Sem a tradução o
   // fatiador de destino troca o valor desconhecido pelo padrão dele, que pode
   // ser o oposto do escolhido (Bambu "disabled" virava "ensure_all" no Orca).
-  var VALUES_BY_FAMILY = {
+  const VALUES_BY_FAMILY = {
     ensure_vertical_shell_thickness: [
       // Bambu Studio, QIDI Studio
       { none: "disabled", ensure_critical_only: "partial", ensure_moderate: "partial", ensure_all: "enabled" },
@@ -178,7 +178,7 @@
   function translateValuesByFamily(config, targetProfile) {
     Object.keys(VALUES_BY_FAMILY).forEach(function (field) {
       VALUES_BY_FAMILY[field].forEach(function (map) {
-        var familyValues = Object.keys(map).map(function (k) { return map[k]; });
+        const familyValues = Object.keys(map).map(function (k) { return map[k]; });
         if (familyValues.indexOf(targetProfile.base[field]) === -1) return;
         if (Object.prototype.hasOwnProperty.call(map, config[field])) config[field] = map[config[field]];
       });
@@ -192,7 +192,7 @@
   // descrevem a troca de cabeça ou de filamento da máquina. Vêm do perfil de
   // destino, repetidas para cada filamento do projeto (o perfil tem só a
   // quantidade de filamentos dele).
-  var TARGET_FILAMENT_FIELDS = [
+  const TARGET_FILAMENT_FIELDS = [
     "filament_start_gcode", "filament_end_gcode", "required_nozzle_HRC",
     "idle_temperature", "filament_toolchange_delay", "filament_multitool_ramming",
     "filament_multitool_ramming_flow", "filament_multitool_ramming_volume",
@@ -200,18 +200,18 @@
   ];
 
   function applyFilamentFields(result, originalConfig, targetProfile) {
-    var hasColours = Array.isArray(originalConfig.filament_colour);
+    const hasColours = Array.isArray(originalConfig.filament_colour);
     TARGET_FILAMENT_FIELDS.forEach(function (field) {
       if (!Object.prototype.hasOwnProperty.call(targetProfile.base, field)) return;
-      var targetValue = targetProfile.base[field];
+      const targetValue = targetProfile.base[field];
       if (!Array.isArray(targetValue)) {
         result[field] = targetValue;
         return;
       }
-      var count = hasColours ? originalConfig.filament_colour.length : (Array.isArray(originalConfig[field]) ? originalConfig[field].length : 1);
-      var value = targetValue.length ? targetValue[0] : "";
+      const count = hasColours ? originalConfig.filament_colour.length : (Array.isArray(originalConfig[field]) ? originalConfig[field].length : 1);
+      const value = targetValue.length ? targetValue[0] : "";
       result[field] = [];
-      for (var i = 0; i < count; i++) result[field].push(value);
+      for (let i = 0; i < count; i++) result[field].push(value);
     });
   }
 
@@ -222,13 +222,13 @@
     });
   }
 
-  var profilesPromise = null;
-  var state = null; // { file, zip, projectConfig, projectConfigPath, modelText, modelPath, sliceInfoText, sliceInfoPath, sliced, geometry, targetKeys }
+  let profilesPromise = null;
+  let state = null; // { file, zip, projectConfig, projectConfigPath, modelText, modelPath, sliceInfoText, sliceInfoPath, sliced, geometry, targetKeys }
   // Cada geração regrava project_settings.config no mesmo zip compartilhado;
   // duas gerações simultâneas misturariam a config de uma impressora no
   // arquivo da outra.
-  var generating = false;
-  var DIACRITICS_REGEX = /[̀-ͯ]/g;
+  let generating = false;
+  const DIACRITICS_REGEX = /[̀-ͯ]/g;
 
   function loadProfiles() {
     if (!profilesPromise) {
@@ -255,20 +255,20 @@
   }
 
   function parsePrintableArea(printableArea) {
-    var points = [];
+    const points = [];
     (printableArea || []).forEach(function (segment) {
       segment.split(",").forEach(function (pair) {
-        var xy = pair.split("x");
+        const xy = pair.split("x");
         if (xy.length === 2) {
-          var x = parseFloat(xy[0]);
-          var y = parseFloat(xy[1]);
+          const x = parseFloat(xy[0]);
+          const y = parseFloat(xy[1]);
           if (!isNaN(x) && !isNaN(y)) points.push([x, y]);
         }
       });
     });
     if (!points.length) return null;
-    var xs = points.map(function (p) { return p[0]; });
-    var ys = points.map(function (p) { return p[1]; });
+    const xs = points.map(function (p) { return p[0]; });
+    const ys = points.map(function (p) { return p[1]; });
     return {
       width: Math.max.apply(null, xs) - Math.min.apply(null, xs),
       depth: Math.max.apply(null, ys) - Math.min.apply(null, ys)
@@ -286,22 +286,22 @@
   // As Qidi gravam o modelo sem a marca ("Q1 Pro"), por isso o casamento
   // exato vem antes do nome.
   function detectSourceProfile(config, profiles) {
-    var model = String(config.printer_model || "").toLowerCase();
-    var settingsId = String(config.printer_settings_id || "").toLowerCase();
-    var target = model || settingsId;
+    const model = String(config.printer_model || "").toLowerCase();
+    const settingsId = String(config.printer_settings_id || "").toLowerCase();
+    const target = model || settingsId;
     if (!target) return null;
-    var keys = Object.keys(profiles);
-    var fields = [["printer_model", model], ["printer_settings_id", settingsId]];
-    for (var c = 0; c < fields.length; c++) {
+    const keys = Object.keys(profiles);
+    const fields = [["printer_model", model], ["printer_settings_id", settingsId]];
+    for (let c = 0; c < fields.length; c++) {
       if (!fields[c][1]) continue;
-      for (var i = 0; i < keys.length; i++) {
+      for (let i = 0; i < keys.length; i++) {
         if (String(profiles[keys[i]].base[fields[c][0]] || "").toLowerCase() === fields[c][1]) return keys[i];
       }
     }
-    var best = null;
-    var bestLength = 0;
+    let best = null;
+    let bestLength = 0;
     keys.forEach(function (key) {
-      var base = printerBaseName(profiles[key].nome).toLowerCase();
+      const base = printerBaseName(profiles[key].nome).toLowerCase();
       if (base.length > bestLength && target.indexOf(base) === 0) {
         best = key;
         bestLength = base.length;
@@ -313,7 +313,7 @@
   function renderPalette(el, colours) {
     el.innerHTML = "";
     (colours || []).forEach(function (colour) {
-      var span = document.createElement("span");
+      const span = document.createElement("span");
       span.className = "convert3mf-swatch";
       span.style.background = colour;
       span.title = colour;
@@ -322,29 +322,29 @@
   }
 
   function renderSource(config, profiles, bbox, plateBoxes) {
-    var detectedKey = detectSourceProfile(config, profiles);
-    var detectedName = detectedKey ? profiles[detectedKey].nome : (config.printer_model || config.printer_settings_id || "Impressora não identificada");
+    const detectedKey = detectSourceProfile(config, profiles);
+    const detectedName = detectedKey ? profiles[detectedKey].nome : (config.printer_model || config.printer_settings_id || "Impressora não identificada");
     sourceNameEl.textContent = detectedName;
 
-    var nozzle = firstValue(config.nozzle_diameter);
-    var nozzleTemp = firstValue(config.nozzle_temperature);
-    var parts = [];
+    const nozzle = firstValue(config.nozzle_diameter);
+    const nozzleTemp = firstValue(config.nozzle_temperature);
+    const parts = [];
     if (nozzle) parts.push("Bico " + nozzle + "mm");
     if (nozzleTemp) parts.push(nozzleTemp + "°C");
     if (plateBoxes) {
       // Várias chapas independentes: o bbox combinado não representa nenhuma
       // mesa real, então mostramos a contagem e o tamanho da maior chapa.
-      var largest = plateBoxes.reduce(function (a, b) {
-        var areaA = (a.bbox.maxX - a.bbox.minX) * (a.bbox.maxY - a.bbox.minY);
-        var areaB = (b.bbox.maxX - b.bbox.minX) * (b.bbox.maxY - b.bbox.minY);
+      const largest = plateBoxes.reduce(function (a, b) {
+        const areaA = (a.bbox.maxX - a.bbox.minX) * (a.bbox.maxY - a.bbox.minY);
+        const areaB = (b.bbox.maxX - b.bbox.minX) * (b.bbox.maxY - b.bbox.minY);
         return areaB > areaA ? b : a;
       });
       parts.push(plateBoxes.length + " chapas");
       parts.push("maior chapa " + (largest.bbox.maxX - largest.bbox.minX).toFixed(0) + " × " + (largest.bbox.maxY - largest.bbox.minY).toFixed(0) + " × " + (largest.bbox.maxZ - largest.bbox.minZ).toFixed(0) + "mm");
     } else if (bbox) {
-      var width = (bbox.maxX - bbox.minX).toFixed(0);
-      var depth = (bbox.maxY - bbox.minY).toFixed(0);
-      var height = (bbox.maxZ - bbox.minZ).toFixed(0);
+      const width = (bbox.maxX - bbox.minX).toFixed(0);
+      const depth = (bbox.maxY - bbox.minY).toFixed(0);
+      const height = (bbox.maxZ - bbox.minZ).toFixed(0);
       parts.push(width + " × " + depth + " × " + height + "mm");
     }
     sourceSubEl.textContent = parts.join(" · ");
@@ -361,12 +361,12 @@
 
   function toggleTarget(key) {
     if (!state) return;
-    var idx = state.targetKeys.indexOf(key);
+    const idx = state.targetKeys.indexOf(key);
     if (idx === -1) state.targetKeys.push(key);
     else state.targetKeys.splice(idx, 1);
 
-    var btn = targetsEl.querySelector('[data-key="' + key + '"]');
-    var selected = state.targetKeys.indexOf(key) !== -1;
+    const btn = targetsEl.querySelector('[data-key="' + key + '"]');
+    const selected = state.targetKeys.indexOf(key) !== -1;
     if (btn) {
       btn.classList.toggle("is-selected", selected);
       btn.setAttribute("aria-pressed", selected ? "true" : "false");
@@ -375,8 +375,8 @@
   }
 
   function updateSelectionUI() {
-    var keys = state.targetKeys;
-    var n = keys.length;
+    const keys = state.targetKeys;
+    const n = keys.length;
     generateBtn.disabled = generating || n === 0;
     generateBtn.textContent = n > 1 ? "Gerar " + n + " projetos convertidos (.zip)" : "Gerar projeto convertido";
 
@@ -384,7 +384,7 @@
       selectedEl.hidden = true;
     } else {
       selectedEl.hidden = false;
-      var names = keys.map(function (key) {
+      const names = keys.map(function (key) {
         return printerBaseName(targetsData.profiles[key].nome);
       });
       selectedEl.textContent = n === 1
@@ -396,16 +396,16 @@
   }
 
   function updateMultiWarning() {
-    var bbox = targetsData && targetsData.bbox;
-    var plateBoxes = targetsData && targetsData.plateBoxes;
-    var notFitting = [];
+    const bbox = targetsData && targetsData.bbox;
+    const plateBoxes = targetsData && targetsData.plateBoxes;
+    const notFitting = [];
 
     state.targetKeys.forEach(function (key) {
-      var profile = targetsData.profiles[key];
-      var area = parsePrintableArea(profile.base.printable_area);
-      var height = parseFloat(profile.base.printable_height);
+      const profile = targetsData.profiles[key];
+      const area = parsePrintableArea(profile.base.printable_area);
+      const height = parseFloat(profile.base.printable_height);
       if (!area || (!bbox && !plateBoxes)) return;
-      var fits = plateBoxes
+      const fits = plateBoxes
         ? plateBoxes.every(function (plateBox) { return fitsOnPlate(plateBox.bbox, area, height); })
         : fitsOnPlate(bbox, area, height);
       if (!fits) notFitting.push(printerBaseName(profile.nome));
@@ -421,36 +421,36 @@
 
   function renderTargets(profiles, detectedKey, bbox, plateBoxes, filter) {
     targetsEl.innerHTML = "";
-    var term = normalizeSearch(filter);
+    const term = normalizeSearch(filter);
 
-    var keys = Object.keys(profiles).filter(function (key) {
+    const keys = Object.keys(profiles).filter(function (key) {
       if (!term) return true;
-      var profile = profiles[key];
-      var target = normalizeSearch(profile.marca + " " + profile.nome);
+      const profile = profiles[key];
+      const target = normalizeSearch(profile.marca + " " + profile.nome);
       return target.indexOf(term) !== -1;
     });
 
     keys.sort(function (a, b) {
-      var pa = profiles[a], pb = profiles[b];
+      const pa = profiles[a], pb = profiles[b];
       return (pa.marca + pa.nome).localeCompare(pb.marca + pb.nome);
     });
 
     targetsCountEl.textContent = keys.length + (keys.length === 1 ? " impressora" : " impressoras");
     noResultEl.hidden = keys.length > 0;
 
-    var currentBrand = null;
+    let currentBrand = null;
     keys.forEach(function (key) {
-      var profile = profiles[key];
+      const profile = profiles[key];
       if (profile.marca !== currentBrand) {
         currentBrand = profile.marca;
-        var group = document.createElement("div");
+        const group = document.createElement("div");
         group.className = "convert3mf-group";
         group.textContent = currentBrand;
         targetsEl.appendChild(group);
       }
 
-      var alreadySelected = !!(state && state.targetKeys.indexOf(key) !== -1);
-      var btn = document.createElement("button");
+      const alreadySelected = !!(state && state.targetKeys.indexOf(key) !== -1);
+      const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "convert3mf-target";
       btn.setAttribute("aria-pressed", alreadySelected ? "true" : "false");
@@ -458,10 +458,10 @@
       if (key === detectedKey) btn.classList.add("is-current");
       if (alreadySelected) btn.classList.add("is-selected");
 
-      var name = document.createElement("span");
+      const name = document.createElement("span");
       name.className = "convert3mf-target-name";
       name.textContent = printerBaseName(profile.nome);
-      var brand = document.createElement("span");
+      const brand = document.createElement("span");
       brand.className = "convert3mf-target-brand";
       brand.textContent = profile.marca;
 
@@ -476,17 +476,17 @@
   }
 
   function fitsOnPlate(bbox, area, height) {
-    var width = bbox.maxX - bbox.minX;
-    var depth = bbox.maxY - bbox.minY;
-    var modelHeight = bbox.maxZ - bbox.minZ;
+    const width = bbox.maxX - bbox.minX;
+    const depth = bbox.maxY - bbox.minY;
+    const modelHeight = bbox.maxZ - bbox.minZ;
     return width <= area.width && depth <= area.depth && (!height || modelHeight <= height);
   }
 
   // `geometry` ({ items, plates }, ver processFile) permite pôr a torre
   // de purga num lugar livre de cada mesa (ver placeTowers).
   function buildNewConfig(originalConfig, targetProfile, geometry) {
-    var adjusted = ModelParser.adjustFlushPerNozzle(ModelParser.adjustNozzleVariants(originalConfig, targetProfile.base), targetProfile.base);
-    var result = {};
+    const adjusted = ModelParser.adjustFlushPerNozzle(ModelParser.adjustNozzleVariants(originalConfig, targetProfile.base), targetProfile.base);
+    const result = {};
     // Campos de hardware que o perfil de destino não tem são de outra
     // impressora (AMS de uma Bambu numa Ender-3, segundo bico de uma H2D...).
     Object.keys(adjusted).forEach(function (k) {
@@ -499,10 +499,10 @@
     if (slicerVersion(targetProfile)) result.version = slicerVersion(targetProfile);
     translateValuesByFamily(result, targetProfile);
     applyFilamentFields(result, originalConfig, targetProfile);
-    var towers = null;
+    let towers = null;
     if (geometry && geometry.items) {
-      var plateCount = [].concat(originalConfig.wipe_tower_x == null ? [] : originalConfig.wipe_tower_x).length;
-      var footprints = ModelParser.footprintsByPlate(geometry.items, geometry.plates, originalConfig.printable_area, result.printable_area, plateCount);
+      const plateCount = [].concat(originalConfig.wipe_tower_x == null ? [] : originalConfig.wipe_tower_x).length;
+      const footprints = ModelParser.footprintsByPlate(geometry.items, geometry.plates, originalConfig.printable_area, result.printable_area, plateCount);
       towers = ModelParser.placeTowers(originalConfig, result, targetProfile.base, footprints);
     }
     if (!towers) towers = ModelParser.repositionTowers(originalConfig, originalConfig.printable_area, targetProfile.base.printable_area);
@@ -514,15 +514,15 @@
   }
 
   function buildNewModel(modelText, sourcePrintableArea, targetProfile) {
-    var result = ModelParser.repositionByPlate(modelText, sourcePrintableArea, targetProfile.base.printable_area) || modelText;
-    var format = APPLICATION_BY_BRAND[targetProfile.marca];
+    let result = ModelParser.repositionByPlate(modelText, sourcePrintableArea, targetProfile.base.printable_area) || modelText;
+    const format = APPLICATION_BY_BRAND[targetProfile.marca];
     if (!format || !slicerVersion(targetProfile)) return result;
-    var application = format.replace("{v}", slicerVersion(targetProfile));
+    const application = format.replace("{v}", slicerVersion(targetProfile));
     // OrcaSlicer e Elegoo Slicer priorizam a versão de <metadata
     // name="OrcaSlicer"> sobre a de Application; a do projeto original
     // dispararia o mesmo aviso.
     result = result.replace(/\s*<metadata\s+name="OrcaSlicer"\s*>[^<]*<\/metadata>/g, "");
-    var tag = /(<metadata\s+name="Application"\s*>)[^<]*(<\/metadata>)/;
+    const tag = /(<metadata\s+name="Application"\s*>)[^<]*(<\/metadata>)/;
     if (tag.test(result)) return result.replace(tag, "$1" + application + "$2");
     return result.replace(/(<model\b[^>]*>)/, '$1\n <metadata name="Application">' + application + "</metadata>");
   }
@@ -530,15 +530,15 @@
   function buildNewSliceInfo(sliceInfoText, targetProfile, sliced) {
     // Num projeto fatiado, os <plate> descrevem o fatiamento da origem
     // (tempo, peso, modelo da impressora): ver removeSlicedGcode.
-    var result = sliced ? sliceInfoText.replace(/\s*<plate\b[^>]*>[\s\S]*?<\/plate>/g, "") : sliceInfoText;
-    var version = slicerVersion(targetProfile);
+    const result = sliced ? sliceInfoText.replace(/\s*<plate\b[^>]*>[\s\S]*?<\/plate>/g, "") : sliceInfoText;
+    const version = slicerVersion(targetProfile);
     if (!version) return result;
     return result.replace(/(<header_item\s+key="X-BBL-Client-Version"\s+value=")[^"]*(")/, "$1" + version + "$2");
   }
 
   function targetFileName(originalName, targetProfile) {
-    var base = originalName.replace(/(\.gcode)?\.3mf$/i, "");
-    var slug = printerBaseName(targetProfile.nome)
+    const base = originalName.replace(/(\.gcode)?\.3mf$/i, "");
+    const slug = printerBaseName(targetProfile.nome)
       .toLowerCase()
       .normalize("NFD").replace(DIACRITICS_REGEX, "")
       .replace(/[^a-z0-9]+/g, "-")
@@ -546,7 +546,7 @@
     return base + "_" + slug + ".3mf";
   }
 
-  var downloadBlob = ModelParser.downloadBlob;
+  const downloadBlob = ModelParser.downloadBlob;
 
   // Um .gcode.3mf (projeto já fatiado) traz o G-code de cada mesa, feito
   // para a impressora de origem. O projeto convertido sai como um projeto sem
@@ -554,20 +554,20 @@
   // a relação que aponta para eles; o fatiador de destino gera o próprio.
   // Devolve (em promessa) se o projeto estava fatiado.
   function removeSlicedGcode(pkg) {
-    var zip = pkg.zip;
-    var gcodes = zip.file(/(^|\/)plate_\d+\.gcode(\.md5)?$/i);
+    const zip = pkg.zip;
+    const gcodes = zip.file(/(^|\/)plate_\d+\.gcode(\.md5)?$/i);
     if (!gcodes.length) return Promise.resolve(false);
     gcodes.forEach(function (entry) {
       zip.remove(entry.name);
     });
     if (pkg.modelSettingsText && pkg.modelSettingsPath) {
-      var settings = pkg.modelSettingsText.replace(/[ \t]*<metadata\s+key="gcode_file"\s+value="[^"]*"\s*\/>\r?\n?/g, "");
+      const settings = pkg.modelSettingsText.replace(/[ \t]*<metadata\s+key="gcode_file"\s+value="[^"]*"\s*\/>\r?\n?/g, "");
       if (settings !== pkg.modelSettingsText) zip.file(pkg.modelSettingsPath, settings);
     }
-    var rels = ModelParser.findUniqueFile(zip, "model_settings.config.rels");
+    const rels = ModelParser.findUniqueFile(zip, "model_settings.config.rels");
     if (!rels) return Promise.resolve(true);
     return rels.async("text").then(function (text) {
-      var withoutGcode = text.replace(/\s*<Relationship\b[^>]*\bTarget="[^"]*\.gcode"[^>]*\/>/g, "");
+      const withoutGcode = text.replace(/\s*<Relationship\b[^>]*\bTarget="[^"]*\.gcode"[^>]*\/>/g, "");
       if (!/<Relationship\b/.test(withoutGcode)) zip.remove(rels.name);
       else if (withoutGcode !== text) zip.file(rels.name, withoutGcode);
       return true;
@@ -582,7 +582,7 @@
   }
 
   function generateSingleProject(project, targetProfile, compressionLevel) {
-    var newConfig = buildNewConfig(project.projectConfig, targetProfile, project.geometry);
+    const newConfig = buildNewConfig(project.projectConfig, targetProfile, project.geometry);
     project.zip.file(project.projectConfigPath, JSON.stringify(newConfig, null, 4));
     if (project.modelText) project.zip.file(project.modelPath, buildNewModel(project.modelText, project.projectConfig.printable_area, targetProfile));
     if (project.sliceInfoText) project.zip.file(project.sliceInfoPath, buildNewSliceInfo(project.sliceInfoText, targetProfile, project.sliced));
@@ -596,14 +596,14 @@
 
   function generateProject() {
     if (generating || !state || !state.targetKeys.length) return;
-    var project = state;
-    var keys = project.targetKeys.slice();
+    const project = state;
+    const keys = project.targetKeys.slice();
     generating = true;
     generateBtn.disabled = true;
 
     loadProfiles().then(function (profiles) {
       if (keys.length === 1) {
-        var targetProfile = profiles[keys[0]];
+        const targetProfile = profiles[keys[0]];
         outEl.textContent = "Gerando arquivo...";
         return generateSingleProject(project, targetProfile, 6).then(function (blob) {
           downloadBlob(blob, targetFileName(project.file.name, targetProfile));
@@ -614,10 +614,10 @@
       // Com vários destinos, a malha (idêntica em todos) seria recompactada
       // do zero em cada um: nível baixo mantém a geração rápida às custas de
       // um .3mf um pouco maior.
-      var finalZip = new JSZip();
+      const finalZip = new JSZip();
       return keys.reduce(function (promise, key, index) {
         return promise.then(function () {
-          var profile = profiles[key];
+          const profile = profiles[key];
           outEl.textContent = "Gerando projeto " + (index + 1) + " de " + keys.length + " (" + printerBaseName(profile.nome) + ")...";
           return generateSingleProject(project, profile, 1).then(function (blob) {
             finalZip.file(targetFileName(project.file.name, profile), blob);
@@ -647,34 +647,34 @@
       return;
     }
 
-    var id = loads.next();
+    const id = loads.next();
     showError("");
     showLoading(true);
     panel.hidden = true;
     state = null;
 
-    var pkg = null;
+    let pkg = null;
     Promise.all([ToolUtils.read3MFPackage(file), loadProfiles()])
       .then(function (results) {
         pkg = results[0];
-        var profiles = results[1];
+        const profiles = results[1];
         if (!pkg.configText) throw new Error("project_settings.config não encontrado");
 
-        var config = JSON.parse(pkg.configText);
-        var geometryPromise = pkg.modelText
+        const config = JSON.parse(pkg.configText);
+        const geometryPromise = pkg.modelText
           ? ModelParser.parse3MFPackage(pkg.zip, pkg.modelText, pkg.modelSettingsText)
           : Promise.resolve(null);
 
         return Promise.all([geometryPromise, removeSlicedGcode(pkg)]).then(function (r) {
-          var res = r[0];
-          var sliced = r[1];
+          const res = r[0];
+          const sliced = r[1];
           if (!loads.isCurrent(id)) return;
-          var bbox = res ? res.bbox : null;
-          var plateBoxes = res ? ModelParser.calculatePlates(res.items, ModelParser.parsePlateAssignments(pkg.modelSettingsText)) : null;
-          var plates = ModelParser.parsePlateAssignments(pkg.modelSettingsText, true);
+          const bbox = res ? res.bbox : null;
+          const plateBoxes = res ? ModelParser.calculatePlates(res.items, ModelParser.parsePlateAssignments(pkg.modelSettingsText)) : null;
+          const plates = ModelParser.parsePlateAssignments(pkg.modelSettingsText, true);
 
           state = { file: file, zip: pkg.zip, projectConfig: config, projectConfigPath: pkg.configPath, modelText: pkg.modelText, modelPath: pkg.modelPath, sliceInfoText: pkg.sliceInfoText, sliceInfoPath: pkg.sliceInfoPath, sliced: sliced, geometry: res ? { items: res.items, plates: plates } : null, targetKeys: [] };
-          var detectedKey = renderSource(config, profiles, bbox, plateBoxes);
+          const detectedKey = renderSource(config, profiles, bbox, plateBoxes);
           targetsData = { profiles: profiles, detectedKey: detectedKey, bbox: bbox, plateBoxes: plateBoxes };
           searchEl.value = "";
           renderTargets(profiles, detectedKey, bbox, plateBoxes, "");
@@ -689,7 +689,7 @@
       .catch(function (err) {
         if (!loads.isCurrent(id)) return;
         if (window.console && console.error) console.error("Conversor 3MF:", err);
-        var detail = err && err.message ? " (" + err.message + ")" : "";
+        const detail = err && err.message ? " (" + err.message + ")" : "";
         showError("Não foi possível ler esse arquivo 3MF. Confirme que é um projeto exportado do Bambu Studio ou Orca Slicer." + detail);
       })
       .then(function () {

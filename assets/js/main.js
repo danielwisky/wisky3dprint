@@ -3,12 +3,12 @@
 // ---------------------------------------------------------------------------
 
   (function () {
-    var nav = document.getElementById("site-nav");
-    var toggle = document.querySelector(".site-nav-toggle");
-    var menu = document.getElementById("site-nav-menu");
+    const nav = document.getElementById("site-nav");
+    const toggle = document.querySelector(".site-nav-toggle");
+    const menu = document.getElementById("site-nav-menu");
     // No app instalado, o CSS esconde o menu do site e mostra o das
     // ferramentas; o hambúrguer abre os dois e só o visível aparece.
-    var menus = [menu, document.getElementById("site-nav-standalone")].filter(Boolean);
+    const menus = [menu, document.getElementById("site-nav-standalone")].filter(Boolean);
 
     function onScroll() {
       nav.classList.toggle("is-scrolled", window.scrollY > 24);
@@ -16,7 +16,7 @@
 
     if (toggle && menu) {
       toggle.addEventListener("click", function () {
-        var open = menu.classList.toggle("is-open");
+        const open = menu.classList.toggle("is-open");
         menus.forEach(function (m) { m.classList.toggle("is-open", open); });
         toggle.setAttribute("aria-expanded", open ? "true" : "false");
       });
@@ -33,8 +33,8 @@
 
     // No app instalado, o logo das ferramentas volta pro Orçamento em vez
     // da home, que é o site e não faz parte do app.
-    var logo = nav.querySelector(".site-logo[data-app-href]");
-    var standalone = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true;
+    const logo = nav.querySelector(".site-logo[data-app-href]");
+    const standalone = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true;
     if (logo && standalone) logo.setAttribute("href", logo.getAttribute("data-app-href"));
 
     onScroll();
@@ -46,10 +46,10 @@
 // ---------------------------------------------------------------------------
 
   (function () {
-    var item = document.getElementById("nav-tools");
+    const item = document.getElementById("nav-tools");
     if (!item) return;
 
-    var btn = item.querySelector(".nav-link-dropdown");
+    const btn = item.querySelector(".nav-link-dropdown");
 
     function close() {
       item.classList.remove("is-open");
@@ -80,16 +80,16 @@
 // ---------------------------------------------------------------------------
 
   (function () {
-    var targets = document.querySelectorAll(".reveal, .reveal-stagger");
+    const targets = document.querySelectorAll(".reveal, .reveal-stagger");
     if (!targets.length) return;
 
-    var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduced || !("IntersectionObserver" in window)) {
       targets.forEach(function (el) { el.classList.add("is-visible"); });
       return;
     }
 
-    var observer = new IntersectionObserver(function (entries) {
+    const observer = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
         if (entry.isIntersecting) {
           entry.target.classList.add("is-visible");
@@ -113,11 +113,11 @@
 
   (function () {
     // Um botão no menu do site e outro no das ferramentas (app instalado).
-    var btns = document.querySelectorAll(".theme-toggle");
+    const btns = document.querySelectorAll(".theme-toggle");
     if (!btns.length) return;
 
-    var themeMeta = document.querySelector('meta[name="theme-color"]');
-    var THEME_COLOR = { light: "#faf6f1", dark: "#070b12" };
+    const themeMeta = document.querySelector('meta[name="theme-color"]');
+    const THEME_COLOR = { light: "#faf6f1", dark: "#070b12" };
 
     function sync(theme) {
       document.documentElement.setAttribute("data-theme", theme);
@@ -129,9 +129,9 @@
 
     sync(document.documentElement.getAttribute("data-theme") || "dark");
 
-    var transitionTimer = null;
+    let transitionTimer = null;
     function withTransition(callback) {
-      var root = document.documentElement;
+      const root = document.documentElement;
       root.classList.add("theme-transitioning");
       callback();
       if (transitionTimer) clearTimeout(transitionTimer);
@@ -142,17 +142,17 @@
 
     btns.forEach(function (btn) {
       btn.addEventListener("click", function () {
-        var current = document.documentElement.getAttribute("data-theme");
-        var next = current === "light" ? "dark" : "light";
+        const current = document.documentElement.getAttribute("data-theme");
+        const next = current === "light" ? "dark" : "light";
         try { localStorage.setItem("theme", next); } catch (e) {}
         withTransition(function () { sync(next); });
       });
     });
 
-    var media = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)");
+    const media = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)");
     if (media && media.addEventListener) {
       media.addEventListener("change", function (event) {
-        var stored = null;
+        let stored = null;
         try { stored = localStorage.getItem("theme"); } catch (err) {}
         if (!stored) withTransition(function () { sync(event.matches ? "light" : "dark"); });
       });
@@ -169,11 +169,11 @@
   window.Wisky3D = window.Wisky3D || {};
 
   window.Wisky3D.createLightbox = function (config) {
-    var box = config.box;
-    var items = [];
-    var idx = 0;
-    var lastTrigger = null;
-    var x0 = null;
+    const box = config.box;
+    let items = [];
+    let idx = 0;
+    let lastTrigger = null;
+    let x0 = null;
 
     function showAt(i) {
       idx = (i + items.length) % items.length;
@@ -191,7 +191,7 @@
       box.hidden = false;
       box.setAttribute("aria-hidden", "false");
       if (config.openClass) document.body.classList.add(config.openClass);
-      var closeBtn = box.querySelector("[data-lightbox-close], [data-gallery-close]");
+      const closeBtn = box.querySelector("[data-lightbox-close], [data-gallery-close]");
       if (closeBtn) closeBtn.focus();
     }
 
@@ -220,7 +220,7 @@
     box.addEventListener("touchstart", function (e) { x0 = e.touches[0].clientX; }, { passive: true });
     box.addEventListener("touchend", function (e) {
       if (x0 === null) return;
-      var dx = e.changedTouches[0].clientX - x0;
+      const dx = e.changedTouches[0].clientX - x0;
       if (Math.abs(dx) > 40) showAt(idx + (dx < 0 ? 1 : -1));
       x0 = null;
     });
@@ -240,18 +240,18 @@
 // ---------------------------------------------------------------------------
 
   (function () {
-    var triggers = document.querySelectorAll(".img-zoom");
+    const triggers = document.querySelectorAll(".img-zoom");
     if (!triggers.length) return;
 
-    var box = document.getElementById("img-lightbox");
+    const box = document.getElementById("img-lightbox");
     if (!box) return;
 
-    var boxImg = document.getElementById("img-lightbox-img");
-    var prevBtn = box.querySelector(".img-lightbox-prev");
-    var nextBtn = box.querySelector(".img-lightbox-next");
-    var counter = box.querySelector(".img-lightbox-counter");
+    const boxImg = document.getElementById("img-lightbox-img");
+    const prevBtn = box.querySelector(".img-lightbox-prev");
+    const nextBtn = box.querySelector(".img-lightbox-next");
+    const counter = box.querySelector(".img-lightbox-counter");
 
-    var lightbox = window.Wisky3D.createLightbox({
+    const lightbox = window.Wisky3D.createLightbox({
       box: box,
       prevBtn: prevBtn,
       nextBtn: nextBtn,
@@ -259,7 +259,7 @@
       onShow: function (item, idx, total) {
         boxImg.src = item.src;
         boxImg.alt = item.alt;
-        var multiple = total > 1;
+        const multiple = total > 1;
         prevBtn.hidden = !multiple;
         nextBtn.hidden = !multiple;
         if (counter) {
@@ -272,15 +272,15 @@
 
     triggers.forEach(function (trigger) {
       trigger.addEventListener("click", function () {
-        var img = trigger.querySelector("img");
+        const img = trigger.querySelector("img");
         if (!img) return;
 
-        var items, startIndex;
-        var carousel = trigger.closest("[data-carousel]");
+        let items, startIndex;
+        const carousel = trigger.closest("[data-carousel]");
         if (carousel) {
-          var slides = Array.prototype.slice.call(carousel.querySelectorAll(".stock-slide"));
+          const slides = Array.prototype.slice.call(carousel.querySelectorAll(".stock-slide"));
           items = slides.map(function (s) {
-            var si = s.querySelector("img");
+            const si = s.querySelector("img");
             // O card exibe um thumb leve; o zoom usa a foto original (data-full) quando disponível.
             return { src: s.dataset.full || (si ? (si.currentSrc || si.src) : ""), alt: si ? si.alt : "" };
           });

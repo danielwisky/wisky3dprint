@@ -8,7 +8,9 @@ export default [
     // catch vazio é usado de propósito (localStorage bloqueado, @xmldom ausente).
     rules: {
       "no-empty": ["error", { allowEmptyCatch: true }],
-      "no-unused-vars": ["error", { caughtErrors: "none" }]
+      "no-unused-vars": ["error", { caughtErrors: "none" }],
+      "no-var": "error",
+      "prefer-const": "error"
     }
   },
   {

@@ -26,13 +26,13 @@ window.Wisky3D = window.Wisky3D || {};
   // item. Embalagem e frete são valores de repasse: entram só no total
   // final, sem incidência de perda nem de margem de lucro.
   function calculateItem(e) {
-    var labor = e.manualHours * e.hourlyRate;
+    const labor = e.manualHours * e.hourlyRate;
 
     if (!isFinite(e.weightG) || e.weightG <= 0 || e.hours <= 0 || !isFinite(e.filamentPricePerKg) || e.filamentPricePerKg <= 0 || labor < 0 || e.marginPct < 0 || e.lossPct < 0) {
       return null;
     }
 
-    var base = window.Wisky3D.calculateBaseSubtotal({
+    const base = window.Wisky3D.calculateBaseSubtotal({
       weightG: e.weightG,
       hours: e.hours,
       filamentPricePerKg: e.filamentPricePerKg,
@@ -40,10 +40,10 @@ window.Wisky3D = window.Wisky3D || {};
       kwhRate: e.kwhRate,
       wear: e.wear
     });
-    var subtotal = base.subtotal + e.hardware;
-    var loss = subtotal * (e.lossPct / 100);
-    var subtotalWithLoss = subtotal + loss;
-    var unitTotal = unitTotalWithMargin(subtotalWithLoss, e.marginPct, labor, e.packaging, e.shipping);
+    const subtotal = base.subtotal + e.hardware;
+    const loss = subtotal * (e.lossPct / 100);
+    const subtotalWithLoss = subtotal + loss;
+    const unitTotal = unitTotalWithMargin(subtotalWithLoss, e.marginPct, labor, e.packaging, e.shipping);
 
     return {
       name: e.name,
@@ -74,7 +74,7 @@ window.Wisky3D = window.Wisky3D || {};
   // Nunca passa do subtotal.
   function calculateDiscount(subtotal, value, type) {
     if (!isFinite(value) || value <= 0) return 0;
-    var discount = type === "pct" ? subtotal * (value / 100) : value;
+    const discount = type === "pct" ? subtotal * (value / 100) : value;
     return Math.min(discount, subtotal);
   }
 
@@ -85,20 +85,20 @@ window.Wisky3D = window.Wisky3D || {};
   // de extrusão) e trata só o volume restante (o "miolo") como preenchido
   // a infillPct.
   function estimateWeightAndTime(p) {
-    var wallThickness = p.walls * p.extrusionWidth;
-    var shellVolumeMm3 = Math.min(p.areaMm2 * wallThickness, p.volumeMm3);
-    var coreVolumeMm3 = p.volumeMm3 - shellVolumeMm3;
-    var materialVolumeMm3 = shellVolumeMm3 + coreVolumeMm3 * (p.infillPct / 100);
+    const wallThickness = p.walls * p.extrusionWidth;
+    const shellVolumeMm3 = Math.min(p.areaMm2 * wallThickness, p.volumeMm3);
+    const coreVolumeMm3 = p.volumeMm3 - shellVolumeMm3;
+    const materialVolumeMm3 = shellVolumeMm3 + coreVolumeMm3 * (p.infillPct / 100);
 
-    var layerCount = Math.ceil(p.modelHeightMm / p.layerHeight);
-    var flowMm3S = p.speed * p.layerHeight * p.extrusionWidth;
-    var totalMin = flowMm3S > 0
+    const layerCount = Math.ceil(p.modelHeightMm / p.layerHeight);
+    const flowMm3S = p.speed * p.layerHeight * p.extrusionWidth;
+    const totalMin = flowMm3S > 0
       ? (materialVolumeMm3 / flowMm3S + layerCount * p.overheadPerLayer) / 60
       : 0;
 
     // Arredonda o total antes de separar em horas/minutos. Arredondar cada
     // parte isoladamente pode gerar "60min" (ex.: 179.6min viraria 2h 60min).
-    var roundedTotalMin = Math.round(totalMin);
+    const roundedTotalMin = Math.round(totalMin);
     return {
       weightG: (materialVolumeMm3 / 1000) * p.density,
       hours: Math.floor(roundedTotalMin / 60),
@@ -115,11 +115,11 @@ window.Wisky3D = window.Wisky3D || {};
   }
 
   function csvField(value) {
-    var str = String(value);
+    const str = String(value);
     return /[";\n]/.test(str) ? '"' + str.replace(/"/g, '""') + '"' : str;
   }
 
-  var CSV_HEADER = [
+  const CSV_HEADER = [
     "Peça", "Quantidade", "Filamento", "Energia", "Desgaste da máquina",
     "Peças e insumos", "Subtotal", "Perda (%)", "Perda",
     "Margem (%)", "Margem", "Horas manuais", "Valor da hora", "Mão de obra",
@@ -127,8 +127,8 @@ window.Wisky3D = window.Wisky3D || {};
   ];
 
   function generateCsv(items) {
-    var total = 0;
-    var lines = [CSV_HEADER];
+    let total = 0;
+    const lines = [CSV_HEADER];
 
     items.forEach(function (item, i) {
       total += item.itemTotal;
@@ -140,7 +140,7 @@ window.Wisky3D = window.Wisky3D || {};
       ].map(csvNum)));
     });
 
-    var totalLine = CSV_HEADER.map(function () { return ""; });
+    const totalLine = CSV_HEADER.map(function () { return ""; });
     totalLine[0] = "Total geral";
     totalLine[totalLine.length - 1] = csvNum(total);
     lines.push(totalLine);

@@ -14,30 +14,30 @@
     } catch (e) {}
   }
 
-  var installTip = document.getElementById("pwa-install-tip");
-  var installTipText = document.getElementById("pwa-install-tip-text");
-  var installTipClose = document.getElementById("pwa-install-tip-close");
-  var updateToast = document.getElementById("pwa-update-toast");
-  var updateToastBtn = document.getElementById("pwa-update-btn");
+  const installTip = document.getElementById("pwa-install-tip");
+  const installTipText = document.getElementById("pwa-install-tip-text");
+  const installTipClose = document.getElementById("pwa-install-tip-close");
+  const updateToast = document.getElementById("pwa-update-toast");
+  const updateToastBtn = document.getElementById("pwa-update-btn");
 
   // Dica de instalação (Adicionar à Tela de Início): iOS não expõe evento
   // de instalação, então o único jeito é orientar o passo a passo manual.
   // Android tem o prompt nativo do Chrome, mas nem todo navegador/versão
   // mostra automaticamente. A dica cobre esse caso também.
-  var INSTALL_TIP_DISMISSED_KEY = "wisky3d:installTipFechada";
-  var INSTALL_TIP_DISMISSED_KEY_LEGACY = "orcamentoCalc:installTipFechada";
+  const INSTALL_TIP_DISMISSED_KEY = "wisky3d:installTipFechada";
+  const INSTALL_TIP_DISMISSED_KEY_LEGACY = "orcamentoCalc:installTipFechada";
 
   if (installTip && installTipText && installTipClose) {
-    var alreadyInstalled =
+    const alreadyInstalled =
       (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) ||
       window.navigator.standalone === true;
-    var ua = window.navigator.userAgent || "";
+    const ua = window.navigator.userAgent || "";
     // Desde o iPadOS 13, o Safari do iPad manda UA de desktop ("Macintosh"),
     // sem "iPad". Só dá pra distinguir de um Mac de verdade pelo touch.
-    var isIPadOS13Plus = window.navigator.platform === "MacIntel" && window.navigator.maxTouchPoints > 1;
-    var isIOS = /iPad|iPhone|iPod/.test(ua) || isIPadOS13Plus;
-    var isAndroid = /Android/.test(ua);
-    var alreadyDismissed = lsGet(INSTALL_TIP_DISMISSED_KEY) === "1" || lsGet(INSTALL_TIP_DISMISSED_KEY_LEGACY) === "1";
+    const isIPadOS13Plus = window.navigator.platform === "MacIntel" && window.navigator.maxTouchPoints > 1;
+    const isIOS = /iPad|iPhone|iPod/.test(ua) || isIPadOS13Plus;
+    const isAndroid = /Android/.test(ua);
+    const alreadyDismissed = lsGet(INSTALL_TIP_DISMISSED_KEY) === "1" || lsGet(INSTALL_TIP_DISMISSED_KEY_LEGACY) === "1";
 
     if (!alreadyInstalled && !alreadyDismissed) {
       if (isIOS) {
@@ -57,8 +57,8 @@
 
   // URL/escopo do service worker vêm do dataset do próprio bloco (renderizado
   // via Liquid), pra respeitar site.baseurl sem precisar de um <form> na página.
-  var swUrl = installTip && installTip.dataset.swUrl;
-  var swScope = installTip && installTip.dataset.swScope;
+  const swUrl = installTip && installTip.dataset.swUrl;
+  const swScope = installTip && installTip.dataset.swScope;
 
   // Registra o service worker do app instalável, com escopo cobrindo as
   // ferramentas do site (Orçamento e Conversor 3MF).
@@ -72,8 +72,8 @@
       // enquanto o toast da primeira ainda está esperando o clique, o
       // navegador descarta o worker antigo. Sem isso, o clique em
       // "Atualizar" ficaria mandando mensagem pra um worker morto.
-      var currentWorker = null;
-      var updateRequested = false;
+      let currentWorker = null;
+      let updateRequested = false;
       function showUpdateToast(worker) {
         if (!worker || !updateToast || !updateToastBtn) return;
         currentWorker = worker;
@@ -94,7 +94,7 @@
           showUpdateToast(reg.waiting);
         }
         reg.addEventListener("updatefound", function () {
-          var worker = reg.installing;
+          const worker = reg.installing;
           if (!worker) return;
           worker.addEventListener("statechange", function () {
             if (worker.state === "installed" && navigator.serviceWorker.controller) {
@@ -125,8 +125,8 @@
       // Só recarrega numa troca de versão de verdade: a página já era
       // controlada ao abrir (outra aba pediu a atualização) ou o usuário
       // tocou em "Atualizar" nesta aba.
-      var hadController = !!navigator.serviceWorker.controller;
-      var reloading = false;
+      const hadController = !!navigator.serviceWorker.controller;
+      let reloading = false;
       navigator.serviceWorker.addEventListener("controllerchange", function () {
         if ((!hadController && !updateRequested) || reloading) return;
         reloading = true;

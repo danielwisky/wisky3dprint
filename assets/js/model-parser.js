@@ -23,20 +23,20 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   }
 
   function computeMeshVolumeMm3(triangles) {
-    var total = 0;
-    for (var i = 0; i < triangles.length; i++) {
-      var t = triangles[i];
+    let total = 0;
+    for (let i = 0; i < triangles.length; i++) {
+      const t = triangles[i];
       total += signedVolumeOfTriangle(t[0], t[1], t[2]);
     }
     return Math.abs(total);
   }
 
   function triangleAreaMm2(p1, p2, p3) {
-    var ux = p2[0] - p1[0], uy = p2[1] - p1[1], uz = p2[2] - p1[2];
-    var vx = p3[0] - p1[0], vy = p3[1] - p1[1], vz = p3[2] - p1[2];
-    var cx = uy * vz - uz * vy;
-    var cy = uz * vx - ux * vz;
-    var cz = ux * vy - uy * vx;
+    const ux = p2[0] - p1[0], uy = p2[1] - p1[1], uz = p2[2] - p1[2];
+    const vx = p3[0] - p1[0], vy = p3[1] - p1[1], vz = p3[2] - p1[2];
+    const cx = uy * vz - uz * vy;
+    const cy = uz * vx - ux * vz;
+    const cz = ux * vy - uy * vx;
     return 0.5 * Math.sqrt(cx * cx + cy * cy + cz * cz);
   }
 
@@ -44,21 +44,21 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // estimar o volume das paredes (casca), já que o volume total sozinho não
   // diferencia "parede sólida" de "miolo em infill".
   function computeMeshAreaMm2(triangles) {
-    var total = 0;
-    for (var i = 0; i < triangles.length; i++) {
-      var t = triangles[i];
+    let total = 0;
+    for (let i = 0; i < triangles.length; i++) {
+      const t = triangles[i];
       total += triangleAreaMm2(t[0], t[1], t[2]);
     }
     return total;
   }
 
   function computeBoundingBox(triangles) {
-    var min = [Infinity, Infinity, Infinity];
-    var max = [-Infinity, -Infinity, -Infinity];
-    for (var i = 0; i < triangles.length; i++) {
-      for (var v = 0; v < 3; v++) {
-        var p = triangles[i][v];
-        for (var axis = 0; axis < 3; axis++) {
+    const min = [Infinity, Infinity, Infinity];
+    const max = [-Infinity, -Infinity, -Infinity];
+    for (let i = 0; i < triangles.length; i++) {
+      for (let v = 0; v < 3; v++) {
+        const p = triangles[i][v];
+        for (let axis = 0; axis < 3; axis++) {
           if (p[axis] < min[axis]) min[axis] = p[axis];
           if (p[axis] > max[axis]) max[axis] = p[axis];
         }
@@ -72,24 +72,24 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
 
   function detectBinarySTL(buffer) {
     if (buffer.byteLength < 84) return false;
-    var dv = new DataView(buffer);
-    var triCount = dv.getUint32(80, true);
-    var expectedSize = 84 + triCount * 50;
+    const dv = new DataView(buffer);
+    const triCount = dv.getUint32(80, true);
+    const expectedSize = 84 + triCount * 50;
     return buffer.byteLength === expectedSize;
   }
 
   function parseBinarySTL(buffer) {
-    var dv = new DataView(buffer);
-    var triCount = dv.getUint32(80, true);
-    var triangles = [];
-    var offset = 84;
-    for (var i = 0; i < triCount; i++) {
+    const dv = new DataView(buffer);
+    const triCount = dv.getUint32(80, true);
+    const triangles = [];
+    let offset = 84;
+    for (let i = 0; i < triCount; i++) {
       offset += 12; // normal
-      var v1 = [dv.getFloat32(offset, true), dv.getFloat32(offset + 4, true), dv.getFloat32(offset + 8, true)];
+      const v1 = [dv.getFloat32(offset, true), dv.getFloat32(offset + 4, true), dv.getFloat32(offset + 8, true)];
       offset += 12;
-      var v2 = [dv.getFloat32(offset, true), dv.getFloat32(offset + 4, true), dv.getFloat32(offset + 8, true)];
+      const v2 = [dv.getFloat32(offset, true), dv.getFloat32(offset + 4, true), dv.getFloat32(offset + 8, true)];
       offset += 12;
-      var v3 = [dv.getFloat32(offset, true), dv.getFloat32(offset + 4, true), dv.getFloat32(offset + 8, true)];
+      const v3 = [dv.getFloat32(offset, true), dv.getFloat32(offset + 4, true), dv.getFloat32(offset + 8, true)];
       offset += 12;
       offset += 2; // attribute byte count
       triangles.push([v1, v2, v3]);
@@ -98,9 +98,9 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   }
 
   function parseAsciiSTL(text) {
-    var triangles = [];
-    var re = /vertex\s+([-\d.eE+]+)\s+([-\d.eE+]+)\s+([-\d.eE+]+)/g;
-    var m, verts = [];
+    const triangles = [];
+    const re = /vertex\s+([-\d.eE+]+)\s+([-\d.eE+]+)\s+([-\d.eE+]+)/g;
+    let m, verts = [];
     while ((m = re.exec(text)) !== null) {
       verts.push([parseFloat(m[1]), parseFloat(m[2]), parseFloat(m[3])]);
       if (verts.length === 3) { triangles.push(verts); verts = []; }
@@ -114,8 +114,8 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   }
 
   function countOccurrences(text, segment) {
-    var n = 0;
-    for (var i = text.indexOf(segment); i !== -1; i = text.indexOf(segment, i + segment.length)) n++;
+    let n = 0;
+    for (let i = text.indexOf(segment); i !== -1; i = text.indexOf(segment, i + segment.length)) n++;
     return n;
   }
 
@@ -125,12 +125,12 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     if (detectBinarySTL(buffer)) return new DataView(buffer).getUint32(80, true);
     // Direto nos bytes: decodificar para texto aqui e de novo no parseSTL
     // dobraria a memória de um STL ASCII grande.
-    var bytes = new Uint8Array(buffer);
-    var target = [101, 110, 100, 102, 97, 99, 101, 116]; // "endfacet"
-    var n = 0;
-    for (var i = 0; i + target.length <= bytes.length; i++) {
+    const bytes = new Uint8Array(buffer);
+    const target = [101, 110, 100, 102, 97, 99, 101, 116]; // "endfacet"
+    let n = 0;
+    for (let i = 0; i + target.length <= bytes.length; i++) {
       if (bytes[i] !== 101) continue;
-      var k = 1;
+      let k = 1;
       while (k < target.length && bytes[i + k] === target[k]) k++;
       if (k === target.length) { n++; i += target.length - 1; }
     }
@@ -147,7 +147,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     function count(text) {
       return countOccurrences(text, "<triangle ") + countOccurrences(text, "<triangle/");
     }
-    var files = zip.file(/\.model$/i).filter(function (file) {
+    const files = zip.file(/\.model$/i).filter(function (file) {
       return rootXmlText == null || file.name !== rootPath;
     });
     return files.reduce(function (promise, file) {
@@ -159,17 +159,17 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     }, Promise.resolve(rootXmlText == null ? 0 : count(rootXmlText)));
   }
 
-  var IDENTITY_TRANSFORM = { M: [[1, 0, 0], [0, 1, 0], [0, 0, 1]], t: [0, 0, 0] };
+  const IDENTITY_TRANSFORM = { M: [[1, 0, 0], [0, 1, 0], [0, 0, 1]], t: [0, 0, 0] };
 
   // Fator pra converter a unidade declarada no <model unit="..."> pra mm.
   // Fatiadores (Bambu/Orca) sempre gravam em mm, mas o padrão 3MF permite
   // outras unidades. Sem isso, um arquivo em "centimeter" sairia com
   // volume/peso 1000x menor que o real.
-  var UNIT_TO_MM = { micron: 0.001, millimeter: 1, centimeter: 10, inch: 25.4, foot: 304.8, meter: 1000 };
+  const UNIT_TO_MM = { micron: 0.001, millimeter: 1, centimeter: 10, inch: 25.4, foot: 304.8, meter: 1000 };
 
   function parseTransformAttr(str) {
     if (!str) return IDENTITY_TRANSFORM;
-    var n = str.trim().split(/\s+/).map(Number);
+    const n = str.trim().split(/\s+/).map(Number);
     if (n.length < 12 || n.some(isNaN)) return IDENTITY_TRANSFORM;
     return {
       M: [[n[0], n[3], n[6]], [n[1], n[4], n[7]], [n[2], n[5], n[8]]],
@@ -178,9 +178,9 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   }
 
   function matMul3(A, B) {
-    var R = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
-    for (var i = 0; i < 3; i++) {
-      for (var j = 0; j < 3; j++) {
+    const R = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 3; j++) {
         R[i][j] = A[i][0] * B[0][j] + A[i][1] * B[1][j] + A[i][2] * B[2][j];
       }
     }
@@ -199,34 +199,34 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // componente), depois o pai (acumulado até aqui). É como o 3MF encadeia
   // transforms de <item> e <component> aninhados.
   function composeTransform(parent, child) {
-    var M = matMul3(parent.M, child.M);
-    var pmt = matVec3(parent.M, child.t);
+    const M = matMul3(parent.M, child.M);
+    const pmt = matVec3(parent.M, child.t);
     return { M: M, t: [pmt[0] + parent.t[0], pmt[1] + parent.t[1], pmt[2] + parent.t[2]] };
   }
 
   function applyTransform(p, tr) {
-    var v = matVec3(tr.M, p);
+    const v = matVec3(tr.M, p);
     return [v[0] + tr.t[0], v[1] + tr.t[1], v[2] + tr.t[2]];
   }
 
   function parseXmlDoc(xmlText) {
-    var doc = new DOMParser().parseFromString(xmlText, "application/xml");
+    const doc = new DOMParser().parseFromString(xmlText, "application/xml");
     if (doc.querySelector("parsererror")) throw new Error("xml inválido");
     return doc;
   }
 
   function directChild(el, tag) {
-    for (var i = 0; i < el.childNodes.length; i++) {
-      var n = el.childNodes[i];
+    for (let i = 0; i < el.childNodes.length; i++) {
+      const n = el.childNodes[i];
       if (n.nodeType === 1 && n.nodeName.toLowerCase() === tag) return n;
     }
     return null;
   }
 
   function directChildren(el, tag) {
-    var out = [];
-    for (var i = 0; i < el.childNodes.length; i++) {
-      var n = el.childNodes[i];
+    const out = [];
+    for (let i = 0; i < el.childNodes.length; i++) {
+      const n = el.childNodes[i];
       if (n.nodeType === 1 && n.nodeName.toLowerCase() === tag) out.push(n);
     }
     return out;
@@ -237,10 +237,10 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // próprio <item> de <build> — usado por fatiadores como Bambu Studio/Orca
   // quando cada object/chapa vive no seu próprio arquivo sob 3D/Objects/).
   function loadExternalDoc(zip, docCache, path) {
-    var normalizedPath = path.replace(/^\//, "");
-    var docPromise = docCache[normalizedPath];
+    const normalizedPath = path.replace(/^\//, "");
+    let docPromise = docCache[normalizedPath];
     if (!docPromise) {
-      var zipEntry = zip.file(normalizedPath);
+      const zipEntry = zip.file(normalizedPath);
       if (!zipEntry) return null;
       docPromise = zipEntry.async("text").then(parseXmlDoc);
       docCache[normalizedPath] = docPromise;
@@ -249,8 +249,8 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   }
 
   function findObjectElement(doc, objectId) {
-    var objects = doc.getElementsByTagName("object");
-    for (var i = 0; i < objects.length; i++) {
+    const objects = doc.getElementsByTagName("object");
+    for (let i = 0; i < objects.length; i++) {
       if (objects[i].getAttribute("id") === String(objectId)) return objects[i];
     }
     return null;
@@ -299,18 +299,18 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // opcional) vale só para os <component> deste nível: ver
   // parseNonSolidParts.
   function resolveObjectRecursive(zip, docCache, doc, objectId, accumTransform, path, onMesh, rootObjectId, ignoredComponents) {
-    var objectEl = findObjectElement(doc, objectId);
+    const objectEl = findObjectElement(doc, objectId);
     if (!objectEl) return Promise.resolve();
     if (rootObjectId === undefined) rootObjectId = objectId;
 
-    var meshEl = directChild(objectEl, "mesh");
+    const meshEl = directChild(objectEl, "mesh");
     if (meshEl) {
-      var verticesEl = directChild(meshEl, "vertices");
-      var trianglesEl = directChild(meshEl, "triangles");
-      var vertexEls = verticesEl ? directChildren(verticesEl, "vertex") : [];
-      var meshBbox = emptyBbox();
-      var vertices = vertexEls.map(function (v) {
-        var p = applyTransform([
+      const verticesEl = directChild(meshEl, "vertices");
+      const trianglesEl = directChild(meshEl, "triangles");
+      const vertexEls = verticesEl ? directChildren(verticesEl, "vertex") : [];
+      const meshBbox = emptyBbox();
+      const vertices = vertexEls.map(function (v) {
+        const p = applyTransform([
           parseFloat(v.getAttribute("x")),
           parseFloat(v.getAttribute("y")),
           parseFloat(v.getAttribute("z"))
@@ -318,13 +318,13 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
         extendBBox(meshBbox, p);
         return p;
       });
-      var triEls = trianglesEl ? directChildren(trianglesEl, "triangle") : [];
-      var leafTriangles = [];
-      var localIndices = [];
+      const triEls = trianglesEl ? directChildren(trianglesEl, "triangle") : [];
+      const leafTriangles = [];
+      const localIndices = [];
       triEls.forEach(function (t, localIndex) {
-        var i1 = parseInt(t.getAttribute("v1"), 10);
-        var i2 = parseInt(t.getAttribute("v2"), 10);
-        var i3 = parseInt(t.getAttribute("v3"), 10);
+        const i1 = parseInt(t.getAttribute("v1"), 10);
+        const i2 = parseInt(t.getAttribute("v2"), 10);
+        const i3 = parseInt(t.getAttribute("v3"), 10);
         if (vertices[i1] && vertices[i2] && vertices[i3]) {
           leafTriangles.push([vertices[i1], vertices[i2], vertices[i3]]);
           localIndices.push(localIndex);
@@ -333,20 +333,20 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
       if (vertexEls.length) onMesh(leafTriangles, localIndices, meshBbox, path, objectId, rootObjectId);
     }
 
-    var componentsEl = directChild(objectEl, "components");
+    const componentsEl = directChild(objectEl, "components");
     if (!componentsEl) return Promise.resolve();
 
-    var components = directChildren(componentsEl, "component").filter(function (comp) {
+    const components = directChildren(componentsEl, "component").filter(function (comp) {
       return !ignoredComponents || !ignoredComponents.has(comp.getAttribute("objectid"));
     });
-    var promises = components.map(function (comp) {
-      var childObjectId = comp.getAttribute("objectid");
-      var childTransform = parseTransformAttr(comp.getAttribute("transform"));
-      var combined = composeTransform(accumTransform, childTransform);
-      var compPath = comp.getAttribute("p:path");
+    const promises = components.map(function (comp) {
+      const childObjectId = comp.getAttribute("objectid");
+      const childTransform = parseTransformAttr(comp.getAttribute("transform"));
+      const combined = composeTransform(accumTransform, childTransform);
+      const compPath = comp.getAttribute("p:path");
 
       if (compPath) {
-        var external = loadExternalDoc(zip, docCache, compPath);
+        const external = loadExternalDoc(zip, docCache, compPath);
         if (!external) return Promise.resolve();
         return external.docPromise.then(function (extDoc) {
           return resolveObjectRecursive(zip, docCache, extDoc, childObjectId, combined, external.normalizedPath, onMesh, rootObjectId);
@@ -366,10 +366,10 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // manter tudo em arrays de arrays estouraria memória no navegador sem
   // necessidade (só usamos os agregados).
   function resolveObjectGeometry(zip, docCache, doc, objectId, accumTransform, ignoredComponents) {
-    var triangleCount = 0;
-    var volumeMm3 = 0;
-    var areaMm2 = 0;
-    var bbox = emptyBbox();
+    let triangleCount = 0;
+    let volumeMm3 = 0;
+    let areaMm2 = 0;
+    let bbox = emptyBbox();
 
     function onMesh(leafTriangles, localIndices, meshBbox) {
       bbox = mergeBBox(bbox, meshBbox);
@@ -397,16 +397,16 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   function parseNonSolidParts(modelSettingsText) {
     if (!modelSettingsText || typeof DOMParser === "undefined") return null;
     try {
-      var doc = new DOMParser().parseFromString(modelSettingsText, "application/xml");
+      const doc = new DOMParser().parseFromString(modelSettingsText, "application/xml");
       if (doc.getElementsByTagName("parsererror").length) return null;
-      var byObject = new Map();
-      var objects = doc.getElementsByTagName("object");
-      for (var i = 0; i < objects.length; i++) {
-        var parts = directChildren(objects[i], "part");
-        for (var j = 0; j < parts.length; j++) {
-          var subtype = parts[j].getAttribute("subtype");
+      const byObject = new Map();
+      const objects = doc.getElementsByTagName("object");
+      for (let i = 0; i < objects.length; i++) {
+        const parts = directChildren(objects[i], "part");
+        for (let j = 0; j < parts.length; j++) {
+          const subtype = parts[j].getAttribute("subtype");
           if (!subtype || subtype === "normal_part") continue;
-          var objectId = objects[i].getAttribute("id");
+          const objectId = objects[i].getAttribute("id");
           if (!byObject.has(objectId)) byObject.set(objectId, new Set());
           byObject.get(objectId).add(parts[j].getAttribute("id"));
         }
@@ -420,40 +420,40 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // `modelSettingsText` (opcional) é o Metadata/model_settings.config: ver
   // parseNonSolidParts.
   function parse3MFPackage(zip, rootXmlText, modelSettingsText) {
-    var doc = parseXmlDoc(rootXmlText);
-    var nonSolidParts = parseNonSolidParts(modelSettingsText);
-    var unitAttr = doc.documentElement.getAttribute("unit");
-    var scale = UNIT_TO_MM[unitAttr] || 1;
-    var docCache = {};
-    var buildEl = doc.getElementsByTagName("build")[0];
-    var itemEls = buildEl ? directChildren(buildEl, "item") : [];
+    const doc = parseXmlDoc(rootXmlText);
+    const nonSolidParts = parseNonSolidParts(modelSettingsText);
+    const unitAttr = doc.documentElement.getAttribute("unit");
+    const scale = UNIT_TO_MM[unitAttr] || 1;
+    const docCache = {};
+    const buildEl = doc.getElementsByTagName("build")[0];
+    const itemEls = buildEl ? directChildren(buildEl, "item") : [];
 
     // Sem <build>/<item> (raro): trata cada <object> de nível topo como se
     // fosse um item, sem transform.
-    var items = itemEls.length ? itemEls : Array.prototype.map.call(
+    const items = itemEls.length ? itemEls : Array.prototype.map.call(
       doc.getElementsByTagName("object"),
       function (o) {
         return { getAttribute: function (name) { return name === "objectid" ? o.getAttribute("id") : null; } };
       }
     );
 
-    var objectIds = items.map(function (item) { return item.getAttribute("objectid"); });
-    var translations = items.map(function (item) { return parseTransformAttr(item.getAttribute("transform")).t; });
-    var promises = items.map(function (item) {
-      var transform = parseTransformAttr(item.getAttribute("transform"));
-      var objectId = item.getAttribute("objectid");
+    const objectIds = items.map(function (item) { return item.getAttribute("objectid"); });
+    const translations = items.map(function (item) { return parseTransformAttr(item.getAttribute("transform")).t; });
+    const promises = items.map(function (item) {
+      const transform = parseTransformAttr(item.getAttribute("transform"));
+      const objectId = item.getAttribute("objectid");
       // 3MF Production Extension: <item> também pode apontar pra um arquivo
       // externo via p:path (padrão do Bambu Studio/Orca pra separar cada
       // object/chapa em 3D/Objects/*.model), não só <component> (ver
       // resolveObjectRecursive). Sem isso, o objectId do item era buscado só
       // no doc raiz e, se coincidisse por acaso com outro object definido
       // ali, a geometria errada (de outra chapa) era resolvida.
-      var itemPath = item.getAttribute("p:path");
+      const itemPath = item.getAttribute("p:path");
       // Os ids de model_settings.config são os do 3dmodel.model raiz: um item
       // com p:path aponta para um id de outro arquivo.
-      var ignored = nonSolidParts && !itemPath ? nonSolidParts.get(objectId) : undefined;
+      const ignored = nonSolidParts && !itemPath ? nonSolidParts.get(objectId) : undefined;
       if (itemPath) {
-        var external = loadExternalDoc(zip, docCache, itemPath);
+        const external = loadExternalDoc(zip, docCache, itemPath);
         if (!external) return Promise.resolve({ triangleCount: 0, volumeMm3: 0, areaMm2: 0, bbox: emptyBbox() });
         return external.docPromise.then(function (extDoc) {
           return resolveObjectGeometry(zip, docCache, extDoc, objectId, transform, ignored);
@@ -463,10 +463,10 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     });
 
     return Promise.all(promises).then(function (results) {
-      var triangleCount = 0;
-      var volumeMm3 = 0;
-      var areaMm2 = 0;
-      var bbox = emptyBbox();
+      let triangleCount = 0;
+      let volumeMm3 = 0;
+      let areaMm2 = 0;
+      let bbox = emptyBbox();
       results.forEach(function (r) {
         triangleCount += r.triangleCount;
         areaMm2 += r.areaMm2;
@@ -531,40 +531,40 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // fora: não são impressos, então não há o que pintar (ver
   // parseNonSolidParts).
   function extractTriangles3MF(zip, rootXmlText, rootPath, modelSettingsText) {
-    var doc = parseXmlDoc(rootXmlText);
-    var nonSolidParts = parseNonSolidParts(modelSettingsText);
-    var unitAttr = doc.documentElement.getAttribute("unit");
-    var scale = UNIT_TO_MM[unitAttr] || 1;
-    var docCache = {};
-    var buildEl = doc.getElementsByTagName("build")[0];
-    var itemEls = buildEl ? directChildren(buildEl, "item") : [];
-    var items = itemEls.length ? itemEls : Array.prototype.map.call(
+    const doc = parseXmlDoc(rootXmlText);
+    const nonSolidParts = parseNonSolidParts(modelSettingsText);
+    const unitAttr = doc.documentElement.getAttribute("unit");
+    const scale = UNIT_TO_MM[unitAttr] || 1;
+    const docCache = {};
+    const buildEl = doc.getElementsByTagName("build")[0];
+    const itemEls = buildEl ? directChildren(buildEl, "item") : [];
+    const items = itemEls.length ? itemEls : Array.prototype.map.call(
       doc.getElementsByTagName("object"),
       function (o) {
         return { getAttribute: function (name) { return name === "objectid" ? o.getAttribute("id") : null; } };
       }
     );
 
-    var triangles = [];
-    var origins = [];
-    var promises = items.map(function (item) {
-      var transform = parseTransformAttr(item.getAttribute("transform"));
-      var objectId = item.getAttribute("objectid");
+    const triangles = [];
+    const origins = [];
+    const promises = items.map(function (item) {
+      const transform = parseTransformAttr(item.getAttribute("transform"));
+      const objectId = item.getAttribute("objectid");
       // Mesmo caso de parse3MFPackage: <item> do build raiz também pode
       // apontar pra um arquivo externo via p:path (objeto/chapa que vive em
       // 3D/Objects/*.model em vez de dentro do 3dmodel.model raiz). Sem
       // tratar isso aqui, os triângulos (e o `path` guardado em origins, que
       // a exportação usa pra reabrir e repintar o arquivo certo) vinham do
       // doc/arquivo errado.
-      var itemPath = item.getAttribute("p:path");
+      const itemPath = item.getAttribute("p:path");
       if (itemPath) {
-        var external = loadExternalDoc(zip, docCache, itemPath);
+        const external = loadExternalDoc(zip, docCache, itemPath);
         if (!external) return Promise.resolve();
         return external.docPromise.then(function (extDoc) {
           return resolveObjectTriangles(zip, docCache, extDoc, objectId, transform, triangles, external.normalizedPath, origins);
         });
       }
-      var ignored = nonSolidParts ? nonSolidParts.get(objectId) : undefined;
+      const ignored = nonSolidParts ? nonSolidParts.get(objectId) : undefined;
       return resolveObjectTriangles(zip, docCache, doc, objectId, transform, triangles, rootPath, origins, ignored);
     });
 
@@ -573,7 +573,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
         // Triângulos vizinhos compartilham o mesmo array de vértice: sem
         // marcar os já escalados, cada vértice seria multiplicado uma vez
         // por triângulo que o usa.
-        var scaled = new Set();
+        const scaled = new Set();
         triangles.forEach(function (tri) {
           tri.forEach(function (p) {
             if (scaled.has(p)) return;
@@ -590,7 +590,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // primeiro o caminho padrão (3D/3dmodel.model); alguns pacotes de terceiros
   // usam outro caminho, daí o fallback por nome de arquivo em qualquer pasta.
   function findRootModel(zip) {
-    var files = zip.file(/(^|\/)3D\/3dmodel\.model$/i);
+    let files = zip.file(/(^|\/)3D\/3dmodel\.model$/i);
     if (!files.length) files = zip.file(/3dmodel\.model$/i);
     return files.length ? files[0] : null;
   }
@@ -600,8 +600,8 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // (precedido só por "/" ou início da string) para não casar por engano com
   // um arquivo tipo "meuproject_settings.config".
   function findUniqueFile(zip, fileName) {
-    var escaped = fileName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    var files = zip.file(new RegExp("(^|/)" + escaped + "$", "i"));
+    const escaped = fileName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const files = zip.file(new RegExp("(^|/)" + escaped + "$", "i"));
     return files.length ? files[0] : null;
   }
 
@@ -610,8 +610,8 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // navegadores que só começam a gravar o arquivo de fato um instante depois
   // do clique sintético.
   function downloadBlob(blob, fileName) {
-    var a = document.createElement("a");
-    var url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const url = URL.createObjectURL(blob);
     a.href = url;
     a.download = fileName;
     document.body.appendChild(a);
@@ -621,10 +621,10 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   }
 
   function parse3MFProfile(configText) {
-    var densityMatch = configText.match(/"filament_density"\s*:\s*\[\s*"([\d.]+)"/);
-    var diameterMatch = configText.match(/"filament_diameter"\s*:\s*\[\s*"([\d.]+)"/);
-    var wallsMatch = configText.match(/"wall_loops"\s*:\s*"?(\d+)"?/);
-    var infillMatch = configText.match(/"sparse_infill_density"\s*:\s*"?(\d+(?:\.\d+)?)%?"?/);
+    const densityMatch = configText.match(/"filament_density"\s*:\s*\[\s*"([\d.]+)"/);
+    const diameterMatch = configText.match(/"filament_diameter"\s*:\s*\[\s*"([\d.]+)"/);
+    const wallsMatch = configText.match(/"wall_loops"\s*:\s*"?(\d+)"?/);
+    const infillMatch = configText.match(/"sparse_infill_density"\s*:\s*"?(\d+(?:\.\d+)?)%?"?/);
     if (!densityMatch) return null;
     return {
       walls: wallsMatch ? parseInt(wallsMatch[1], 10) : null,
@@ -645,18 +645,18 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   function parsePlateAssignments(modelSettingsText, keepEmpty) {
     if (!modelSettingsText || typeof DOMParser === "undefined") return null;
     try {
-      var doc = new DOMParser().parseFromString(modelSettingsText, "application/xml");
+      const doc = new DOMParser().parseFromString(modelSettingsText, "application/xml");
       if (doc.getElementsByTagName("parsererror").length) return null;
-      var plateEls = doc.getElementsByTagName("plate");
+      const plateEls = doc.getElementsByTagName("plate");
       if (!plateEls.length) return null;
 
-      var plates = [];
-      for (var i = 0; i < plateEls.length; i++) {
-        var instances = plateEls[i].getElementsByTagName("model_instance");
-        var ids = [];
-        for (var j = 0; j < instances.length; j++) {
-          var metas = instances[j].getElementsByTagName("metadata");
-          for (var k = 0; k < metas.length; k++) {
+      const plates = [];
+      for (let i = 0; i < plateEls.length; i++) {
+        const instances = plateEls[i].getElementsByTagName("model_instance");
+        const ids = [];
+        for (let j = 0; j < instances.length; j++) {
+          const metas = instances[j].getElementsByTagName("metadata");
+          for (let k = 0; k < metas.length; k++) {
             if (metas[k].getAttribute("key") === "object_id") {
               ids.push(metas[k].getAttribute("value"));
             }
@@ -676,8 +676,8 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // bbox único pra todo o arquivo.
   function calculatePlates(items, plateAssignments) {
     if (!plateAssignments || !items) return null;
-    var plates = plateAssignments.map(function (ids, index) {
-      var bbox = null;
+    const plates = plateAssignments.map(function (ids, index) {
+      let bbox = null;
       items.forEach(function (item) {
         if (ids.indexOf(item.objectId) !== -1) {
           // Mescla o bbox do item com o bbox acumulado da chapa
@@ -694,11 +694,11 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // (cada item pode ter vários pontos separados por vírgula, como no
   // extruder_printable_area). null sem nenhum ponto válido.
   function pointBounds(points) {
-    var xs = [];
-    var ys = [];
+    const xs = [];
+    const ys = [];
     [].concat(points || []).forEach(function (segment) {
       String(segment).split(",").forEach(function (pair) {
-        var xy = pair.split("x").map(Number);
+        const xy = pair.split("x").map(Number);
         if (xy.length === 2 && !isNaN(xy[0]) && !isNaN(xy[1])) {
           xs.push(xy[0]);
           ys.push(xy[1]);
@@ -716,7 +716,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // (lista de "XxY", ex.: ["0x0","256x0","256x256","0x256"]).
   function plateGrid(printableArea) {
     if (!Array.isArray(printableArea)) return null;
-    var m = pointBounds(printableArea);
+    const m = pointBounds(printableArea);
     if (!m || !(m.x1 > m.x0 && m.y1 > m.y0)) return null;
     return {
       x0: m.x0, x1: m.x1, y0: m.y0, y1: m.y1,
@@ -729,8 +729,8 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // deslocamento [dx, dy] que o leva para a mesma célula no destino,
   // mantendo o afastamento do centro da mesa (ver repositionByPlate).
   function targetCell(x, y, a, b) {
-    var column = Math.round((x - a.cx) / a.stepX);
-    var row = Math.round((y - a.cy) / a.stepY);
+    const column = Math.round((x - a.cx) / a.stepX);
+    const row = Math.round((y - a.cy) / a.stepY);
     return {
       column: column,
       row: row,
@@ -749,15 +749,15 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // mesa; com uma mesa só a peça fica centralizada como estava na origem.
   // Devolve null quando falta a área de uma das mesas.
   function repositionByPlate(modelText, sourcePrintableArea, targetPrintableArea) {
-    var a = plateGrid(sourcePrintableArea);
-    var b = plateGrid(targetPrintableArea);
+    const a = plateGrid(sourcePrintableArea);
+    const b = plateGrid(targetPrintableArea);
     if (!a || !b) return null;
     return modelText.replace(/(<item\b[^>]*\btransform=")([^"]*)(")/g, function (whole, start, transform, end) {
-      var parts = transform.trim().split(/\s+/);
-      var x = Number(parts[9]);
-      var y = Number(parts[10]);
+      const parts = transform.trim().split(/\s+/);
+      const x = Number(parts[9]);
+      const y = Number(parts[10]);
       if (parts.length !== 12 || isNaN(x) || isNaN(y)) return whole;
-      var cell = targetCell(x, y, a, b);
+      const cell = targetCell(x, y, a, b);
       parts[9] = String(+(x + cell.dx).toFixed(6));
       parts[10] = String(+(y + cell.dy).toFixed(6));
       return start + parts.join(" ") + end;
@@ -771,26 +771,26 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // anda o mesmo que repositionByPlate anda o item, e perde a célula da
   // grade do destino.
   function footprintsByPlate(items, plates, sourcePrintableArea, targetPrintableArea, plateCount) {
-    var a = plateGrid(sourcePrintableArea);
-    var b = plateGrid(targetPrintableArea);
-    var byPlate = [];
-    for (var i = 0; i < plateCount; i++) byPlate.push([]);
+    const a = plateGrid(sourcePrintableArea);
+    const b = plateGrid(targetPrintableArea);
+    const byPlate = [];
+    for (let i = 0; i < plateCount; i++) byPlate.push([]);
     if (!a || !b) return byPlate;
     (items || []).forEach(function (item) {
-      var c = item.bbox;
+      const c = item.bbox;
       if (!c || !(c.maxX >= c.minX)) return;
-      var index = 0;
+      let index = 0;
       if (plates) {
         index = -1;
-        for (var k = 0; k < plates.length; k++) {
+        for (let k = 0; k < plates.length; k++) {
           if (plates[k].indexOf(item.objectId) !== -1) { index = k; break; }
         }
       }
       if (index < 0 || index >= plateCount) return;
-      var p = item.position || [(c.minX + c.maxX) / 2, (c.minY + c.maxY) / 2];
-      var cell = targetCell(p[0], p[1], a, b);
-      var dx = cell.dx - cell.column * b.stepX;
-      var dy = cell.dy - cell.row * b.stepY;
+      const p = item.position || [(c.minX + c.maxX) / 2, (c.minY + c.maxY) / 2];
+      const cell = targetCell(p[0], p[1], a, b);
+      const dx = cell.dx - cell.column * b.stepX;
+      const dy = cell.dy - cell.row * b.stepY;
       byPlate[index].push([c.minX + dx, c.minY + dy, c.maxX + dx, c.maxY + dy]);
     });
     return byPlate;
@@ -808,17 +808,17 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // (extruder_printable_area), e longe das peças. A torre ocupa até 40 mm de
   // profundidade e a largura configurada, girada pelo
   // wipe_tower_rotation_angle (medido no G-code dos fatiadores).
-  var TOWER = { side: 40, margin: 6, clearance: 6, step: 5 };
+  const TOWER = { side: 40, margin: 6, clearance: 6, step: 5 };
 
   function firstNumber(value) {
     return parseFloat([].concat(value == null ? [] : value)[0]);
   }
 
   function towerRegion(config) {
-    var m = pointBounds(config.printable_area);
+    let m = pointBounds(config.printable_area);
     if (!m) return null;
     [].concat(config.extruder_printable_area || []).forEach(function (area) {
-      var e = pointBounds(area);
+      const e = pointBounds(area);
       if (e) m = { x0: Math.max(m.x0, e.x0), x1: Math.min(m.x1, e.x1), y0: Math.max(m.y0, e.y0), y1: Math.min(m.y1, e.y1) };
     });
     if (!(m.x1 > m.x0 && m.y1 > m.y0)) return null;
@@ -826,15 +826,15 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     // em 4 pontos, com trechos de largura zero entre eles (Qidi X-Max 4: 4
     // cantos; Anycubic Kobra 3: 4 bordas). Retângulo com metade da mesa ou
     // mais é o contorno, não uma área proibida.
-    var forbidden = [];
-    var plateArea = (m.x1 - m.x0) * (m.y1 - m.y0);
+    const forbidden = [];
+    const plateArea = (m.x1 - m.x0) * (m.y1 - m.y0);
     ["bed_exclude_area", "wrapping_exclude_area"].forEach(function (field) {
-      var points = [];
+      let points = [];
       [].concat(config[field] || []).forEach(function (segment) {
         points = points.concat(String(segment).split(","));
       });
-      for (var i = 0; i + 4 <= points.length; i += 4) {
-        var e = pointBounds(points.slice(i, i + 4));
+      for (let i = 0; i + 4 <= points.length; i += 4) {
+        const e = pointBounds(points.slice(i, i + 4));
         if (e && e.x1 > e.x0 && e.y1 > e.y0 && (e.x1 - e.x0) * (e.y1 - e.y0) < plateArea / 2) forbidden.push([e.x0, e.y0, e.x1, e.y1]);
       }
     });
@@ -844,33 +844,33 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // Retângulo que a torre ocupa em relação a (wipe_tower_x, wipe_tower_y),
   // girado no sentido anti-horário como no fatiador.
   function towerFootprint(config) {
-    var width = Math.max(TOWER.side, firstNumber(config.prime_tower_width) || 0);
-    var angle = (firstNumber(config.wipe_tower_rotation_angle) || 0) * Math.PI / 180;
-    var c = Math.cos(angle), s = Math.sin(angle);
-    var corners = [[0, 0], [width, 0], [0, TOWER.side], [width, TOWER.side]].map(function (p) {
+    const width = Math.max(TOWER.side, firstNumber(config.prime_tower_width) || 0);
+    const angle = (firstNumber(config.wipe_tower_rotation_angle) || 0) * Math.PI / 180;
+    const c = Math.cos(angle), s = Math.sin(angle);
+    const corners = [[0, 0], [width, 0], [0, TOWER.side], [width, TOWER.side]].map(function (p) {
       return [p[0] * c - p[1] * s, p[0] * s + p[1] * c];
     });
     function round3(v) { return Math.round(v * 1000) / 1000; }
-    var xs = corners.map(function (p) { return p[0]; });
-    var ys = corners.map(function (p) { return p[1]; });
+    const xs = corners.map(function (p) { return p[0]; });
+    const ys = corners.map(function (p) { return p[1]; });
     return [round3(Math.min.apply(null, xs)), round3(Math.min.apply(null, ys)), round3(Math.max.apply(null, xs)), round3(Math.max.apply(null, ys))];
   }
 
   function towerSpot(config, pieces, candidates) {
-    var region = towerRegion(config);
+    const region = towerRegion(config);
     if (!region) return null;
-    var lim = region.lim, M = TOWER.margin, F = TOWER.clearance, t = towerFootprint(config);
-    var obstacles = pieces.map(function (c) { return [c[0] - F, c[1] - F, c[2] + F, c[3] + F]; }).concat(region.forbidden);
+    const lim = region.lim, M = TOWER.margin, F = TOWER.clearance, t = towerFootprint(config);
+    const obstacles = pieces.map(function (c) { return [c[0] - F, c[1] - F, c[2] + F, c[3] + F]; }).concat(region.forbidden);
     // posições (x, y) em que a torre inteira, com a margem, fica na mesa
-    var xMin = lim.x0 - t[0] + M, xMax = lim.x1 - t[2] - M;
-    var yMin = lim.y0 - t[1] + M, yMax = lim.y1 - t[3] - M;
+    const xMin = lim.x0 - t[0] + M, xMax = lim.x1 - t[2] - M;
+    const yMin = lim.y0 - t[1] + M, yMax = lim.y1 - t[3] - M;
     // área da torre (com a margem) em cima de peças ou de áreas proibidas
     function overlap(x, y) {
-      var total = 0;
-      for (var i = 0; i < obstacles.length; i++) {
-        var c = obstacles[i];
-        var w = Math.min(x + t[2] + M, c[2]) - Math.max(x + t[0] - M, c[0]);
-        var h = Math.min(y + t[3] + M, c[3]) - Math.max(y + t[1] - M, c[1]);
+      let total = 0;
+      for (let i = 0; i < obstacles.length; i++) {
+        const c = obstacles[i];
+        const w = Math.min(x + t[2] + M, c[2]) - Math.max(x + t[0] - M, c[0]);
+        const h = Math.min(y + t[3] + M, c[3]) - Math.max(y + t[1] - M, c[1]);
         if (w > 0 && h > 0) total += w * h;
       }
       return total;
@@ -878,17 +878,17 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     function isFree(x, y) {
       return x >= xMin && x <= xMax && y >= yMin && y <= yMax && overlap(x, y) === 0;
     }
-    var valid = candidates.filter(Boolean);
-    for (var k = 0; k < valid.length; k++) {
+    const valid = candidates.filter(Boolean);
+    for (let k = 0; k < valid.length; k++) {
       if (isFree(valid[k][0], valid[k][1])) return valid[k];
     }
     // o ponto livre mais perto da referência; mesa cheia: o que menos cobre
-    var ref = valid[0] || [xMin, yMax];
-    var best = null, minOverlap = Infinity, minDist = Infinity;
-    for (var x = xMin; x <= xMax; x += TOWER.step) {
-      for (var y = yMin; y <= yMax; y += TOWER.step) {
-        var covered = overlap(x, y);
-        var dist = (x - ref[0]) * (x - ref[0]) + (y - ref[1]) * (y - ref[1]);
+    const ref = valid[0] || [xMin, yMax];
+    let best = null, minOverlap = Infinity, minDist = Infinity;
+    for (let x = xMin; x <= xMax; x += TOWER.step) {
+      for (let y = yMin; y <= yMax; y += TOWER.step) {
+        const covered = overlap(x, y);
+        const dist = (x - ref[0]) * (x - ref[0]) + (y - ref[1]) * (y - ref[1]);
         if (covered < minOverlap || (covered === minOverlap && dist < minDist)) {
           best = [x, y]; minOverlap = covered; minDist = dist;
         }
@@ -907,26 +907,26 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // sem torre: desligada ou com um filamento só, não há troca e o fatiador
   // não a imprime.
   function placeTowers(sourceConfig, targetConfig, targetBase, footprints) {
-    var enabled = String([].concat(targetConfig.enable_prime_tower == null ? "1" : targetConfig.enable_prime_tower)[0]) !== "0";
-    var filamentCount = [].concat(targetConfig.filament_colour || []).length;
+    const enabled = String([].concat(targetConfig.enable_prime_tower == null ? "1" : targetConfig.enable_prime_tower)[0]) !== "0";
+    const filamentCount = [].concat(targetConfig.filament_colour || []).length;
     if (!enabled || filamentCount < 2 || sourceConfig.wipe_tower_x == null || sourceConfig.wipe_tower_y == null) return null;
-    var a = plateGrid(sourceConfig.printable_area);
-    var b = plateGrid(targetConfig.printable_area);
+    const a = plateGrid(sourceConfig.printable_area);
+    const b = plateGrid(targetConfig.printable_area);
     if (!a || !b) return null;
-    var xs = [].concat(sourceConfig.wipe_tower_x);
-    var ys = [].concat(sourceConfig.wipe_tower_y);
-    var factory = [firstNumber(targetBase.wipe_tower_x), firstNumber(targetBase.wipe_tower_y)];
+    const xs = [].concat(sourceConfig.wipe_tower_x);
+    const ys = [].concat(sourceConfig.wipe_tower_y);
+    let factory = [firstNumber(targetBase.wipe_tower_x), firstNumber(targetBase.wipe_tower_y)];
     if (isNaN(factory[0]) || isNaN(factory[1])) factory = null;
 
     // Sem lugar calculado (região da torre inválida no perfil), a torre só
     // acompanha as peças, como em repositionTowers.
-    var simple = repositionTowers(sourceConfig, sourceConfig.printable_area, targetConfig.printable_area);
-    var simpleX = [].concat(simple.wipe_tower_x), simpleY = [].concat(simple.wipe_tower_y);
-    var newX = [], newY = [];
-    for (var i = 0; i < xs.length; i++) {
-      var author = [parseFloat(xs[i]) + b.cx - a.cx, parseFloat(ys[Math.min(i, ys.length - 1)]) + b.cy - a.cy];
+    const simple = repositionTowers(sourceConfig, sourceConfig.printable_area, targetConfig.printable_area);
+    const simpleX = [].concat(simple.wipe_tower_x), simpleY = [].concat(simple.wipe_tower_y);
+    const newX = [], newY = [];
+    for (let i = 0; i < xs.length; i++) {
+      let author = [parseFloat(xs[i]) + b.cx - a.cx, parseFloat(ys[Math.min(i, ys.length - 1)]) + b.cy - a.cy];
       if (isNaN(author[0]) || isNaN(author[1])) author = null;
-      var spot = towerSpot(targetConfig, footprints[i] || [], [author, factory]);
+      const spot = towerSpot(targetConfig, footprints[i] || [], [author, factory]);
       newX.push(spot ? String(+spot[0].toFixed(3)) : simpleX[i]);
       newY.push(spot ? String(+spot[1].toFixed(3)) : simpleY[Math.min(i, simpleY.length - 1)]);
     }
@@ -941,13 +941,13 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // repositionByPlate dá às peças, para não cair em cima delas, e é
   // limitada à mesa de destino. Devolve null sem torre ou sem área de mesa.
   function repositionTowers(config, sourcePrintableArea, targetPrintableArea) {
-    var a = plateGrid(sourcePrintableArea);
-    var b = plateGrid(targetPrintableArea);
+    const a = plateGrid(sourcePrintableArea);
+    const b = plateGrid(targetPrintableArea);
     if (!a || !b || config.wipe_tower_x == null || config.wipe_tower_y == null) return null;
-    var width = parseFloat(config.prime_tower_width) || 35;
+    const width = parseFloat(config.prime_tower_width) || 35;
 
     function move(value, delta, minimum, maximum) {
-      var n = parseFloat(value);
+      const n = parseFloat(value);
       if (isNaN(n)) return value;
       return String(+Math.min(Math.max(n + delta, minimum), Math.max(minimum, maximum - width)).toFixed(4));
     }
@@ -964,7 +964,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
 
   // Opções de processo que o Bambu Studio grava com um valor por variante de
   // bico (print_extruder_variant).
-  var PROCESS_OPTIONS_PER_VARIANT = [
+  const PROCESS_OPTIONS_PER_VARIANT = [
     "bridge_speed", "default_acceleration", "enable_height_slowdown",
     "enable_overhang_speed", "gap_infill_speed", "initial_layer_acceleration",
     "initial_layer_infill_speed", "initial_layer_speed",
@@ -982,7 +982,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   ];
 
   // Opções de filamento por variante de bico sem o prefixo filament_.
-  var FILAMENT_OPTIONS_PER_VARIANT = [
+  const FILAMENT_OPTIONS_PER_VARIANT = [
     "long_retractions_when_ec", "nozzle_temperature", "nozzle_temperature_initial_layer",
     "override_process_overhang_speed", "retraction_distances_when_ec",
     "slow_down_min_speed", "volumetric_speed_coefficients"
@@ -990,7 +990,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
 
   // Mapa de filamento por bico do Bambu Studio (H2D, H2C), sem sentido numa
   // impressora que não os tem.
-  var NOZZLE_MAPS = [
+  const NOZZLE_MAPS = [
     "filament_nozzle_map", "filament_volume_map", "filament_extruder_compatibility", "enable_filament_dynamic_map"
   ];
 
@@ -1003,7 +1003,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // como o fatiador faz ao importar o projeto, no formato do perfil de
   // destino. Devolve uma cópia de `config`.
   function adjustNozzleVariants(config, targetBase) {
-    var adjusted = {};
+    const adjusted = {};
     Object.keys(config).forEach(function (k) {
       if (NOZZLE_MAPS.indexOf(k) !== -1 && !Object.prototype.hasOwnProperty.call(targetBase, k)) return;
       adjusted[k] = config[k];
@@ -1017,7 +1017,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // filament_map aponta cada filamento para um extrusor (1, 2...); os que
   // o destino não tem vão para o primeiro.
   function clampFilamentMap(adjusted, targetBase) {
-    var extruderCount = [].concat(targetBase.nozzle_diameter || []).length;
+    const extruderCount = [].concat(targetBase.nozzle_diameter || []).length;
     if (Array.isArray(adjusted.filament_map) && extruderCount) {
       adjusted.filament_map = adjusted.filament_map.map(function (v) {
         return parseInt(v, 10) > extruderCount ? "1" : v;
@@ -1029,26 +1029,26 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // destino, o índice da origem com a mesma variante (e o mesmo extrusor,
   // quando os dois lados informam print_extruder_id).
   function adjustProcessVariants(adjusted, config, targetBase) {
-    var pev = config.print_extruder_variant;
-    var pid = config.print_extruder_id;
+    const pev = config.print_extruder_variant;
+    const pid = config.print_extruder_id;
     if (Array.isArray(pev) && pev.length) {
-      var dev = Array.isArray(targetBase.print_extruder_variant) ? targetBase.print_extruder_variant : [pev[0]];
-      var did = Array.isArray(targetBase.print_extruder_id) ? targetBase.print_extruder_id : null;
-      var chosen = dev.map(function (variant, j) {
-        for (var i = 0; i < pev.length; i++) {
+      const dev = Array.isArray(targetBase.print_extruder_variant) ? targetBase.print_extruder_variant : [pev[0]];
+      const did = Array.isArray(targetBase.print_extruder_id) ? targetBase.print_extruder_id : null;
+      const chosen = dev.map(function (variant, j) {
+        for (let i = 0; i < pev.length; i++) {
           if (pev[i] === variant && did && pid && pid[i] === did[j]) return i;
         }
-        var same = pev.indexOf(variant);
+        const same = pev.indexOf(variant);
         return same === -1 ? 0 : same;
       });
-      var identical = chosen.length === pev.length && chosen.every(function (i, j) {
+      const identical = chosen.length === pev.length && chosen.every(function (i, j) {
         return i === j && (!did || !pid || pid[i] === did[j]);
       });
       if (!identical) {
         PROCESS_OPTIONS_PER_VARIANT.forEach(function (k) {
-          var v = adjusted[k];
+          const v = adjusted[k];
           if (!Array.isArray(v) || v.length !== pev.length) return;
-          var singleValue = Object.prototype.hasOwnProperty.call(targetBase, k) && !Array.isArray(targetBase[k]);
+          const singleValue = Object.prototype.hasOwnProperty.call(targetBase, k) && !Array.isArray(targetBase[k]);
           adjusted[k] = singleValue ? v[chosen[0]] : chosen.map(function (i) { return v[i]; });
         });
         adjusted.print_extruder_variant = dev.slice();
@@ -1060,12 +1060,12 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // filament_self_index diz de que filamento é cada valor. Ficam os valores
   // das variantes do destino, ou o primeiro de cada filamento.
   function adjustFilamentVariants(adjusted, config, targetBase) {
-    var targetVariants = targetBase.printer_extruder_variant || targetBase.extruder_variant_list || targetBase.print_extruder_variant || [];
-    var fev = config.filament_extruder_variant;
-    var fsi = config.filament_self_index;
+    const targetVariants = targetBase.printer_extruder_variant || targetBase.extruder_variant_list || targetBase.print_extruder_variant || [];
+    const fev = config.filament_extruder_variant;
+    const fsi = config.filament_self_index;
     if (Array.isArray(fev) && Array.isArray(fsi) && fev.length === fsi.length) {
-      var byFilament = {};
-      var order = [];
+      const byFilament = {};
+      const order = [];
       fsi.forEach(function (s, i) {
         if (!byFilament[s]) {
           byFilament[s] = [];
@@ -1073,11 +1073,11 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
         }
         byFilament[s].push(i);
       });
-      var keep = [];
-      var newVariants = [];
-      var newIndexes = [];
+      const keep = [];
+      const newVariants = [];
+      const newIndexes = [];
       order.forEach(function (s, f) {
-        var fromTarget = byFilament[s].filter(function (i) { return targetVariants.indexOf(fev[i]) !== -1; });
+        const fromTarget = byFilament[s].filter(function (i) { return targetVariants.indexOf(fev[i]) !== -1; });
         if (!fromTarget.length) {
           keep.push(byFilament[s][0]);
           newVariants.push(targetVariants[0] || fev[byFilament[s][0]]);
@@ -1090,10 +1090,10 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
           newIndexes.push(String(f + 1));
         });
       });
-      var changed = keep.length !== fev.length || newVariants.some(function (v, i) { return v !== fev[i]; });
+      const changed = keep.length !== fev.length || newVariants.some(function (v, i) { return v !== fev[i]; });
       if (changed) {
         Object.keys(adjusted).forEach(function (k) {
-          var v = adjusted[k];
+          const v = adjusted[k];
           if (!Array.isArray(v) || v.length !== fev.length) return;
           if (k.indexOf("filament_") !== 0 && FILAMENT_OPTIONS_PER_VARIANT.indexOf(k) === -1) return;
           adjusted[k] = keep.map(function (i) { return v[i]; });
@@ -1110,24 +1110,24 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // a dele em flush_multiplier. Bicos a mais repetem a primeira matriz, como
   // o fatiador faz ao importar o projeto. Devolve uma cópia de `config`.
   function adjustFlushPerNozzle(config, targetBase) {
-    var adjusted = {};
+    const adjusted = {};
     Object.keys(config).forEach(function (k) { adjusted[k] = config[k]; });
     if (!Array.isArray(targetBase.flush_multiplier)) return adjusted;
-    var nozzleCount = targetBase.flush_multiplier.length;
+    const nozzleCount = targetBase.flush_multiplier.length;
 
     function perNozzle(values, size) {
-      var blockCount = values.length / size;
-      var result = [];
-      for (var b = 0; b < nozzleCount; b++) {
-        var start = (b < blockCount ? b : 0) * size;
+      const blockCount = values.length / size;
+      let result = [];
+      for (let b = 0; b < nozzleCount; b++) {
+        const start = (b < blockCount ? b : 0) * size;
         result = result.concat(values.slice(start, start + size));
       }
       return result;
     }
 
-    var filamentCount = [].concat(config.filament_colour || []).length;
-    var matrix = config.flush_volumes_matrix;
-    var block = filamentCount * filamentCount;
+    const filamentCount = [].concat(config.filament_colour || []).length;
+    const matrix = config.flush_volumes_matrix;
+    const block = filamentCount * filamentCount;
     if (Array.isArray(matrix) && block && matrix.length && matrix.length % block === 0) {
       adjusted.flush_volumes_matrix = perNozzle(matrix, block);
     }
@@ -1156,21 +1156,21 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // outra chapa), esses ids ambíguos ficam de fora de toda chapa, igual ao
   // caso de rootObjectId sem match nenhum.
   function mapTrianglesToPlates(triangleOrigins, plates) {
-    var byPlate = new Map();
+    const byPlate = new Map();
     plates.forEach(function (plate) { byPlate.set(plate.index, []); });
 
-    var countById = new Map();
+    const countById = new Map();
     plates.forEach(function (plate) {
       plate.objectIds.forEach(function (id) {
         countById.set(id, (countById.get(id) || 0) + 1);
       });
     });
 
-    for (var t = 0; t < triangleOrigins.length; t++) {
-      var origin = triangleOrigins[t];
+    for (let t = 0; t < triangleOrigins.length; t++) {
+      const origin = triangleOrigins[t];
       if (!origin) continue;
       if (countById.get(origin.rootObjectId) !== 1) continue;
-      for (var i = 0; i < plates.length; i++) {
+      for (let i = 0; i < plates.length; i++) {
         if (plates[i].objectIds.has(origin.rootObjectId)) {
           byPlate.get(plates[i].index).push(t);
           break;
@@ -1190,28 +1190,28 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // início de cada trecho e, para trechos repetidos, o início de todas as
   // cópias, em vez de um registro por triângulo. Devolve null sem cópias.
   function mapMeshCopies(triangleOrigins) {
-    var starts = [];
-    var keys = [];
-    for (var t = 0; t < triangleOrigins.length; t++) {
-      var o = triangleOrigins[t];
-      var previous = t > 0 ? triangleOrigins[t - 1] : null;
-      var continues = o && previous && o.path === previous.path && o.objectId === previous.objectId && o.localIndex > previous.localIndex;
+    const starts = [];
+    const keys = [];
+    for (let t = 0; t < triangleOrigins.length; t++) {
+      const o = triangleOrigins[t];
+      const previous = t > 0 ? triangleOrigins[t - 1] : null;
+      const continues = o && previous && o.path === previous.path && o.objectId === previous.objectId && o.localIndex > previous.localIndex;
       if (!continues) {
         starts.push(t);
         keys.push(o ? o.path + "|" + o.objectId : null);
       }
     }
 
-    var byKey = new Map();
+    const byKey = new Map();
     keys.forEach(function (key, i) {
       if (key === null) return;
       if (!byKey.has(key)) byKey.set(key, []);
       byKey.get(key).push(starts[i]);
     });
 
-    var hasCopies = false;
-    var copies = keys.map(function (key) {
-      var group = key === null ? null : byKey.get(key);
+    let hasCopies = false;
+    const copies = keys.map(function (key) {
+      const group = key === null ? null : byKey.get(key);
       if (!group || group.length < 2) return null;
       hasCopies = true;
       return group;
@@ -1224,23 +1224,23 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
   // arrays: roda para cada triângulo de um balde que pode ter milhões.
   function forEachCopy(copyMap, t, fn) {
     if (!copyMap) return;
-    var low = 0;
-    var high = copyMap.starts.length - 1;
+    let low = 0;
+    let high = copyMap.starts.length - 1;
     while (low < high) {
-      var mid = (low + high + 1) >> 1;
+      const mid = (low + high + 1) >> 1;
       if (copyMap.starts[mid] <= t) low = mid;
       else high = mid - 1;
     }
-    var group = copyMap.copies[low];
+    const group = copyMap.copies[low];
     if (!group) return;
-    var start = copyMap.starts[low];
-    for (var i = 0; i < group.length; i++) {
+    const start = copyMap.starts[low];
+    for (let i = 0; i < group.length; i++) {
       if (group[i] !== start) fn(group[i] + t - start);
     }
   }
 
   function triangleCopies(copyMap, t) {
-    var indices = [];
+    const indices = [];
     forEachCopy(copyMap, t, function (index) { indices.push(index); });
     return indices;
   }

@@ -12,7 +12,7 @@
   // (ex.: depois de um erro) não dispara "change".
   function bindDropzone(dropzone, input, onSelect) {
     input.addEventListener("change", function () {
-      var file = input.files && input.files[0];
+      const file = input.files && input.files[0];
       input.value = "";
       onSelect(file);
     });
@@ -38,7 +38,7 @@
   // segundo arquivo antes do primeiro terminar, o resultado atrasado do
   // primeiro é descartado em vez de sobrescrever o do segundo.
   function createSequencer() {
-    var current = 0;
+    let current = 0;
     return {
       next: function () { return ++current; },
       isCurrent: function (id) { return id === current; }
@@ -51,17 +51,17 @@
     if (typeof JSZip === "undefined") {
       return Promise.reject(new Error("não foi possível carregar o leitor de 3MF, verifique sua conexão"));
     }
-    var ModelParser = window.Wisky3D.ModelParser;
+    const ModelParser = window.Wisky3D.ModelParser;
 
     function readText(entry) {
       return entry ? entry.async("text") : Promise.resolve(null);
     }
 
     return JSZip.loadAsync(file).then(function (zip) {
-      var modelFile = ModelParser.findRootModel(zip);
-      var configFile = ModelParser.findUniqueFile(zip, "project_settings.config");
-      var modelSettingsFile = ModelParser.findUniqueFile(zip, "model_settings.config");
-      var sliceInfoFile = ModelParser.findUniqueFile(zip, "slice_info.config");
+      const modelFile = ModelParser.findRootModel(zip);
+      const configFile = ModelParser.findUniqueFile(zip, "project_settings.config");
+      const modelSettingsFile = ModelParser.findUniqueFile(zip, "model_settings.config");
+      const sliceInfoFile = ModelParser.findUniqueFile(zip, "slice_info.config");
 
       return Promise.all([readText(modelFile), readText(configFile), readText(modelSettingsFile), readText(sliceInfoFile)]).then(function (r) {
         return {
@@ -82,7 +82,7 @@
   // Acima disso o navegador corre risco de travar a aba: cada triângulo custa
   // uns 290 bytes no Colorir (3,7 milhões ocupam ~1 GB). Vale para o
   // Orçamento e o Colorir.
-  var MAX_TRIANGLES = 6000000;
+  const MAX_TRIANGLES = 6000000;
 
   window.Wisky3D.ToolUtils = {
     MAX_TRIANGLES: MAX_TRIANGLES,
