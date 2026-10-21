@@ -26,16 +26,16 @@ function fakeZip(files) {
   };
 }
 
-function triangulos(n) {
+function triangles(n) {
   return Array.from({ length: n }, () => '<triangle v1="0" v2="1" v3="2"/>').join("");
 }
 
 test("countTriangles3MF soma os <triangle> de todos os .model do pacote", () => {
   const zip = fakeZip({
-    "3D/3dmodel.model": `<model><resources><object id="1"><mesh><triangles>${triangulos(3)}</triangles></mesh></object></resources></model>`,
-    "3D/Objects/object_1.model": `<model><triangles>${triangulos(5)}</triangles></model>`,
+    "3D/3dmodel.model": `<model><resources><object id="1"><mesh><triangles>${triangles(3)}</triangles></mesh></object></resources></model>`,
+    "3D/Objects/object_1.model": `<model><triangles>${triangles(5)}</triangles></model>`,
     "Metadata/model_settings.config": "<triangle/> não conta",
-    "3D/Objects/object_2.MODEL": `<model>${triangulos(2)}</model>`
+    "3D/Objects/object_2.MODEL": `<model>${triangles(2)}</model>`
   });
 
   return countTriangles3MF(zip).then((n) => assert.equal(n, 10));
@@ -56,22 +56,22 @@ test("countTrianglesSTL lê a contagem do cabeçalho do STL binário", () => {
 
 test("countTrianglesSTL conta as facets do STL ASCII", () => {
   const facet = " facet normal 0 0 1\n  outer loop\n   vertex 0 0 0\n   vertex 1 0 0\n   vertex 0 1 0\n  endloop\n endfacet\n";
-  const texto = "solid x\n" + facet.repeat(4) + "endsolid x\n";
+  const text = "solid x\n" + facet.repeat(4) + "endsolid x\n";
 
-  assert.equal(countTrianglesSTL(new TextEncoder().encode(texto).buffer), 4);
+  assert.equal(countTrianglesSTL(new TextEncoder().encode(text).buffer), 4);
 });
 
 test("countTriangles3MF conta o 3dmodel.model já lido sem ler a entrada dele de novo", () => {
-  let leuRaiz = false;
-  const zip = fakeZip({ "3D/Objects/object_1.model": triangulos(5) });
-  const arquivos = zip.file;
+  let readRoot = false;
+  const zip = fakeZip({ "3D/Objects/object_1.model": triangles(5) });
+  const files = zip.file;
   zip.file = (p) => {
-    const r = arquivos(p);
-    return p instanceof RegExp ? r.concat([{ name: "3D/3dmodel.model", async: () => { leuRaiz = true; return Promise.resolve(""); } }]) : r;
+    const r = files(p);
+    return p instanceof RegExp ? r.concat([{ name: "3D/3dmodel.model", async: () => { readRoot = true; return Promise.resolve(""); } }]) : r;
   };
 
-  return countTriangles3MF(zip, triangulos(3), "3D/3dmodel.model").then((n) => {
+  return countTriangles3MF(zip, triangles(3), "3D/3dmodel.model").then((n) => {
     assert.equal(n, 8);
-    assert.equal(leuRaiz, false);
+    assert.equal(readRoot, false);
   });
 });

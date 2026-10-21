@@ -24,17 +24,17 @@
         return;
       }
       var base = window.Wisky3D.calculateBaseSubtotal({
-        pesoG: g,
-        horas: h,
-        filamentoKg: parseFloat(d.filamentKg),
-        potenciaW: parseFloat(d.powerW),
-        tarifaKwh: parseFloat(d.tariffKwh),
-        desgaste: parseFloat(d.wear)
+        weightG: g,
+        hours: h,
+        filamentPricePerKg: parseFloat(d.filamentKg),
+        powerW: parseFloat(d.powerW),
+        kwhRate: parseFloat(d.tariffKwh),
+        wear: parseFloat(d.wear)
       });
       var total = base.subtotal * (1 + parseFloat(d.marginPct) / 100) + parseFloat(d.assembly);
       out.textContent = fmt.format(total);
       out.classList.add("has-value");
-      energiaValorOut.textContent = fmt.format(base.energia);
+      energiaValorOut.textContent = fmt.format(base.energy);
       energiaInfo.hidden = false;
     }
 

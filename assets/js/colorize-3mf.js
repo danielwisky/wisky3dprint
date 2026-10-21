@@ -474,7 +474,7 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
 
     abasEl.appendChild(criarAba(null, "Todos"));
     state.chapas.forEach((chapa) => {
-      abasEl.appendChild(criarAba(chapa.indice, "Modelo " + chapa.indice));
+      abasEl.appendChild(criarAba(chapa.index, "Modelo " + chapa.index));
     });
   }
 
@@ -871,7 +871,7 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
       });
     }).then((pacote) => {
       return ModelParser.extractTriangles3MF(pacote.zip, pacote.modelText, pacote.modelPath, pacote.modelSettingsText).then((resultado) => ({
-        triangulos: resultado.triangulos,
+        triangulos: resultado.triangles,
         origins: resultado.origins,
         zip: pacote.zip,
         modelSettingsText: pacote.modelSettingsText
@@ -889,7 +889,7 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
     const plateAssignments = ModelParser.parsePlateAssignments(modelSettingsText);
     if (!plateAssignments) return null;
     return plateAssignments.map((objectIds, indice) => ({
-      indice: indice + 1,
+      index: indice + 1,
       objectIds: new Set(objectIds)
     }));
   }
@@ -1011,7 +1011,7 @@ if (root && !(modulos.ModelParser && modulos.ThreeMFWriter && modulos.ToolUtils 
   function exportarModeloDoZero(nomeSaida) {
     const triangulos = ColorizeCalculations.trianglesForExport(state.cornerExportIndex, state.baseColors, state.triCount);
     const { modelXml, contentTypesXml, relsXml } = ThreeMFWriter.buildModelFromScratch([
-      { objectId: 2, vertices: state.exportVertices, triangulos: triangulos }
+      { objectId: 2, vertices: state.exportVertices, triangles: triangulos }
     ]);
 
     const zip = new JSZip();

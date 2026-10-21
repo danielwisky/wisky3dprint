@@ -14,39 +14,39 @@ new Function(source)();
 
 const { mapMeshCopies, triangleCopies } = window.Wisky3D.ModelParser;
 
-function malha(path, objectId, n) {
+function mesh(path, objectId, n) {
   return Array.from({ length: n }, (_, localIndex) => ({ path, objectId, rootObjectId: objectId, localIndex }));
 }
 
 test("mapMeshCopies devolve null quando nenhuma malha aparece duas vezes", () => {
-  const origins = [...malha("3D/3dmodel.model", "1", 3), ...malha("3D/3dmodel.model", "2", 2)];
+  const origins = [...mesh("3D/3dmodel.model", "1", 3), ...mesh("3D/3dmodel.model", "2", 2)];
 
   assert.equal(mapMeshCopies(origins), null);
 });
 
 test("triangleCopies liga o mesmo triângulo de origem em cada cópia da malha", () => {
   // objeto 1 com 3 triângulos instanciado duas vezes, com o objeto 2 no meio
-  const origins = [...malha("a", "1", 3), ...malha("a", "2", 2), ...malha("a", "1", 3)];
+  const origins = [...mesh("a", "1", 3), ...mesh("a", "2", 2), ...mesh("a", "1", 3)];
 
-  const mapa = mapMeshCopies(origins);
+  const copyMap = mapMeshCopies(origins);
 
-  assert.deepEqual(triangleCopies(mapa, 0), [5]);
-  assert.deepEqual(triangleCopies(mapa, 2), [7]);
-  assert.deepEqual(triangleCopies(mapa, 6), [1]);
-  assert.deepEqual(triangleCopies(mapa, 3), [], "objeto 2 só aparece uma vez");
+  assert.deepEqual(triangleCopies(copyMap, 0), [5]);
+  assert.deepEqual(triangleCopies(copyMap, 2), [7]);
+  assert.deepEqual(triangleCopies(copyMap, 6), [1]);
+  assert.deepEqual(triangleCopies(copyMap, 3), [], "objeto 2 só aparece uma vez");
 });
 
 test("triangleCopies funciona com três cópias seguidas da mesma malha", () => {
-  const origins = [...malha("a", "1", 2), ...malha("a", "1", 2), ...malha("a", "1", 2)];
+  const origins = [...mesh("a", "1", 2), ...mesh("a", "1", 2), ...mesh("a", "1", 2)];
 
-  const mapa = mapMeshCopies(origins);
+  const copyMap = mapMeshCopies(origins);
 
-  assert.deepEqual(triangleCopies(mapa, 1), [3, 5]);
-  assert.deepEqual(triangleCopies(mapa, 4), [0, 2]);
+  assert.deepEqual(triangleCopies(copyMap, 1), [3, 5]);
+  assert.deepEqual(triangleCopies(copyMap, 4), [0, 2]);
 });
 
 test("mesmo objectId em arquivos diferentes não é cópia", () => {
-  const origins = [...malha("3D/Objects/a.model", "1", 2), ...malha("3D/Objects/b.model", "1", 2)];
+  const origins = [...mesh("3D/Objects/a.model", "1", 2), ...mesh("3D/Objects/b.model", "1", 2)];
 
   assert.equal(mapMeshCopies(origins), null);
 });

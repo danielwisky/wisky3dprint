@@ -10,11 +10,11 @@
   // Liga o <input type="file"> e a área de arrastar a um único callback. O
   // input é limpo a cada escolha: sem isso, escolher de novo o mesmo arquivo
   // (ex.: depois de um erro) não dispara "change".
-  function bindDropzone(dropzone, input, aoEscolher) {
+  function bindDropzone(dropzone, input, onSelect) {
     input.addEventListener("change", function () {
       var file = input.files && input.files[0];
       input.value = "";
-      aoEscolher(file);
+      onSelect(file);
     });
 
     ["dragenter", "dragover"].forEach(function (evt) {
@@ -30,7 +30,7 @@
     });
     dropzone.addEventListener("drop", function (e) {
       e.preventDefault();
-      aoEscolher(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]);
+      onSelect(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]);
     });
   }
 
@@ -38,10 +38,10 @@
   // segundo arquivo antes do primeiro terminar, o resultado atrasado do
   // primeiro é descartado em vez de sobrescrever o do segundo.
   function createSequencer() {
-    var atual = 0;
+    var current = 0;
     return {
-      next: function () { return ++atual; },
-      isCurrent: function (id) { return id === atual; }
+      next: function () { return ++current; },
+      isCurrent: function (id) { return id === current; }
     };
   }
 
@@ -53,7 +53,7 @@
     }
     var ModelParser = window.Wisky3D.ModelParser;
 
-    function texto(entry) {
+    function readText(entry) {
       return entry ? entry.async("text") : Promise.resolve(null);
     }
 
@@ -63,7 +63,7 @@
       var modelSettingsFile = ModelParser.findUniqueFile(zip, "model_settings.config");
       var sliceInfoFile = ModelParser.findUniqueFile(zip, "slice_info.config");
 
-      return Promise.all([texto(modelFile), texto(configFile), texto(modelSettingsFile), texto(sliceInfoFile)]).then(function (r) {
+      return Promise.all([readText(modelFile), readText(configFile), readText(modelSettingsFile), readText(sliceInfoFile)]).then(function (r) {
         return {
           zip: zip,
           modelPath: modelFile ? modelFile.name : null,

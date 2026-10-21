@@ -34,29 +34,29 @@ test("mapTrianglesToPlates agrupa triangulos por chapa de acordo com objectId", 
     origin("2", 1),
     origin("3", 1)
   ];
-  const chapas = [
-    { indice: 1, objectIds: new Set(["1", "2"]) },
-    { indice: 2, objectIds: new Set(["3"]) }
+  const plates = [
+    { index: 1, objectIds: new Set(["1", "2"]) },
+    { index: 2, objectIds: new Set(["3"]) }
   ];
 
-  const resultado = ModelParser.mapTrianglesToPlates(triangleOrigins, chapas);
+  const result = ModelParser.mapTrianglesToPlates(triangleOrigins, plates);
 
-  assert.ok(resultado instanceof Map, "resultado deve ser um Map");
-  assert.deepEqual(resultado.get(1), [0, 1, 2, 4], "chapa 1 agrupa os triangulos dos objectIds 1 e 2");
-  assert.deepEqual(resultado.get(2), [3, 5], "chapa 2 agrupa os triangulos do objectId 3");
+  assert.ok(result instanceof Map, "resultado deve ser um Map");
+  assert.deepEqual(result.get(1), [0, 1, 2, 4], "chapa 1 agrupa os triangulos dos objectIds 1 e 2");
+  assert.deepEqual(result.get(2), [3, 5], "chapa 2 agrupa os triangulos do objectId 3");
 });
 
 test("mapTrianglesToPlates ignora triangulos cujo objectId não bate com nenhuma chapa", () => {
   const triangleOrigins = [origin("1", 0), origin("99", 0), origin("2", 0)];
-  const chapas = [
-    { indice: 1, objectIds: new Set(["1"]) },
-    { indice: 2, objectIds: new Set(["2"]) }
+  const plates = [
+    { index: 1, objectIds: new Set(["1"]) },
+    { index: 2, objectIds: new Set(["2"]) }
   ];
 
-  const resultado = ModelParser.mapTrianglesToPlates(triangleOrigins, chapas);
+  const result = ModelParser.mapTrianglesToPlates(triangleOrigins, plates);
 
-  assert.deepEqual(resultado.get(1), [0]);
-  assert.deepEqual(resultado.get(2), [2]);
+  assert.deepEqual(result.get(1), [0]);
+  assert.deepEqual(result.get(2), [2]);
 });
 
 test("mapTrianglesToPlates usa rootObjectId (build item de topo), não objectId do object-folha", () => {
@@ -69,27 +69,27 @@ test("mapTrianglesToPlates usa rootObjectId (build item de topo), não objectId 
     origin("10-a", 1, "10"),
     origin("20", 0, "20")
   ];
-  const chapas = [
-    { indice: 1, objectIds: new Set(["10"]) },
-    { indice: 2, objectIds: new Set(["20"]) }
+  const plates = [
+    { index: 1, objectIds: new Set(["10"]) },
+    { index: 2, objectIds: new Set(["20"]) }
   ];
 
-  const resultado = ModelParser.mapTrianglesToPlates(triangleOrigins, chapas);
+  const result = ModelParser.mapTrianglesToPlates(triangleOrigins, plates);
 
-  assert.deepEqual(resultado.get(1), [0, 1], "chapa 1 agrupa os triangulos do component aninhado pelo rootObjectId");
-  assert.deepEqual(resultado.get(2), [2]);
+  assert.deepEqual(result.get(1), [0, 1], "chapa 1 agrupa os triangulos do component aninhado pelo rootObjectId");
+  assert.deepEqual(result.get(2), [2]);
 });
 
 test("mapTrianglesToPlates com lista de origins vazia retorna grupos vazios", () => {
-  const chapas = [
-    { indice: 1, objectIds: new Set(["1"]) },
-    { indice: 2, objectIds: new Set(["2"]) }
+  const plates = [
+    { index: 1, objectIds: new Set(["1"]) },
+    { index: 2, objectIds: new Set(["2"]) }
   ];
 
-  const resultado = ModelParser.mapTrianglesToPlates([], chapas);
+  const result = ModelParser.mapTrianglesToPlates([], plates);
 
-  assert.deepEqual(resultado.get(1), []);
-  assert.deepEqual(resultado.get(2), []);
+  assert.deepEqual(result.get(1), []);
+  assert.deepEqual(result.get(2), []);
 });
 
 test("mapTrianglesToPlates não atribui a nenhuma chapa quando o rootObjectId é ambíguo (aparece em mais de uma)", () => {
@@ -100,13 +100,13 @@ test("mapTrianglesToPlates não atribui a nenhuma chapa quando o rootObjectId é
   // match vence", que silenciosamente roubava triângulos de uma chapa pra
   // outra).
   const triangleOrigins = [origin("1", 0), origin("2", 0), origin("1", 1)];
-  const chapas = [
-    { indice: 1, objectIds: new Set(["1"]) },
-    { indice: 2, objectIds: new Set(["1", "2"]) }
+  const plates = [
+    { index: 1, objectIds: new Set(["1"]) },
+    { index: 2, objectIds: new Set(["1", "2"]) }
   ];
 
-  const resultado = ModelParser.mapTrianglesToPlates(triangleOrigins, chapas);
+  const result = ModelParser.mapTrianglesToPlates(triangleOrigins, plates);
 
-  assert.deepEqual(resultado.get(1), [], "chapa 1 não recebe o id ambíguo");
-  assert.deepEqual(resultado.get(2), [1], "chapa 2 só recebe o triângulo do id não ambíguo (\"2\")");
+  assert.deepEqual(result.get(1), [], "chapa 1 não recebe o id ambíguo");
+  assert.deepEqual(result.get(2), [1], "chapa 2 só recebe o triângulo do id não ambíguo (\"2\")");
 });

@@ -78,27 +78,27 @@ const plate2Model = `<?xml version="1.0"?>
 test("extractTriangles3MF resolve <item p:path> pro arquivo externo em vez do object do root", () => {
   const zip = fakeZip({ "3D/Objects/object_1.model": plate2Model });
 
-  return ModelParser.extractTriangles3MF(zip, rootModel, "3D/3dmodel.model").then((resultado) => {
-    assert.equal(resultado.triangulos.length, 2, "deve extrair os triângulos dos 2 items (chapa 1 e chapa 2)");
-    assert.equal(resultado.origins[0].path, "3D/3dmodel.model", "1º item (sem p:path) vem do root");
+  return ModelParser.extractTriangles3MF(zip, rootModel, "3D/3dmodel.model").then((result) => {
+    assert.equal(result.triangles.length, 2, "deve extrair os triângulos dos 2 items (chapa 1 e chapa 2)");
+    assert.equal(result.origins[0].path, "3D/3dmodel.model", "1º item (sem p:path) vem do root");
     assert.equal(
-      resultado.origins[1].path,
+      result.origins[1].path,
       "3D/Objects/object_1.model",
       "2º item (com p:path) deve vir do arquivo externo, não ser confundido com o object id=1 do root"
     );
-    assert.equal(resultado.triangulos[1][0][0], 50, "geometria do 2º item deve ser a do arquivo externo (x=50), não a do root (x=0)");
+    assert.equal(result.triangles[1][0][0], 50, "geometria do 2º item deve ser a do arquivo externo (x=50), não a do root (x=0)");
   });
 });
 
 test("parse3MFPackage resolve <item p:path> pro arquivo externo ao agregar bbox/volume", () => {
   const zip = fakeZip({ "3D/Objects/object_1.model": plate2Model });
 
-  return ModelParser.parse3MFPackage(zip, rootModel).then((resultado) => {
-    assert.equal(resultado.triangleCount, 2, "deve contar os triângulos dos 2 items");
-    assert.equal(resultado.itens.length, 2);
+  return ModelParser.parse3MFPackage(zip, rootModel).then((result) => {
+    assert.equal(result.triangleCount, 2, "deve contar os triângulos dos 2 items");
+    assert.equal(result.items.length, 2);
     // bbox do 2º item deve refletir a geometria do arquivo externo (x em torno de 50),
     // não ser idêntico ao bbox do 1º item (x em torno de 0).
-    assert.ok(resultado.itens[1].bbox.minX >= 50, "bbox do 2º item deve vir do arquivo externo");
+    assert.ok(result.items[1].bbox.minX >= 50, "bbox do 2º item deve vir do arquivo externo");
   });
 });
 
@@ -127,9 +127,9 @@ test("extractTriangles3MF converte unidade escalando cada vértice uma vez só, 
   <build><item objectid="1"/></build>
 </model>`;
 
-  return ModelParser.extractTriangles3MF(fakeZip({}), rootModel, "3D/3dmodel.model").then((resultado) => {
-    const coordenadas = resultado.triangulos.flat().flat();
-    assert.equal(Math.max(...coordenadas), 10, "1 cm vira 10 mm");
-    assert.deepEqual(resultado.triangulos[3], [[10, 0, 0], [0, 10, 0], [0, 0, 10]]);
+  return ModelParser.extractTriangles3MF(fakeZip({}), rootModel, "3D/3dmodel.model").then((result) => {
+    const coordinates = result.triangles.flat().flat();
+    assert.equal(Math.max(...coordinates), 10, "1 cm vira 10 mm");
+    assert.deepEqual(result.triangles[3], [[10, 0, 0], [0, 10, 0], [0, 0, 10]]);
   });
 });

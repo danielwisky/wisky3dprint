@@ -616,7 +616,7 @@
   var perfilDoArquivo = null;
 
   function densidadeAtual() {
-    if (perfilDoArquivo) return perfilDoArquivo.densidade;
+    if (perfilDoArquivo) return perfilDoArquivo.density;
     if (materialSelect.value === "outro") {
       return parseMedida(densidadeInput.value);
     }
@@ -712,12 +712,12 @@
       (bbox.maxZ - bbox.minZ).toFixed(1) + " mm";
     modeloVolumeOut.textContent = (volumeMm3 / 1000).toFixed(2) + " cm³";
     if (perfilDoArquivo) {
-      modeloDensidadeOut.textContent = perfilDoArquivo.densidade + " g/cm³";
+      modeloDensidadeOut.textContent = perfilDoArquivo.density + " g/cm³";
       modeloDensidadeRow.hidden = false;
       // Perfil do fatiador embutido no 3MF (Bambu/Orca): usa como ponto de
       // partida quando disponível, mas continua editável: o usuário pode
       // ajustar antes de calcular.
-      if (perfilDoArquivo.paredes) paredesInput.value = perfilDoArquivo.paredes;
+      if (perfilDoArquivo.walls) paredesInput.value = perfilDoArquivo.walls;
       if (perfilDoArquivo.infillPct != null) infillInput.value = perfilDoArquivo.infillPct;
     } else {
       modeloDensidadeRow.hidden = true;

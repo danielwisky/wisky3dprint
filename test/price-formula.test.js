@@ -11,34 +11,34 @@ global.window = global;
 new Function(source)();
 
 test("calculateBaseSubtotal soma filamento + energia + desgaste", () => {
-  const resultado = window.Wisky3D.calculateBaseSubtotal({
-    pesoG: 100,
-    horas: 4,
-    filamentoKg: 90,
-    potenciaW: 150,
-    tarifaKwh: 0.8,
-    desgaste: 5
+  const result = window.Wisky3D.calculateBaseSubtotal({
+    weightG: 100,
+    hours: 4,
+    filamentPricePerKg: 90,
+    powerW: 150,
+    kwhRate: 0.8,
+    wear: 5
   });
 
-  assert.equal(resultado.custoFilamento, 9);
-  assert.equal(resultado.energia, 0.48);
-  assert.equal(resultado.desgaste, 5);
-  assert.ok(Math.abs(resultado.subtotal - 14.48) < 1e-9);
+  assert.equal(result.filamentCost, 9);
+  assert.equal(result.energy, 0.48);
+  assert.equal(result.wear, 5);
+  assert.ok(Math.abs(result.subtotal - 14.48) < 1e-9);
 });
 
 test("calculateBaseSubtotal com peso, tempo ou desgaste zero", () => {
-  const resultado = window.Wisky3D.calculateBaseSubtotal({
-    pesoG: 0,
-    horas: 0,
-    filamentoKg: 90,
-    potenciaW: 150,
-    tarifaKwh: 0.8,
-    desgaste: 0
+  const result = window.Wisky3D.calculateBaseSubtotal({
+    weightG: 0,
+    hours: 0,
+    filamentPricePerKg: 90,
+    powerW: 150,
+    kwhRate: 0.8,
+    wear: 0
   });
 
-  assert.equal(resultado.custoFilamento, 0);
-  assert.equal(resultado.energia, 0);
-  assert.equal(resultado.subtotal, 0);
+  assert.equal(result.filamentCost, 0);
+  assert.equal(result.energy, 0);
+  assert.equal(result.subtotal, 0);
 });
 
 test("parsePtBrNumber converte vírgula decimal", () => {

@@ -23,10 +23,10 @@ window.Wisky3D.parsePtBrNumber = function (value) {
   // toFixed()). Um grupo de milhar sempre tem exatamente 3 dígitos após
   // o ponto ("3.000"); se o último grupo tiver 1 ou 2 dígitos ("174.9"),
   // é decimal, não milhar.
-  var partes = str.split(".");
-  if (partes.length > 1 && partes[partes.length - 1].length !== 3) {
-    var decimal = partes.pop();
-    return parseFloat(partes.join("") + "." + decimal);
+  var parts = str.split(".");
+  if (parts.length > 1 && parts[parts.length - 1].length !== 3) {
+    var decimal = parts.pop();
+    return parseFloat(parts.join("") + "." + decimal);
   }
   return parseFloat(str.replace(/\./g, ""));
 };
@@ -43,15 +43,15 @@ window.Wisky3D.parsePtBrMeasure = function (value) {
   return parseFloat(str);
 };
 
-// pesoG, horas, filamentoKg, potenciaW, tarifaKwh, desgaste (custo fixo de desgaste da impressora)
+// weightG, hours, filamentPricePerKg, powerW, kwhRate, wear (custo fixo de desgaste da impressora)
 window.Wisky3D.calculateBaseSubtotal = function (params) {
-  var custoFilamento = (params.pesoG / 1000) * params.filamentoKg;
-  var energia = (params.potenciaW * params.horas / 1000) * params.tarifaKwh;
-  var desgaste = params.desgaste;
+  var filamentCost = (params.weightG / 1000) * params.filamentPricePerKg;
+  var energy = (params.powerW * params.hours / 1000) * params.kwhRate;
+  var wear = params.wear;
   return {
-    custoFilamento: custoFilamento,
-    energia: energia,
-    desgaste: desgaste,
-    subtotal: custoFilamento + energia + desgaste
+    filamentCost: filamentCost,
+    energy: energy,
+    wear: wear,
+    subtotal: filamentCost + energy + wear
   };
 };

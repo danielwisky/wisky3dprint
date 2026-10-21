@@ -33,12 +33,12 @@ window.Wisky3D = window.Wisky3D || {};
     }
 
     var base = window.Wisky3D.calculateBaseSubtotal({
-      pesoG: e.pesoG,
-      horas: e.horas,
-      filamentoKg: e.filamentoKg,
-      potenciaW: e.potenciaW,
-      tarifaKwh: e.tarifaKwh,
-      desgaste: e.desgaste
+      weightG: e.pesoG,
+      hours: e.horas,
+      filamentPricePerKg: e.filamentoKg,
+      powerW: e.potenciaW,
+      kwhRate: e.tarifaKwh,
+      wear: e.desgaste
     });
     var subtotal = base.subtotal + e.hardware;
     var perda = subtotal * (e.perdaPct / 100);
@@ -50,9 +50,9 @@ window.Wisky3D = window.Wisky3D || {};
       qtd: e.qtd,
       pesoG: e.pesoG,
       tempoH: e.horas,
-      custoFilamento: base.custoFilamento,
-      energia: base.energia,
-      desgaste: base.desgaste,
+      custoFilamento: base.filamentCost,
+      energia: base.energy,
+      desgaste: base.wear,
       hardware: e.hardware,
       embalagem: e.embalagem,
       frete: e.frete,
