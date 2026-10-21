@@ -1008,17 +1008,27 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
       if (MAPAS_DE_BICO.indexOf(k) !== -1 && !Object.prototype.hasOwnProperty.call(baseDestino, k)) return;
       novo[k] = config[k];
     });
-    var variantesDestino = baseDestino.printer_extruder_variant || baseDestino.extruder_variant_list || baseDestino.print_extruder_variant || [];
+    limitarFilamentMap(novo, baseDestino);
+    ajustarVariantesDeProcesso(novo, config, baseDestino);
+    ajustarVariantesDeFilamento(novo, config, baseDestino);
+    return novo;
+  }
 
-    // filament_map aponta cada filamento para um extrusor (1, 2...); os que
-    // o destino não tem vão para o primeiro.
+  // filament_map aponta cada filamento para um extrusor (1, 2...); os que
+  // o destino não tem vão para o primeiro.
+  function limitarFilamentMap(novo, baseDestino) {
     var qtdExtrusores = [].concat(baseDestino.nozzle_diameter || []).length;
     if (Array.isArray(novo.filament_map) && qtdExtrusores) {
       novo.filament_map = novo.filament_map.map(function (v) {
         return parseInt(v, 10) > qtdExtrusores ? "1" : v;
       });
     }
+  }
 
+  // Um valor por print_extruder_variant: escolhe, para cada variante do
+  // destino, o índice da origem com a mesma variante (e o mesmo extrusor,
+  // quando os dois lados informam print_extruder_id).
+  function ajustarVariantesDeProcesso(novo, config, baseDestino) {
     var pev = config.print_extruder_variant;
     var pid = config.print_extruder_id;
     if (Array.isArray(pev) && pev.length) {
@@ -1045,7 +1055,12 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
         novo.print_extruder_id = did ? did.slice() : escolhidos.map(function (i) { return pid ? pid[i] : "1"; });
       }
     }
+  }
 
+  // filament_self_index diz de que filamento é cada valor. Ficam os valores
+  // das variantes do destino, ou o primeiro de cada filamento.
+  function ajustarVariantesDeFilamento(novo, config, baseDestino) {
+    var variantesDestino = baseDestino.printer_extruder_variant || baseDestino.extruder_variant_list || baseDestino.print_extruder_variant || [];
     var fev = config.filament_extruder_variant;
     var fsi = config.filament_self_index;
     if (Array.isArray(fev) && Array.isArray(fsi) && fev.length === fsi.length) {
@@ -1087,7 +1102,6 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
         novo.filament_self_index = novoIndice;
       }
     }
-    return novo;
   }
 
   // Com mais de um bico, flush_volumes_matrix tem uma matriz de purga
