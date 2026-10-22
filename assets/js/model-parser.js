@@ -1370,6 +1370,33 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     return adjusted;
   }
 
+  // Opções que o projeto de origem nem tem (só existem no fatiador de
+  // destino) vêm do perfil de destino, como numa importação manual. Sem
+  // isso, o fatiador usa os padrões genéricos dele: um projeto da Bambu
+  // aberto no Flash Studio ficava com cone da torre de purga de 30° e
+  // prime_volume 45, em vez dos 12° e 30 do perfil da Creator 5. Listas com
+  // um valor por filamento do perfil são repetidas (primeiro valor) até a
+  // quantidade de filamentos do projeto. Devolve uma cópia de `config`.
+  function fillMissingFromProfile(config, targetBase) {
+    const filled = {};
+    Object.keys(config).forEach(function (k) {
+      filled[k] = config[k];
+    });
+    const profileFilaments = [].concat(targetBase.filament_colour || []).length;
+    const projectFilaments = [].concat(config.filament_colour || []).length || profileFilaments;
+    Object.keys(targetBase).forEach(function (k) {
+      if (Object.prototype.hasOwnProperty.call(config, k)) return;
+      const value = targetBase[k];
+      if (Array.isArray(value) && profileFilaments && value.length === profileFilaments) {
+        filled[k] = [];
+        for (let i = 0; i < projectFilaments; i++) filled[k].push(value.length ? value[0] : "");
+        return;
+      }
+      filled[k] = Array.isArray(value) ? value.slice() : value;
+    });
+    return filled;
+  }
+
   // Agrupa índices de triângulo por chapa, numa única varredura de
   // `triangleOrigins` (formato `{path, objectId, rootObjectId, localIndex}`
   // por triângulo, ver resolveObjectTriangles/extractTriangles3MF). Pra cada
@@ -1515,6 +1542,7 @@ if (typeof window.DOMParser === "undefined" && typeof require !== "undefined") {
     repositionTowers: repositionTowers,
     adjustNozzleVariants: adjustNozzleVariants,
     adjustFlushPerNozzle: adjustFlushPerNozzle,
+    fillMissingFromProfile: fillMissingFromProfile,
     footprintsByPlate: footprintsByPlate,
     placeTowers: placeTowers,
     mapMeshCopies: mapMeshCopies,

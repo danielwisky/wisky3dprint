@@ -638,6 +638,7 @@
     if (slicerVersion(targetProfile)) result.version = slicerVersion(targetProfile);
     translateValuesByFamily(result, targetProfile);
     applyFilamentFields(result, originalConfig, targetProfile);
+    Object.assign(result, ModelParser.fillMissingFromProfile(result, targetProfile.base));
     let towers = null;
     if (geometry && geometry.items) {
       const plateCount = [].concat(originalConfig.wipe_tower_x == null ? [] : originalConfig.wipe_tower_x).length;
