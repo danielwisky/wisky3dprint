@@ -71,7 +71,7 @@ a {
   transition: color 0.2s ease, opacity 0.2s ease;
 
   &:hover {
-    color: color-mix(in srgb, var(--cyan) 88%, white);
+    color: var(--link-hover);
   }
 }
 

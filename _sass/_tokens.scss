@@ -25,6 +25,7 @@ $nav-h: 72px;
   --danger: #ff6b6b;
   --glow-cyan: var(--cyan);
   --glow-coral: var(--coral);
+  --link-hover: color-mix(in srgb, var(--cyan) 88%, white);
 
   --surface: rgba(255, 255, 255, 0.035);
   --surface-soft: rgba(255, 255, 255, 0.02);
@@ -66,6 +67,7 @@ $nav-h: 72px;
   --danger: #c62828;
   --glow-cyan: #009b8a;
   --glow-coral: #e0492b;
+  --link-hover: #005c52;
 
   --surface: rgba(60, 40, 20, 0.04);
   --surface-soft: rgba(60, 40, 20, 0.025);
