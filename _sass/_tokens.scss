@@ -22,6 +22,10 @@ $nav-h: 72px;
   --cyan: #00e5cc;
   --coral: #ff6b4a;
   --violet: #8b7cf6;
+  --danger: #ff6b6b;
+  --glow-cyan: var(--cyan);
+  --glow-coral: var(--coral);
+  --link-hover: color-mix(in srgb, var(--cyan) 88%, white);
 
   --surface: rgba(255, 255, 255, 0.035);
   --surface-soft: rgba(255, 255, 255, 0.02);
@@ -57,28 +61,32 @@ $nav-h: 72px;
   // contraste pra manter ≥ 4.5:1 (WCAG AA) com essa mesma cor de base.
   --muted-soft: rgba(92, 100, 119, 0.92);
 
-  --cyan: #009b8a;
-  --coral: #e0492b;
+  --cyan: #00766a;
+  --coral: #c4381c;
   --violet: #6a4bd6;
+  --danger: #c62828;
+  --glow-cyan: #009b8a;
+  --glow-coral: #e0492b;
+  --link-hover: #005c52;
 
-  --surface: rgba(20, 20, 30, 0.04);
-  --surface-soft: rgba(20, 20, 30, 0.025);
-  --surface-hover: rgba(20, 20, 30, 0.07);
-  --border: rgba(20, 20, 30, 0.09);
-  --border-strong: rgba(20, 20, 30, 0.14);
+  --surface: rgba(60, 40, 20, 0.04);
+  --surface-soft: rgba(60, 40, 20, 0.025);
+  --surface-hover: rgba(60, 40, 20, 0.07);
+  --border: rgba(60, 40, 20, 0.09);
+  --border-strong: rgba(60, 40, 20, 0.14);
 
   --on-accent: #ffffff;
 
-  --grid-line: rgba(20, 20, 40, 0.05);
-  --section-tint: rgba(20, 20, 40, 0.02);
+  --grid-line: rgba(45, 30, 15, 0.05);
+  --section-tint: rgba(45, 30, 15, 0.02);
 
-  --shadow-strong: rgba(20, 20, 40, 0.18);
-  --shadow-soft: rgba(20, 20, 40, 0.1);
+  --shadow-strong: rgba(45, 30, 15, 0.18);
+  --shadow-soft: rgba(45, 30, 15, 0.1);
 
   --surface-elev: rgba(250, 246, 241, 0.82);
   --surface-elev-strong: rgba(250, 246, 241, 0.96);
-  --surface-overlay-image: rgba(20, 20, 40, 0.32);
-  --modal-backdrop: rgba(20, 20, 40, 0.55);
+  --surface-overlay-image: rgba(45, 30, 15, 0.32);
+  --modal-backdrop: rgba(45, 30, 15, 0.55);
   --modal-figure-bg: #ede4d6;
 
   --gradient: linear-gradient(135deg, var(--cyan) 0%, var(--violet) 50%, var(--coral) 100%);

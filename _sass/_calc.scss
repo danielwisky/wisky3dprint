@@ -179,7 +179,7 @@
 }
 .calc-model-error {
   font-size: 0.85rem;
-  color: #e05656;
+  color: var(--danger);
 }
 .calc-model-done {
   display: flex;
@@ -222,7 +222,7 @@
   cursor: pointer;
 }
 .calc-model-badge-remove {
-  color: #e05656;
+  color: var(--danger);
 }
 .calc-modal-backdrop {
   position: fixed;
