@@ -97,12 +97,12 @@
 
 .step-pipeline-item:hover .step-marker {
   transform: translateY(-4px);
-  box-shadow: 0 8px 28px color-mix(in srgb, var(--cyan) 18%, transparent);
+  box-shadow: 0 8px 28px color-mix(in srgb, var(--glow-cyan) 18%, transparent);
   border-color: color-mix(in srgb, var(--cyan) 60%, transparent);
 }
 
 .step-pipeline-item:hover .step-marker-finish {
-  box-shadow: 0 8px 28px color-mix(in srgb, var(--coral) 18%, transparent);
+  box-shadow: 0 8px 28px color-mix(in srgb, var(--glow-coral) 18%, transparent);
   border-color: color-mix(in srgb, var(--coral) 60%, transparent);
 }
 

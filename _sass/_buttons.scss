@@ -23,11 +23,11 @@
 .btn-gradient {
   background: var(--gradient);
   color: var(--on-accent);
-  box-shadow: 0 8px 32px color-mix(in srgb, var(--cyan) 22%, transparent);
+  box-shadow: 0 8px 32px color-mix(in srgb, var(--glow-cyan) 22%, transparent);
 
   &:hover {
     color: var(--on-accent);
-    box-shadow: 0 12px 40px color-mix(in srgb, var(--cyan) 32%, transparent);
+    box-shadow: 0 12px 40px color-mix(in srgb, var(--glow-cyan) 32%, transparent);
   }
 }
 
