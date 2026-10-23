@@ -44,7 +44,7 @@
   height: 420px;
   top: -80px;
   right: -60px;
-  background: var(--coral);
+  background: var(--glow-coral);
 }
 
 // O coral pesa mais que o ciano do brilho oposto; mais transparente equilibra.
@@ -57,7 +57,7 @@
   height: 360px;
   bottom: -40px;
   left: -80px;
-  background: var(--cyan);
+  background: var(--glow-cyan);
   animation-delay: -4s;
 }
 
