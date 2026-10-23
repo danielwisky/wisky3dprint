@@ -177,7 +177,7 @@
   border-color: color-mix(in srgb, var(--coral) 40%, var(--border));
 
   &.is-active {
-    color: #fff;
+    color: var(--on-accent);
     background: var(--coral);
   }
 }
