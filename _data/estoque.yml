@@ -190,6 +190,24 @@ pecas:
     tamanho_cm: 24
     descricao: "O gigante verde da Marvel em pose de força, com short roxo detalhado. Cerca de 24 cm."
 
+  - nome: "Homem-Aranha na Teia"
+    categorias: ["Personagens", "Marvel"]
+    pronta_entrega: false
+    imagem: "/assets/img/estoque/homem-aranha-teia-1.webp"
+    preco: 60
+    descricao: "O amigão da vizinhança pendurado de cabeça pra baixo no fio da teia. A teia encaixa na borda de prateleiras e o fio é articulado."
+
+  - nome: "Walter White (Breaking Bad)"
+    categorias: ["Personagens", "Breaking Bad"]
+    pronta_entrega: false
+    imagens:
+      - "/assets/img/estoque/walter-white-1.webp"
+      - "/assets/img/estoque/walter-white-2.webp"
+      - "/assets/img/estoque/walter-white-3.webp"
+      - "/assets/img/estoque/walter-white-4.webp"
+    preco: 82
+    descricao: "Heisenberg com o macacão amarelo de laboratório, luvas azuis e máscara de gás na cabeça. Os óculos são removíveis."
+
   - nome: "Luminária Rosa Encantada"
     categorias: ["Decoração"]
     pronta_entrega: false
