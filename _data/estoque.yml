@@ -115,6 +115,13 @@ pecas:
     tamanho_cm: 27
     descricao: "O bigodudo mais invocado do Looney Tunes em versão gangster de Birmingham. Cerca de 27 cm."
 
+  - nome: "Placa Ele Vive"
+    categorias: ["Decoração"]
+    pronta_entrega: true
+    imagem: "/assets/img/estoque/placa-ele-vive-1.webp"
+    preco: 40
+    descricao: "Letreiro “Ele Vive” com coroa de espinhos e um mini Jesus sentado na letra “e”. O “Vive” em letra cursiva branca contrasta com o “Ele” em tom terroso."
+
   - nome: "Coringa (Joker)"
     categorias: ["Personagens", "Urban Vibes", "DC"]
     pronta_entrega: false
