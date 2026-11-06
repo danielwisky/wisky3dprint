@@ -54,7 +54,7 @@ pecas:
       - "/assets/img/estoque/blastoise-3.webp"
     preco: 217
     tamanho_cm: 26
-    descricao: "O Pokémon tanque em versão urbana, com jaqueta, corrente e correntão. Detalhes pintados à mão."
+    descricao: "Blastoise em versão street style, com jaqueta e correntão. Pintado à mão."
 
   - nome: "Goku"
     categorias: ["Personagens", "Dragon Ball"]
@@ -65,7 +65,7 @@ pecas:
       - "/assets/img/estoque/goku-2.webp"
     preco: 110
     tamanho_cm: 32
-    descricao: "O guerreiro Saiyajin mais famoso do anime em pose de luta. Cerca de 32 cm."
+    descricao: "Goku, o guerreiro Saiyajin, em pose de luta."
 
   - nome: "Haaland"
     categorias: ["Personagens", "Futebol"]
@@ -76,7 +76,7 @@ pecas:
       - "/assets/img/estoque/haaland-3.webp"
     preco: 80
     tamanho_cm: 20
-    descricao: "O atacante mais carrancudo do futebol em versão caricata correndo pra frente. Cerca de 20 cm."
+    descricao: "Haaland em versão caricata, em plena corrida."
 
   - nome: "Pikachu Cosplay Angel (Stitch)"
     categorias: ["Personagens", "Pokémon"]
@@ -87,7 +87,7 @@ pecas:
       - "/assets/img/estoque/pikachu-stitch-3.webp"
     preco: 95
     tamanho_cm: 20
-    descricao: "O Pikachu mais fofo vestido de Angel, a Stitch rosa. Cerca de 20 cm, com textura de tricô caprichada e detalhes pintados à mão."
+    descricao: "Pikachu vestido de Angel, a namorada do Stitch, com textura de tricô e detalhes pintados à mão."
 
   - nome: "Taz Peaky Blinders"
     categorias: ["Personagens", "Urban Vibes", "Looney Tunes"]
@@ -100,7 +100,7 @@ pecas:
       - "/assets/img/estoque/taz-1.webp"
     preco: 265
     tamanho_cm: 33
-    descricao: "O redemoinho mais selvagem do Looney Tunes na pele dos Peaky Blinders. Cerca de 33 cm, com acabamento caprichado."
+    descricao: "Taz, dos Looney Tunes, caracterizado como integrante dos Peaky Blinders."
 
   - nome: "Yosemite Sam Peaky Blinders"
     categorias: ["Personagens", "Urban Vibes", "Looney Tunes"]
@@ -113,14 +113,14 @@ pecas:
       - "/assets/img/estoque/sam-1.webp"
     preco: 165
     tamanho_cm: 27
-    descricao: "O bigodudo mais invocado do Looney Tunes em versão gangster de Birmingham. Cerca de 27 cm."
+    descricao: "Yosemite Sam, dos Looney Tunes, em versão gangster dos Peaky Blinders."
 
   - nome: "Placa Ele Vive"
     categorias: ["Decoração"]
     pronta_entrega: true
     imagem: "/assets/img/estoque/placa-ele-vive-1.webp"
     preco: 40
-    descricao: "Letreiro “Ele Vive” com coroa de espinhos e um mini Jesus sentado na letra “e”. O “Vive” em letra cursiva branca contrasta com o “Ele” em tom terroso."
+    descricao: "Letreiro “Ele Vive” com coroa de espinhos e um mini Jesus sentado na letra “e”."
 
   - nome: "Coringa (Joker)"
     categorias: ["Personagens", "Urban Vibes", "DC"]
@@ -132,7 +132,7 @@ pecas:
       - "/assets/img/estoque/joker-2.webp"
     preco: 265
     tamanho_cm: 27
-    descricao: "O Príncipe Palhaço do Crime sobre o baú temático, que também é porta-objetos. Cerca de 27 cm."
+    descricao: "Coringa sobre um baú temático, que também funciona como porta-objetos."
 
   - nome: "Scorpion (Mortal Kombat)"
     categorias: ["Personagens", "Mortal Kombat"]
@@ -140,7 +140,7 @@ pecas:
     imagem: "/assets/img/estoque/scorpion.webp"
     preco: 160
     tamanho_cm: 30
-    descricao: "Get over here! O ninja mais icônico dos games de luta. Cerca de 30 cm."
+    descricao: "Scorpion, o ninja de Mortal Kombat."
 
   - nome: "R2-D2 (Star Wars)"
     categorias: ["Personagens", "Star Wars"]
@@ -150,7 +150,7 @@ pecas:
     imagem: "/assets/img/estoque/r2d2.webp"
     preco: 290
     tamanho_cm: 30
-    descricao: "O droide mais corajoso da galáxia, cheio de detalhes. Cerca de 30 cm."
+    descricao: "Figura do droide R2-D2, de Star Wars."
 
   - nome: "Sabre de Luz do Obi-Wan"
     categorias: ["Star Wars", "Sabres de Luz"]
@@ -158,7 +158,7 @@ pecas:
     imagem: "/assets/img/estoque/sabre-obi-wan.webp"
     preco: 100
     tamanho_cm: 28
-    descricao: "Réplica decorativa do sabre do mestre Jedi. Cerca de 28 cm."
+    descricao: "Réplica decorativa do sabre de luz de Obi-Wan Kenobi."
 
   - nome: "Sabre de Luz do Darth Vader"
     categorias: ["Star Wars", "Sabres de Luz"]
@@ -166,7 +166,7 @@ pecas:
     imagem: "/assets/img/estoque/sabre-darth-vader.webp"
     preco: 100
     tamanho_cm: 28
-    descricao: "Réplica do icônico sabre vermelho do Lorde Sith. Cerca de 28 cm."
+    descricao: "Réplica decorativa do sabre de luz de Darth Vader."
 
   - nome: "Sabre de Luz do Luke Skywalker"
     categorias: ["Star Wars", "Sabres de Luz"]
@@ -174,7 +174,7 @@ pecas:
     imagem: "/assets/img/estoque/sabre-luke.webp"
     preco: 100
     tamanho_cm: 28
-    descricao: "Réplica decorativa do sabre do jovem Jedi. Cerca de 28 cm."
+    descricao: "Réplica decorativa do sabre de luz de Luke Skywalker."
 
   - nome: "Earthworm Jim"
     categoria: "Personagens"
@@ -184,7 +184,7 @@ pecas:
       - "/assets/img/estoque/earthworm-jim-1.webp"
     preco: 110
     tamanho_cm: 19
-    descricao: "O minhocão super-herói pronto pra atirar com sua arma de fogo. Cerca de 19 cm."
+    descricao: "O herói minhoca dos videogames, com sua pistola de plasma."
 
   - nome: "Hulk"
     categorias: ["Personagens", "Marvel"]
@@ -195,14 +195,14 @@ pecas:
       - "/assets/img/estoque/hulk-3.webp"
     preco: 130
     tamanho_cm: 24
-    descricao: "O gigante verde da Marvel em pose de força, com short roxo detalhado. Cerca de 24 cm."
+    descricao: "Hulk, da Marvel, em pose de força."
 
   - nome: "Homem-Aranha na Teia"
     categorias: ["Personagens", "Marvel"]
     pronta_entrega: false
     imagem: "/assets/img/estoque/homem-aranha-teia-1.webp"
     preco: 60
-    descricao: "O amigão da vizinhança pendurado de cabeça pra baixo no fio da teia. A teia encaixa na borda de prateleiras e o fio é articulado."
+    descricao: "Homem-Aranha pendurado de cabeça para baixo no fio da teia. A teia encaixa na borda de prateleiras e o fio é articulado."
 
   - nome: "Walter White (Breaking Bad)"
     categorias: ["Personagens", "Breaking Bad"]
@@ -213,7 +213,7 @@ pecas:
       - "/assets/img/estoque/walter-white-3.webp"
       - "/assets/img/estoque/walter-white-4.webp"
     preco: 82
-    descricao: "Heisenberg com o macacão amarelo de laboratório, luvas azuis e máscara de gás na cabeça. Os óculos são removíveis."
+    descricao: "Walter White com macacão de laboratório, luvas e máscara de gás. Os óculos são removíveis."
 
   - nome: "Luminária Rosa Encantada"
     categorias: ["Decoração"]
@@ -223,7 +223,7 @@ pecas:
       - "/assets/img/estoque/luminaria-rosa-1.webp"
       - "/assets/img/estoque/luminaria-rosa-3.webp"
     preco: 100
-    descricao: "Inspirada no conto de A Bela e a Fera, com luz LED que ilumina a rosa por baixo da cúpula. Peça decorativa pronta para presentear."
+    descricao: "Luminária inspirada em A Bela e a Fera, com LED que ilumina a rosa sob a cúpula."
 
   - nome: "Arc Reactor MK1 (Homem de Ferro)"
     categorias: ["Marvel", "Decoração"]
@@ -234,7 +234,7 @@ pecas:
       - "/assets/img/estoque/arc-reactor-mk1-4.webp"
       - "/assets/img/estoque/arc-reactor-mk1-1.webp"
     preco: 110
-    descricao: "Réplica do reator arc Mark 1 do Homem de Ferro, com luz LED e base de apoio. Peça de decoração pronta para exibir."
+    descricao: "Réplica do reator Arc Mark 1 do Homem de Ferro, com LED e base de apoio."
 
   - nome: "Capivara Dormindo"
     categorias: ["Decoração", "Animais"]
@@ -244,16 +244,16 @@ pecas:
       - "/assets/img/estoque/capivara-dormindo-2.webp"
       - "/assets/img/estoque/capivara-dormindo-3.webp"
     preco: 50
-    descricao: "Capivara fofa dormindo enrolada em sua casquinha azul de bolinhas. Peça de decoração pronta para presentear."
+    descricao: "Capivara dormindo enrolada em uma casquinha."
 
-  - nome: "Dado do Mário Party"
+  - nome: "Dado do Mario Party"
     categorias: ["Jogos", "Acessórios"]
     pronta_entrega: false
     imagens:
       - "/assets/img/estoque/dado-mario-party-1.webp"
       - "/assets/img/estoque/dado-mario-party-2.webp"
     preco: 5
-    descricao: "Dado temático do Mário Party, com números dourados em relevo. Vendido individualmente."
+    descricao: "Dado temático do Mario Party, com números em relevo. Vendido individualmente."
 
   - nome: "Barco Funcional com Motor"
     categorias: ["Brinquedos", "Decoração"]
@@ -265,14 +265,14 @@ pecas:
       - "/assets/img/estoque/barco-2.webp"
     preco: 150
     tamanho_cm: 10
-    descricao: "Barquinho funcional que boia e navega sozinho, com motor a pilha. Cerca de 19 cm de comprimento e 10 cm de altura."
+    descricao: "Barco que boia e navega sozinho, com motor a pilha. Cerca de 19 cm de comprimento."
 
   - nome: "Caixa de Música Bailarina"
     categorias: ["Decoração"]
     pronta_entrega: false
     imagem: "/assets/img/estoque/caixa-musica-bailarina-1.webp"
     preco: 55
-    descricao: "Caixinha de música com bailarina giratória sobre base rosa em espiral. Peça decorativa delicada."
+    descricao: "Caixinha de música com bailarina giratória sobre base em espiral."
 
   - nome: "Relógio Cubo Cósmico Cronos"
     categorias: ["Decoração"]
@@ -282,7 +282,7 @@ pecas:
       - "/assets/img/estoque/relogio-cubo-cosmico-3.webp"
       - "/assets/img/estoque/relogio-cubo-cosmico-1.webp"
     preco: 100
-    descricao: "Relógio de mesa em formato de cubo, com painéis em tons de espaço estrelado e ponteiros dourados. Peça decorativa pronta para presentear."
+    descricao: "Relógio de mesa em formato de cubo, com tema espacial."
 
   - nome: "Motor V-Twin Motorizado"
     categorias: ["Mecânicos"]
@@ -291,14 +291,14 @@ pecas:
       - "/assets/img/estoque/motor-v-twin-1.webp"
       - "/assets/img/estoque/motor-v-twin-2.webp"
     preco: 280
-    descricao: "Réplica de motor V-Twin com engrenagens, pistões e velas em vermelho e azul. Motorizado: liga na tomada e as peças se movimentam de verdade. Vem com base de apoio."
+    descricao: "Réplica de motor V-Twin com engrenagens, pistões e velas. Motorizado: ligado na tomada, as peças se movimentam. Acompanha base de apoio."
 
   - nome: "Turbilhão Furioso TT"
     categorias: ["Mecânicos"]
     pronta_entrega: true
     imagem: "/assets/img/estoque/turbilhao-furioso-tt-1.webp"
     preco: 500
-    descricao: "Esfera cinética com engrenagens coloridas em movimento, inspirada no mecanismo de um turbilhão de relógio. Motorizada: liga via USB e as engrenagens giram de verdade."
+    descricao: "Esfera cinética com engrenagens, inspirada no mecanismo de turbilhão de relógio. Motorizada: ligada via USB, as engrenagens giram."
 
   - nome: "Caixa de Música Gramofone"
     categorias: ["Decoração"]
@@ -307,7 +307,7 @@ pecas:
       - "/assets/img/estoque/caixa-musica-gramofone-1.webp"
       - "/assets/img/estoque/caixa-musica-gramofone-2.webp"
     preco: 70
-    descricao: "Caixinha de música em formato de gramofone antigo, com manivela funcional e trompa dourada detalhada. Peça decorativa de mesa."
+    descricao: "Caixinha de música em formato de gramofone antigo, com manivela funcional."
 
   - nome: "Até Virar! A Arca de Noé"
     categorias: ["Jogos"]
@@ -317,7 +317,7 @@ pecas:
       - "/assets/img/estoque/arca-de-noe-2.webp"
       - "/assets/img/estoque/arca-de-noe-3.webp"
     preco: 200
-    descricao: "Jogo de tabuleiro com a arca de Noé impressa em 3D e peões de animais coloridos, acompanha baralho de cartas. Sob encomenda."
+    descricao: "Jogo de tabuleiro com a arca de Noé impressa em 3D e peões de animais. Acompanha baralho de cartas."
 
   - nome: "Kid Goku"
     categorias: ["Personagens", "Dragon Ball"]
@@ -328,7 +328,7 @@ pecas:
       - "/assets/img/estoque/goku-crianca-2.webp"
     preco: 90
     tamanho_cm: 19
-    descricao: "O Saiyajin em sua versão criança, com bastão sagrado. Cerca de 19 cm."
+    descricao: "Goku criança com o bastão mágico."
 
   - nome: "Motor a Jato"
     categorias: ["Mecânicos"]
@@ -338,4 +338,4 @@ pecas:
       - "/assets/img/estoque/motor-a-jato-3.webp"
       - "/assets/img/estoque/motor-a-jato-1.webp"
     preco: 460
-    descricao: "Réplica em corte de um motor turbofan, mostrando fan, compressor, câmara de combustão e turbina em azul e branco. Vem com base de apoio."
+    descricao: "Réplica em corte de um motor turbofan, mostrando fan, compressor, câmara de combustão e turbina. Acompanha base de apoio."
