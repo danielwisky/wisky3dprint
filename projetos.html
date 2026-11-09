@@ -1,0 +1,23 @@
+---
+layout: default
+title: "Projetos"
+description: "Projetos que ainda não imprimi, mas que posso imprimir pra você. Gostou de algum? É só me falar o nome."
+permalink: /projetos/
+# Página escondida: fora do menu, do sitemap e do Google; só abre pelo link direto.
+sitemap: false
+noindex: true
+---
+
+<section class="section section-stock">
+  <div class="container">
+    <header class="section-header section-header-center reveal">
+      <span class="section-tag">Projetos</span>
+      <h1>Projetos para imprimir</h1>
+      <p>Modelos que ainda não imprimi, mas posso fazer pra você. Gostou de algum? É só me falar o nome (ex: “Pikachu do Pokémon”). Alguns têm versão tricô, com textura de crochê.</p>
+    </header>
+
+    {% include project-grid.html %}
+  </div>
+</section>
+
+<script src="{{ '/assets/js/projects.js' | relative_url }}?v={{ '/assets/js/projects.js' | asset_hash }}" defer></script>

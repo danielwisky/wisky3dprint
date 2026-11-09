@@ -1,0 +1,951 @@
+# Projetos que ainda não foram impressos (página /projetos/).
+#
+# Para adicionar ou corrigir à mão:
+#   - nome:      como aparece no card e na busca.
+#   - categoria: vira um chip de filtro no topo da página.
+#   - modelador: quem criou o modelo (ex: "Whale3D"). Vira um chip de filtro
+#                na linha "Modelador:".
+#   - versoes:   Regular e/ou Knitted.
+#   - imagem:    foto em assets/img/projetos/ (webp, até 480px).
+
+projetos:
+  - nome: "Eren Yeager"
+    categoria: "Attack on Titan"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/attack-on-titan-eren-yeager.webp"
+  - nome: "Attack Titan - Eren Titan"
+    categoria: "Attack on Titan"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/attack-on-titan-attack-titan-eren-titan.webp"
+  - nome: "Levi Ackerman"
+    categoria: "Attack on Titan"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/attack-on-titan-levi-ackerman.webp"
+  - nome: "Bluey"
+    categoria: "Bluey"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/bluey-bluey.webp"
+  - nome: "Bingo"
+    categoria: "Bluey"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/bluey-bingo.webp"
+  - nome: "Tanjiro"
+    categoria: "Demon Slayer"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/demon-slayer-tanjiro.webp"
+  - nome: "Nezuko"
+    categoria: "Demon Slayer"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/demon-slayer-nezuko.webp"
+  - nome: "Zenitsu"
+    categoria: "Demon Slayer"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/demon-slayer-zenitsu.webp"
+  - nome: "Inosuke"
+    categoria: "Demon Slayer"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/demon-slayer-inosuke.webp"
+  - nome: "Shinobu"
+    categoria: "Demon Slayer"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/demon-slayer-shinobu.webp"
+  - nome: "Rengoku"
+    categoria: "Demon Slayer"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/demon-slayer-rengoku.webp"
+  - nome: "Akaza"
+    categoria: "Demon Slayer"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/demon-slayer-akaza.webp"
+  - nome: "Mickey"
+    categoria: "Disney"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/disney-mickey.webp"
+  - nome: "Minnie"
+    categoria: "Disney"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/disney-minnie.webp"
+  - nome: "Lilo"
+    categoria: "Disney"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/disney-lilo.webp"
+  - nome: "Stitch - Sitting Version"
+    categoria: "Disney"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/disney-stitch-sitting-version.webp"
+  - nome: "Angel"
+    categoria: "Disney"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/disney-angel.webp"
+  - nome: "Angel - Sitting Version"
+    categoria: "Disney"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/disney-angel-sitting-version.webp"
+  - nome: "Leroy - Red Stitch"
+    categoria: "Disney"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/disney-leroy-red-stitch.webp"
+  - nome: "Mike Wazowski"
+    categoria: "Disney"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/disney-mike-wazowski.webp"
+  - nome: "Sulley"
+    categoria: "Disney"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/disney-sulley.webp"
+  - nome: "Boo"
+    categoria: "Disney"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/dragon-ball-boo-monster-inc.webp"
+  - nome: "Judy Hopps - Zootopia"
+    categoria: "Disney"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/disney-judy-hopps-zootopia.webp"
+  - nome: "Nick Wilde - Zootopia"
+    categoria: "Disney"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/disney-nick-wilde-zootopia.webp"
+  - nome: "The Smurf"
+    categoria: "Disney"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/disney-the-smurf.webp"
+  - nome: "Tom Lizard"
+    categoria: "Disney"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/disney-tom-lizard.webp"
+  - nome: "Goku"
+    categoria: "Dragon Ball"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/dragon-ball-goku.webp"
+  - nome: "Vegeta"
+    categoria: "Dragon Ball"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/dragon-ball-vegeta.webp"
+  - nome: "Piccolo"
+    categoria: "Dragon Ball"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/dragon-ball-piccolo.webp"
+  - nome: "Frieza"
+    categoria: "Dragon Ball"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/dragon-ball-frieza.webp"
+  - nome: "Golden Frieza"
+    categoria: "Dragon Ball"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/dragon-ball-golden-frieza.webp"
+  - nome: "Cell"
+    categoria: "Dragon Ball"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/dragon-ball-cell.webp"
+  - nome: "Fat Buu"
+    categoria: "Dragon Ball"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/dragon-ball-fat-buu.webp"
+  - nome: "Kid Buu"
+    categoria: "Dragon Ball"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/dragon-ball-kid-buu.webp"
+  - nome: "Grinch"
+    categoria: "Grinch"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/grinch-grinch.webp"
+  - nome: "Max - The Grinch's Dog"
+    categoria: "Grinch"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/grinch-max-the-grinch-s-dog.webp"
+  - nome: "Halloween Pumpkin Deadpool"
+    categoria: "Halloween"
+    modelador: "Whale3D"
+    versoes: ["Regular"]
+    imagem: "/assets/img/projetos/halloween-halloween-pumpkin-deadpool.webp"
+  - nome: "Halloween Pumpkin Freddy Fazbear"
+    categoria: "Halloween"
+    modelador: "Whale3D"
+    versoes: ["Regular"]
+    imagem: "/assets/img/projetos/halloween-halloween-pumpkin-freddy-fazbear.webp"
+  - nome: "Harry Potter"
+    categoria: "Harry Potter"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/harry-potter-harry-potter.webp"
+  - nome: "Hermione Granger"
+    categoria: "Harry Potter"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/harry-potter-hermione-granger.webp"
+  - nome: "Ron Weasley"
+    categoria: "Harry Potter"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/harry-potter-ron-weasley.webp"
+  - nome: "Draco Malfoy"
+    categoria: "Harry Potter"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/harry-potter-draco-malfoy.webp"
+  - nome: "Hagrid"
+    categoria: "Harry Potter"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/harry-potter-hagrid.webp"
+  - nome: "Dobby"
+    categoria: "Harry Potter"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/harry-potter-dobby.webp"
+  - nome: "Severus Snape"
+    categoria: "Harry Potter"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/harry-potter-severus-snape.webp"
+  - nome: "Sirius Black"
+    categoria: "Harry Potter"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/harry-potter-sirius-black.webp"
+  - nome: "Wise Wizard"
+    categoria: "Harry Potter"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/fan-gifts-wise-wizard.webp"
+  - nome: "Hello Kitty"
+    categoria: "Hello Kitty"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/hello-kitty-hello-kitty.webp"
+  - nome: "Kuromi"
+    categoria: "Hello Kitty"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/hello-kitty-kuromi.webp"
+  - nome: "Toothless"
+    categoria: "How to Train Your Dragon"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/how-to-train-your-dragon-toothless.webp"
+  - nome: "Light Fury"
+    categoria: "How to Train Your Dragon"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/how-to-train-your-dragon-light-fury.webp"
+  - nome: "Toothless face & keychain"
+    categoria: "How to Train Your Dragon"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/how-to-train-your-dragon-toothless-face-keychain.webp"
+  - nome: "Toothless controller holder - joystick"
+    categoria: "How to Train Your Dragon"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/how-to-train-your-dragon-toothless-controller-holder-joystick.webp"
+  - nome: "Rumi - HUNTRX"
+    categoria: "K-Pop Demon Hunters"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/k-pop-demon-hunters-rumi-huntrx.webp"
+  - nome: "Mira - HUNTRX"
+    categoria: "K-Pop Demon Hunters"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/k-pop-demon-hunters-mira-huntrx.webp"
+  - nome: "Zoey - HUNTRX"
+    categoria: "K-Pop Demon Hunters"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/k-pop-demon-hunters-zoey-huntrx.webp"
+  - nome: "Derpy Tiger Keychain"
+    categoria: "K-Pop Demon Hunters"
+    modelador: "Whale3D"
+    versoes: ["Regular"]
+    imagem: "/assets/img/projetos/k-pop-demon-hunters-derpy-tiger-keychain.webp"
+  - nome: "Sussy Bird"
+    categoria: "K-Pop Demon Hunters"
+    modelador: "Whale3D"
+    versoes: ["Regular"]
+    imagem: "/assets/img/projetos/k-pop-demon-hunters-sussy-bird.webp"
+  - nome: "Mario"
+    categoria: "Mario"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/mario-mario.webp"
+  - nome: "Luigi"
+    categoria: "Mario"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/mario-luigi.webp"
+  - nome: "Princess Peach"
+    categoria: "Mario"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/mario-princess-peach.webp"
+  - nome: "Toad"
+    categoria: "Mario"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/mario-toad.webp"
+  - nome: "Yoshi"
+    categoria: "Mario"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/dragon-ball-yoshi.webp"
+  - nome: "Bowser"
+    categoria: "Mario"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/mario-bowser.webp"
+  - nome: "Donkey Kong"
+    categoria: "Mario"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/donkey-kong-donkey-kong.webp"
+  - nome: "Mario Mushroom"
+    categoria: "Mario"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/mario-mario-mushroom.webp"
+  - nome: "Santa Mario"
+    categoria: "Mario"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/mario-santa-mario.webp"
+  - nome: "Santa Luigi"
+    categoria: "Mario"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/mario-santa-luigi.webp"
+  - nome: "Naruto"
+    categoria: "Naruto"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/naruto-naruto.webp"
+  - nome: "Sasuke"
+    categoria: "Naruto"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/naruto-sasuke.webp"
+  - nome: "Sakura"
+    categoria: "Naruto"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/naruto-sakura.webp"
+  - nome: "Kakashi"
+    categoria: "Naruto"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/naruto-kakashi.webp"
+  - nome: "Jiraiya"
+    categoria: "Naruto"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/naruto-jiraiya.webp"
+  - nome: "Itachi"
+    categoria: "Naruto"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/naruto-itachi.webp"
+  - nome: "Luffy Chibi"
+    categoria: "One Piece"
+    modelador: "Whale3D"
+    versoes: ["Regular"]
+    imagem: "/assets/img/projetos/one-piece-luffy-chibi.webp"
+  - nome: "Zoro"
+    categoria: "One Piece"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/one-piece-zoro.webp"
+  - nome: "Nami"
+    categoria: "One Piece"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/one-piece-nami.webp"
+  - nome: "Usopp"
+    categoria: "One Piece"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/one-piece-usopp.webp"
+  - nome: "Sanji"
+    categoria: "One Piece"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/one-piece-sanji.webp"
+  - nome: "Chopper"
+    categoria: "One Piece"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/one-piece-chopper.webp"
+  - nome: "Nico Robin"
+    categoria: "One Piece"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/one-piece-nico-robin.webp"
+  - nome: "Franky"
+    categoria: "One Piece"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/one-piece-franky.webp"
+  - nome: "Brook"
+    categoria: "One Piece"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/one-piece-brook.webp"
+  - nome: "Jinbe"
+    categoria: "One Piece"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/one-piece-jinbe.webp"
+  - nome: "Rubber Pirate"
+    categoria: "One Piece"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/one-piece-rubber-pirate.webp"
+  - nome: "Labubu Luffy"
+    categoria: "One Piece"
+    modelador: "Whale3D"
+    versoes: ["Regular"]
+    imagem: "/assets/img/projetos/one-piece-labubu-luffy.webp"
+  - nome: "Jetdragon"
+    categoria: "Palworld"
+    modelador: "Whale3D"
+    versoes: ["Regular"]
+    imagem: "/assets/img/projetos/palworld-jetdragon.webp"
+  - nome: "Grizzbolt"
+    categoria: "Palworld"
+    modelador: "Whale3D"
+    versoes: ["Regular"]
+    imagem: "/assets/img/projetos/palworld-grizzbolt.webp"
+  - nome: "Frostallion"
+    categoria: "Palworld"
+    modelador: "Whale3D"
+    versoes: ["Regular"]
+    imagem: "/assets/img/projetos/palworld-frostallion.webp"
+  - nome: "Palworld Logo & Keychain"
+    categoria: "Palworld"
+    modelador: "Whale3D"
+    versoes: ["Regular"]
+    imagem: "/assets/img/projetos/palworld-palworld-logo-keychain.webp"
+  - nome: "Chase"
+    categoria: "Paw Patrol"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/paw-patrol-chase.webp"
+  - nome: "Bulbasaur"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/pokemon-bulbasaur.webp"
+  - nome: "Ivysaur"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/pokemon-ivysaur.webp"
+  - nome: "Venusaur"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/pokemon-venusaur.webp"
+  - nome: "Charmander"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/pokemon-charmander.webp"
+  - nome: "Charmeleon"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/pokemon-charmeleon.webp"
+  - nome: "Charizard"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/pokemon-charizard.webp"
+  - nome: "Charizard Urban Vibes"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Regular"]
+    imagem: "/assets/img/projetos/pokemon-charizard-urban-vibes.webp"
+  - nome: "Squirtle"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/pokemon-squirtle.webp"
+  - nome: "Wartortle"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/pokemon-wartortle.webp"
+  - nome: "Blastoise"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/pokemon-blastoise.webp"
+  - nome: "Squirtle Saxophone"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Regular"]
+    imagem: "/assets/img/projetos/pokemon-squirtle-saxophone.webp"
+  - nome: "Caterpie"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Regular"]
+    imagem: "/assets/img/projetos/pokemon-caterpie.webp"
+  - nome: "Pikachu"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/pokemon-pikachu.webp"
+  - nome: "Psyduck"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/pokemon-psyduck.webp"
+  - nome: "Gengar"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/pokemon-gengar.webp"
+  - nome: "Cubone"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/pokemon-cubone.webp"
+  - nome: "Eevee"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/pokemon-eevee.webp"
+  - nome: "Snorlax"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/pokemon-snorlax.webp"
+  - nome: "Halloween Pumpkin Snorlax and Munchlax"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Regular"]
+    imagem: "/assets/img/projetos/pokemon-halloween-pumpkin-snorlax-and-munchlax.webp"
+  - nome: "Dragonite"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/pokemon-dragonite.webp"
+  - nome: "Mew"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/pokemon-mew.webp"
+  - nome: "Chikorita"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/pokemon-chikorita.webp"
+  - nome: "Bayleef"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/pokemon-bayleef.webp"
+  - nome: "Meganium"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/pokemon-meganium.webp"
+  - nome: "Cyndaquil"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/pokemon-cyndaquil.webp"
+  - nome: "Quilava"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/pokemon-quilava.webp"
+  - nome: "Typhlosion"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/pokemon-typhlosion.webp"
+  - nome: "Totodile"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/pokemon-totodile.webp"
+  - nome: "Croconaw"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/pokemon-croconaw.webp"
+  - nome: "Feraligatr"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/pokemon-feraligatr.webp"
+  - nome: "Mega Greninja"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Regular"]
+    imagem: "/assets/img/projetos/pokemon-mega-greninja.webp"
+  - nome: "Ash Ketchum (Satoshi)"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/pokemon-ash-ketchum-satoshi.webp"
+  - nome: "Misty"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/pokemon-misty.webp"
+  - nome: "Brock"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/pokemon-brock.webp"
+  - nome: "Browt"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/pokemon-browt.webp"
+  - nome: "Pokeball"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/pokemon-pokeball.webp"
+  - nome: "Iron Man Pokeball"
+    categoria: "Pokémon"
+    modelador: "Whale3D"
+    versoes: ["Regular"]
+    imagem: "/assets/img/projetos/pokemon-iron-man-pokeball.webp"
+  - nome: "Snoopy"
+    categoria: "Snoopy"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/snoopy-snoopy.webp"
+  - nome: "Sonic"
+    categoria: "Sonic"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/sonic-sonic.webp"
+  - nome: "Tails"
+    categoria: "Sonic"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/sonic-tails.webp"
+  - nome: "Knuckles"
+    categoria: "Sonic"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/sonic-knuckles.webp"
+  - nome: "Amy Rose"
+    categoria: "Sonic"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/sonic-amy-rose.webp"
+  - nome: "Shadow the Hedgehog"
+    categoria: "Sonic"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/sonic-shadow-the-hedgehog.webp"
+  - nome: "Silver the Hedgehog"
+    categoria: "Sonic"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/sonic-silver-the-hedgehog.webp"
+  - nome: "Super Sonic"
+    categoria: "Sonic"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/sonic-super-sonic.webp"
+  - nome: "Dr. Eggman"
+    categoria: "Sonic"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/sonic-dr-eggman.webp"
+  - nome: "Mandalorian"
+    categoria: "Star Wars"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/star-wars-mandalorian.webp"
+  - nome: "Baby Yoda"
+    categoria: "Star Wars"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/star-wars-baby-yoda.webp"
+  - nome: "Stormtrooper - First Order"
+    categoria: "Star Wars"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/star-wars-stormtrooper-first-order.webp"
+  - nome: "Demogorgon"
+    categoria: "Stranger Things"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/stranger-things-demogorgon.webp"
+  - nome: "Superman"
+    categoria: "Super Hero"
+    modelador: "Whale3D"
+    versoes: ["Regular"]
+    imagem: "/assets/img/projetos/outros-superman.webp"
+  - nome: "Batman"
+    categoria: "Super Hero"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/super-hero-batman.webp"
+  - nome: "Joker"
+    categoria: "Super Hero"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/super-hero-joker.webp"
+  - nome: "Spider Man"
+    categoria: "Super Hero"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/super-hero-spider-man.webp"
+  - nome: "Venom"
+    categoria: "Super Hero"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/super-hero-venom.webp"
+  - nome: "Hulk"
+    categoria: "Super Hero"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/super-hero-hulk.webp"
+  - nome: "Wolverine"
+    categoria: "Super Hero"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/super-hero-wolverine.webp"
+  - nome: "Deadpool"
+    categoria: "Super Hero"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/super-hero-deadpool.webp"
+  - nome: "Megaman"
+    categoria: "Super Hero"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/super-hero-megaman.webp"
+  - nome: "Zero - Megaman X"
+    categoria: "Super Hero"
+    modelador: "Whale3D"
+    versoes: ["Regular"]
+    imagem: "/assets/img/projetos/super-hero-zero-megaman-x.webp"
+  - nome: "Astro Boy"
+    categoria: "Super Hero"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/super-hero-astro-boy.webp"
+  - nome: "Buzz Lightyear"
+    categoria: "Toy Story"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/toy-story-buzz-lightyear.webp"
+  - nome: "Winnie the Pooh"
+    categoria: "Winnie the Pooh"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/winnie-the-pooh-winnie-the-pooh.webp"
+  - nome: "Tigger"
+    categoria: "Winnie the Pooh"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/winnie-the-pooh-tigger.webp"
+  - nome: "Link"
+    categoria: "Zelda"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/zelda-link.webp"
+  - nome: "Princess Zelda"
+    categoria: "Zelda"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/zelda-princess-zelda.webp"
+  - nome: "Gojo Satoru"
+    categoria: "Outros"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/anime-gojo-satoru.webp"
+  - nome: "InuYasha"
+    categoria: "Outros"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/anime-inuyasha.webp"
+  - nome: "Gon Freecss"
+    categoria: "Outros"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/anime-gon-freecss.webp"
+  - nome: "Pochita"
+    categoria: "Outros"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/anime-pochita.webp"
+  - nome: "Agumon"
+    categoria: "Outros"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/outros-agumon.webp"
+  - nome: "Minions"
+    categoria: "Outros"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/outros-minions.webp"
+  - nome: "Labubu"
+    categoria: "Outros"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/outros-labubu.webp"
+  - nome: "Tung Tung Tung Sahur"
+    categoria: "Outros"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/outros-tung-tung-tung-sahur.webp"
+  - nome: "Shinobi Turtle"
+    categoria: "Outros"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/fan-gifts-shinobi-turtle.webp"
+  - nome: "Bonbon Dog"
+    categoria: "Outros"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/fan-gifts-bonbon-dog.webp"
+  - nome: "Cute Cat"
+    categoria: "Outros"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/original-designs-cute-cat.webp"
+  - nome: "Cute Corgi"
+    categoria: "Outros"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/original-designs-cute-corgi.webp"
+  - nome: "Cute Husky"
+    categoria: "Outros"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/original-designs-cute-husky.webp"
+  - nome: "Cute Bulldog"
+    categoria: "Outros"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/original-designs-cute-bulldog.webp"
+  - nome: "Pug dog flexi"
+    categoria: "Outros"
+    modelador: "Whale3D"
+    versoes: ["Regular"]
+    imagem: "/assets/img/projetos/original-designs-pug-dog-flexi.webp"
+  - nome: "Hamster"
+    categoria: "Outros"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/original-designs-hamster.webp"
+  - nome: "Hamster Flexi"
+    categoria: "Outros"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/original-designs-hamster-flexi.webp"
+  - nome: "Fat Cabybara"
+    categoria: "Outros"
+    modelador: "Whale3D"
+    versoes: ["Regular", "Knitted"]
+    imagem: "/assets/img/projetos/original-designs-fat-cabybara.webp"
+  - nome: "Capybara Crocodile"
+    categoria: "Outros"
+    modelador: "Whale3D"
+    versoes: ["Regular"]
+    imagem: "/assets/img/projetos/outros-capybara-crocodile.webp"
+  - nome: "Cute Cow"
+    categoria: "Outros"
+    modelador: "Whale3D"
+    versoes: ["Regular"]
+    imagem: "/assets/img/projetos/original-designs-cute-cow.webp"
+  - nome: "Dragon Cute - Lucky Dragon"
+    categoria: "Outros"
+    modelador: "Whale3D"
+    versoes: ["Regular"]
+    imagem: "/assets/img/projetos/outros-dragon-cute-lucky-dragon.webp"
+  - nome: "Red-whiskered bulbul"
+    categoria: "Outros"
+    modelador: "Whale3D"
+    versoes: ["Regular"]
+    imagem: "/assets/img/projetos/original-designs-red-whiskered-bulbul.webp"
+  - nome: "Channa Barca fish - Snake head fish"
+    categoria: "Outros"
+    modelador: "Whale3D"
+    versoes: ["Regular"]
+    imagem: "/assets/img/projetos/original-designs-channa-barca-fish-snake-head-fish.webp"
+  - nome: "Channa Barca fish - Snake head fish with chopsticks"
+    categoria: "Outros"
+    modelador: "Whale3D"
+    versoes: ["Regular"]
+    imagem: "/assets/img/projetos/original-designs-channa-barca-fish-snake-head-fish-with-chopsticks.webp"
+  - nome: "Christmas Ornaments"
+    categoria: "Outros"
+    modelador: "Whale3D"
+    versoes: ["Knitted"]
+    imagem: "/assets/img/projetos/outros-christmas-ornaments.webp"
+  - nome: "Emoji Easter Egg"
+    categoria: "Outros"
+    modelador: "Whale3D"
+    versoes: ["Regular"]
+    imagem: "/assets/img/projetos/outros-emoji-easter-egg.webp"
+  - nome: "Sunflower"
+    categoria: "Outros"
+    modelador: "Whale3D"
+    versoes: ["Regular"]
+    imagem: "/assets/img/projetos/original-designs-sunflower.webp"
+  - nome: "Boat Planter V2"
+    categoria: "Outros"
+    modelador: "Whale3D"
+    versoes: ["Regular"]
+    imagem: "/assets/img/projetos/original-designs-boat-planter-v2.webp"
+  - nome: "Cute Cloud Tissue Box"
+    categoria: "Outros"
+    modelador: "Whale3D"
+    versoes: ["Regular"]
+    imagem: "/assets/img/projetos/original-designs-cute-cloud-tissue-box.webp"
+  - nome: "Airless Basketball"
+    categoria: "Outros"
+    modelador: "Whale3D"
+    versoes: ["Regular"]
+    imagem: "/assets/img/projetos/original-designs-airless-basketball.webp"
+  - nome: "Dinosaur gravity knife - T-Rex carrot knife"
+    categoria: "Outros"
+    modelador: "Whale3D"
+    versoes: ["Regular"]
+    imagem: "/assets/img/projetos/outros-dinosaur-gravity-knife-t-rex-carrot-knife.webp"
