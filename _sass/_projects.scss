@@ -1,5 +1,5 @@
-// Projetos (/projetos/): mesma grade da loja, mas com centenas de cards sem
-// preço, então cabem 4 por fileira e a foto é quadrada.
+// Projects (/projetos/): same grid as the store, but with hundreds of cards
+// and no price, so 4 fit per row and the photo is square.
 .projects-grid {
   grid-template-columns: repeat(4, 1fr);
   gap: 1.25rem;
@@ -8,8 +8,7 @@
 .project-card-media {
   padding-bottom: 100%;
 
-  // contain (como na loja): algumas fotos não são quadradas e o cover cortava
-  // cabeça/pés dos bonecos.
+  // contain (like the store): a non-square photo is never cropped.
   .stock-card-image {
     position: absolute;
     inset: 0;
@@ -30,11 +29,9 @@
   }
 }
 
-// Seletor duplo para ganhar do .stock-grid de _responsive (que vem depois e
-// vira 1 coluna no celular): aqui os cards são pequenos, então ficam 2.
 @media (max-width: 900px) {
-  // 30 categorias quebrando em linhas ocupavam a primeira tela inteira no
-  // celular: aqui viram uma linha só que rola para o lado.
+  // ~30 chips wrapping onto several lines took the whole first screen on
+  // phones: here they become a single row that scrolls sideways.
   .projects-filters {
     flex-wrap: nowrap;
     overflow-x: auto;
@@ -50,13 +47,15 @@
       flex: none;
     }
 
-    // Acompanha a margem do .container (mixins), que encolhe no celular.
+    // Matches the .container side margin (mixins), which shrinks on phones.
     @media (max-width: 480px) {
       margin: 0 -0.75rem;
       padding: 0 0.75rem 0.25rem;
     }
   }
 
+  // Double selector to beat .stock-grid from _responsive (loaded later, one
+  // column on phones): these cards are small, so they stay 2 per row.
   .stock-grid.projects-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 0.75rem;

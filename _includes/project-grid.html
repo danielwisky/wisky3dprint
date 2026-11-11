@@ -1,10 +1,11 @@
-{%- comment -%} Grade da página /projetos/. Usa o visual da loja (classes stock-*), mas o filtro é próprio: dentro de um grupo (categoria ou modelador) marcar vários soma; entre grupos, cruza. {%- endcomment -%}
-{%- assign projetos = site.data.projetos.projetos -%}
-{%- comment -%} "Outros" é o balaio: vai por último em vez de cair no meio da ordem alfabética. {%- endcomment -%}
-{%- assign categorias = projetos | map: "categoria" | uniq | sort_natural | where_exp: "c", "c != 'Outros'" -%}
-{%- assign outros = projetos | where: "categoria", "Outros" -%}
-{%- if outros.size > 0 -%}{%- assign categorias = categorias | push: "Outros" -%}{%- endif -%}
-{%- assign modeladores = projetos | map: "modelador" | uniq | sort_natural -%}
+{%- comment -%} Grid for /projetos/. Reuses the store look (stock-* classes) but has its own filter: inside a group (category or designer) several chips add up; across groups they intersect. {%- endcomment -%}
+{%- assign projects = site.data.projects.projects -%}
+{%- assign search_terms = site.data.projects.category_search_terms -%}
+{%- comment -%} "Outros" is the catch-all: it goes last instead of landing mid-alphabet. {%- endcomment -%}
+{%- assign categories = projects | map: "category" | uniq | sort_natural | where_exp: "c", "c != 'Outros'" -%}
+{%- assign others = projects | where: "category", "Outros" -%}
+{%- if others.size > 0 -%}{%- assign categories = categories | push: "Outros" -%}{%- endif -%}
+{%- assign designers = projects | map: "designer" | uniq | sort_natural -%}
 <div class="stock-controls reveal" data-projects-controls>
   <div class="stock-controls-top">
     <div class="stock-search">
@@ -15,54 +16,51 @@
     </div>
   </div>
   <div class="stock-filters projects-filters" role="group" aria-label="Filtrar por categoria">
-    <button type="button" class="stock-chip is-active" data-group="categoria" data-filter="todos" aria-pressed="true">Todos <span class="stock-chip-count" aria-hidden="true">{{ projetos.size }}</span></button>
-    {%- for cat in categorias -%}
-    {%- assign n = projetos | where: "categoria", cat | size -%}
-    <button type="button" class="stock-chip" data-group="categoria" data-filter="{{ cat | escape }}" aria-pressed="false">{{ cat | escape }} <span class="stock-chip-count" aria-hidden="true">{{ n }}</span></button>
+    <button type="button" class="stock-chip is-active" data-group="category" data-filter="all" aria-pressed="true">Todos <span class="stock-chip-count" aria-hidden="true">{{ projects.size }}</span></button>
+    {%- for category in categories -%}
+    {%- assign count = projects | where: "category", category | size -%}
+    <button type="button" class="stock-chip" data-group="category" data-filter="{{ category | escape }}" aria-pressed="false">{{ category | escape }} <span class="stock-chip-count" aria-hidden="true">{{ count }}</span></button>
     {%- endfor -%}
   </div>
-  {%- if modeladores.size > 0 -%}
+  {%- if designers.size > 0 -%}
   <div class="stock-filters projects-filters" role="group" aria-label="Filtrar por modelador">
     <span class="projects-filters-label">Modelador:</span>
-    {%- for mod in modeladores -%}
-    {%- assign n = projetos | where: "modelador", mod | size -%}
-    <button type="button" class="stock-chip" data-group="modelador" data-filter="{{ mod | escape }}" aria-pressed="false">{{ mod | escape }} <span class="stock-chip-count" aria-hidden="true">{{ n }}</span></button>
+    {%- for designer in designers -%}
+    {%- assign count = projects | where: "designer", designer | size -%}
+    <button type="button" class="stock-chip" data-group="designer" data-filter="{{ designer | escape }}" aria-pressed="false">{{ designer | escape }} <span class="stock-chip-count" aria-hidden="true">{{ count }}</span></button>
     {%- endfor -%}
   </div>
   {%- endif -%}
 </div>
-<p class="stock-count" data-projects-count role="status">Mostrando {{ projetos.size }} projetos</p>
+<p class="stock-count" data-projects-count role="status">Mostrando {{ projects.size }} projetos</p>
 <div class="stock-grid projects-grid">
-  {%- for projeto in projetos -%}
+  {%- for project in projects -%}
   <article
     class="stock-card"
-    data-categoria="{{ projeto.categoria | escape }}"
-    data-modelador="{{ projeto.modelador | escape }}"
-    data-search="{{ projeto.nome | escape }} {{ projeto.categoria | escape }} {{ projeto.modelador | escape }}{% if projeto.versoes contains 'Regular' %} lisa regular{% endif %}{% if projeto.versoes contains 'Knitted' %} tricô knitted crochê{% endif %}"
+    data-category="{{ project.category | escape }}"
+    data-designer="{{ project.designer | escape }}"
+    data-search="{{ project.name | escape }} {{ project.category | escape }} {{ search_terms[project.category] | escape }} {{ project.designer | escape }}{% if project.versions contains 'Regular' %} lisa regular{% endif %}{% if project.versions contains 'Knitted' %} tricô knitted crochê{% endif %}"
   >
     <div class="stock-card-media project-card-media">
       <img
         class="stock-card-image"
-        src="{{ projeto.imagem | relative_url }}"
-        alt="{{ projeto.nome | escape }}"
-        width="480"
-        height="480"
+        src="{{ project.image | relative_url }}"
+        alt="{{ project.name | escape }}"
+        width="400"
+        height="400"
         {% if forloop.index0 >= 4 %}loading="lazy"{% endif %}
         decoding="async"
       >
     </div>
     <div class="stock-card-body">
       <div class="stock-card-cats">
-        <span class="stock-card-cat">{{ projeto.categoria | escape }}</span>
-        {%- if projeto.modelador -%}
-        <span class="stock-card-cat">{{ projeto.modelador | escape }}</span>
-        {%- endif -%}
+        <span class="stock-card-cat">{{ project.category | escape }}</span>
       </div>
-      <h2 class="stock-card-title">{{ projeto.nome | escape }}</h2>
-      {%- comment -%} No YAML ficam os nomes do Drive (Regular/Knitted); no card, o que o cliente entende. {%- endcomment -%}
-      {%- if projeto.versoes.size > 1 -%}
+      <h2 class="stock-card-title">{{ project.name | escape }}</h2>
+      {%- comment -%} The YAML keeps the Drive names (Regular/Knitted); the card shows what customers understand. {%- endcomment -%}
+      {%- if project.versions.size > 1 -%}
       <p class="stock-card-desc">Versões: lisa e tricô</p>
-      {%- elsif projeto.versoes.first == "Knitted" -%}
+      {%- elsif project.versions.first == "Knitted" -%}
       <p class="stock-card-desc">Versão tricô</p>
       {%- endif -%}
     </div>
