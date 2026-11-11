@@ -3,8 +3,8 @@
 # Fields of each project (values shown on the site stay in Portuguese):
 #   - name:     card title, also used by the search.
 #   - category: becomes a filter chip at the top of the page.
-#   - designer: who made the model (e.g. "Whale3D", or the Telegram group the
-#               files came from); becomes a chip in the "Modelador:" row.
+#   - designer: who made the model (e.g. "Whale3D", "Cats3D"); becomes a chip
+#               in the "Modelador:" row.
 #   - versions: Regular and/or Knitted (shown as "lisa" / "tricô").
 #   - image:    photo in assets/img/projects/ (webp, up to 400px, quality 72),
 #               named <category-in-english>-<name>.webp.
