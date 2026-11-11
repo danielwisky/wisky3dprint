@@ -1,0 +1,1438 @@
+# Projects not printed yet (hidden page /projetos/).
+#
+# Fields of each project (values shown on the site stay in Portuguese):
+#   - name:     card title, also used by the search.
+#   - category: becomes a filter chip at the top of the page.
+#   - designer: who made the model (e.g. "Whale3D"); becomes a chip in the
+#               "Modelador:" row.
+#   - versions: Regular and/or Knitted (shown as "lisa" / "tricô").
+#   - image:    photo in assets/img/projects/ (webp, up to 400px, quality 72),
+#               named <category-in-english>-<name>.webp.
+#
+# The order below is the order on the page: Pokémon follow the Pokédex, the
+# other categories start with the main character, and "Outros" goes last.
+
+# Extra search terms per category, so searching the English (or original)
+# title still finds the projects after the category was translated.
+category_search_terms:
+  "Ataque dos Titãs": "Attack on Titan Shingeki no Kyojin"
+  "Como Treinar o Seu Dragão": "How to Train Your Dragon"
+  "Demon Slayer": "Kimetsu no Yaiba"
+  "Disney": "Pixar"
+  "Grinch": "Natal"
+  "Guerreiras do K-Pop": "K-Pop Demon Hunters Huntrx"
+  "Hello Kitty": "Sanrio"
+  "Mario": "Super Mario Nintendo"
+  "Patrulha Canina": "Paw Patrol"
+  "Snoopy": "Peanuts"
+  "Super-heróis": "Super Hero Marvel DC"
+  "Toy Story": "Pixar"
+  "Ursinho Pooh": "Winnie the Pooh"
+  "Zelda": "Nintendo"
+
+projects:
+  - name: "Eren Yeager"
+    category: "Ataque dos Titãs"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/attack-on-titan-eren-yeager.webp"
+  - name: "Attack Titan - Eren Titan"
+    category: "Ataque dos Titãs"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/attack-on-titan-attack-titan-eren-titan.webp"
+  - name: "Levi Ackerman"
+    category: "Ataque dos Titãs"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/attack-on-titan-levi-ackerman.webp"
+  - name: "Bluey"
+    category: "Bluey"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/bluey-bluey.webp"
+  - name: "Bingo"
+    category: "Bluey"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/bluey-bingo.webp"
+  - name: "Toothless"
+    category: "Como Treinar o Seu Dragão"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/how-to-train-your-dragon-toothless.webp"
+  - name: "Light Fury"
+    category: "Como Treinar o Seu Dragão"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/how-to-train-your-dragon-light-fury.webp"
+  - name: "Toothless Dancing Meme Flexi"
+    category: "Como Treinar o Seu Dragão"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/how-to-train-your-dragon-toothless-dancing-meme-flexi.webp"
+  - name: "Toothless face & keychain"
+    category: "Como Treinar o Seu Dragão"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/how-to-train-your-dragon-toothless-face-keychain.webp"
+  - name: "Toothless controller holder - joystick"
+    category: "Como Treinar o Seu Dragão"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/how-to-train-your-dragon-toothless-controller-holder-joystick.webp"
+  - name: "Tanjiro"
+    category: "Demon Slayer"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/demon-slayer-tanjiro.webp"
+  - name: "Nezuko"
+    category: "Demon Slayer"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/demon-slayer-nezuko.webp"
+  - name: "Zenitsu"
+    category: "Demon Slayer"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/demon-slayer-zenitsu.webp"
+  - name: "Inosuke"
+    category: "Demon Slayer"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/demon-slayer-inosuke.webp"
+  - name: "Shinobu"
+    category: "Demon Slayer"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/demon-slayer-shinobu.webp"
+  - name: "Rengoku"
+    category: "Demon Slayer"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/demon-slayer-rengoku.webp"
+  - name: "Akaza"
+    category: "Demon Slayer"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/demon-slayer-akaza.webp"
+  - name: "Mickey"
+    category: "Disney"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/disney-mickey.webp"
+  - name: "Minnie"
+    category: "Disney"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/disney-minnie.webp"
+  - name: "Lilo"
+    category: "Disney"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/disney-lilo.webp"
+  - name: "Stitch"
+    category: "Disney"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/disney-stitch.webp"
+  - name: "Stitch - Sitting Version"
+    category: "Disney"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/disney-stitch-sitting-version.webp"
+  - name: "Angel"
+    category: "Disney"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/disney-angel.webp"
+  - name: "Angel - Sitting Version"
+    category: "Disney"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/disney-angel-sitting-version.webp"
+  - name: "Leroy - Red Stitch"
+    category: "Disney"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/disney-leroy-red-stitch.webp"
+  - name: "Mike Wazowski"
+    category: "Disney"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/disney-mike-wazowski.webp"
+  - name: "Sulley"
+    category: "Disney"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/disney-sulley.webp"
+  - name: "Boo"
+    category: "Disney"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/disney-boo.webp"
+  - name: "Judy Hopps - Zootopia"
+    category: "Disney"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/disney-judy-hopps-zootopia.webp"
+  - name: "Nick Wilde - Zootopia"
+    category: "Disney"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/disney-nick-wilde-zootopia.webp"
+  - name: "Perry the Platypus"
+    category: "Disney"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/disney-perry-the-platypus.webp"
+  - name: "The Smurf"
+    category: "Disney"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/disney-the-smurf.webp"
+  - name: "Tom Lizard"
+    category: "Disney"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/disney-tom-lizard.webp"
+  - name: "Goku"
+    category: "Dragon Ball"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/dragon-ball-goku.webp"
+  - name: "Goku Super Saiyan 4 - SSJ4"
+    category: "Dragon Ball"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/dragon-ball-goku-super-saiyan-4-ssj4.webp"
+  - name: "Vegeta"
+    category: "Dragon Ball"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/dragon-ball-vegeta.webp"
+  - name: "Piccolo"
+    category: "Dragon Ball"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/dragon-ball-piccolo.webp"
+  - name: "Frieza"
+    category: "Dragon Ball"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/dragon-ball-frieza.webp"
+  - name: "Golden Frieza"
+    category: "Dragon Ball"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/dragon-ball-golden-frieza.webp"
+  - name: "Cell"
+    category: "Dragon Ball"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/dragon-ball-cell.webp"
+  - name: "Fat Buu"
+    category: "Dragon Ball"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/dragon-ball-fat-buu.webp"
+  - name: "Kid Buu"
+    category: "Dragon Ball"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/dragon-ball-kid-buu.webp"
+  - name: "Grinch"
+    category: "Grinch"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/grinch-grinch.webp"
+  - name: "Max - The Grinch's Dog"
+    category: "Grinch"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/grinch-max-the-grinch-s-dog.webp"
+  - name: "Rumi - HUNTRX"
+    category: "Guerreiras do K-Pop"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/kpop-demon-hunters-rumi-huntrx.webp"
+  - name: "Mira - HUNTRX"
+    category: "Guerreiras do K-Pop"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/kpop-demon-hunters-mira-huntrx.webp"
+  - name: "Zoey - HUNTRX"
+    category: "Guerreiras do K-Pop"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/kpop-demon-hunters-zoey-huntrx.webp"
+  - name: "Derpy Tiger Keychain"
+    category: "Guerreiras do K-Pop"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/kpop-demon-hunters-derpy-tiger-keychain.webp"
+  - name: "Sussy Bird"
+    category: "Guerreiras do K-Pop"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/kpop-demon-hunters-sussy-bird.webp"
+  - name: "Freddy Fazbear Flexi"
+    category: "Halloween"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/halloween-freddy-fazbear-flexi.webp"
+  - name: "Halloween Pumpkin Freddy Fazbear"
+    category: "Halloween"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/halloween-halloween-pumpkin-freddy-fazbear.webp"
+  - name: "Halloween Pumpkin Deadpool"
+    category: "Halloween"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/halloween-halloween-pumpkin-deadpool.webp"
+  - name: "Harry Potter"
+    category: "Harry Potter"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/harry-potter-harry-potter.webp"
+  - name: "Hermione Granger"
+    category: "Harry Potter"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/harry-potter-hermione-granger.webp"
+  - name: "Ron Weasley"
+    category: "Harry Potter"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/harry-potter-ron-weasley.webp"
+  - name: "Draco Malfoy"
+    category: "Harry Potter"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/harry-potter-draco-malfoy.webp"
+  - name: "Hagrid"
+    category: "Harry Potter"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/harry-potter-hagrid.webp"
+  - name: "Dobby"
+    category: "Harry Potter"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/harry-potter-dobby.webp"
+  - name: "Severus Snape"
+    category: "Harry Potter"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/harry-potter-severus-snape.webp"
+  - name: "Sirius Black"
+    category: "Harry Potter"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/harry-potter-sirius-black.webp"
+  - name: "Wise Wizard"
+    category: "Harry Potter"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/harry-potter-wise-wizard.webp"
+  - name: "Hello Kitty"
+    category: "Hello Kitty"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/hello-kitty-hello-kitty.webp"
+  - name: "Kuromi"
+    category: "Hello Kitty"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/hello-kitty-kuromi.webp"
+  - name: "Mario"
+    category: "Mario"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/mario-mario.webp"
+  - name: "Luigi"
+    category: "Mario"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/mario-luigi.webp"
+  - name: "Princess Peach"
+    category: "Mario"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/mario-princess-peach.webp"
+  - name: "Toad"
+    category: "Mario"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/mario-toad.webp"
+  - name: "Yoshi"
+    category: "Mario"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/mario-yoshi.webp"
+  - name: "Bowser"
+    category: "Mario"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/mario-bowser.webp"
+  - name: "Donkey Kong"
+    category: "Mario"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/mario-donkey-kong.webp"
+  - name: "Mario Mushroom"
+    category: "Mario"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/mario-mario-mushroom.webp"
+  - name: "Luma star"
+    category: "Mario"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/mario-luma-star.webp"
+  - name: "Santa Mario"
+    category: "Mario"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/mario-santa-mario.webp"
+  - name: "Santa Luigi"
+    category: "Mario"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/mario-santa-luigi.webp"
+  - name: "Kirby"
+    category: "Mario"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/mario-kirby.webp"
+  - name: "Kirby Yoshi"
+    category: "Mario"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/mario-kirby-yoshi.webp"
+  - name: "Naruto"
+    category: "Naruto"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/naruto-naruto.webp"
+  - name: "Sasuke"
+    category: "Naruto"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/naruto-sasuke.webp"
+  - name: "Sakura"
+    category: "Naruto"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/naruto-sakura.webp"
+  - name: "Kakashi"
+    category: "Naruto"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/naruto-kakashi.webp"
+  - name: "Jiraiya"
+    category: "Naruto"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/naruto-jiraiya.webp"
+  - name: "Itachi"
+    category: "Naruto"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/naruto-itachi.webp"
+  - name: "Luffy Chibi"
+    category: "One Piece"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/one-piece-luffy-chibi.webp"
+  - name: "Luffy"
+    category: "One Piece"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/one-piece-luffy.webp"
+  - name: "Zoro"
+    category: "One Piece"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/one-piece-zoro.webp"
+  - name: "Nami"
+    category: "One Piece"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/one-piece-nami.webp"
+  - name: "Usopp"
+    category: "One Piece"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/one-piece-usopp.webp"
+  - name: "Sanji"
+    category: "One Piece"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/one-piece-sanji.webp"
+  - name: "Chopper"
+    category: "One Piece"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/one-piece-chopper.webp"
+  - name: "Nico Robin"
+    category: "One Piece"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/one-piece-nico-robin.webp"
+  - name: "Franky"
+    category: "One Piece"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/one-piece-franky.webp"
+  - name: "Brook"
+    category: "One Piece"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/one-piece-brook.webp"
+  - name: "Jinbe"
+    category: "One Piece"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/one-piece-jinbe.webp"
+  - name: "Rubber Pirate"
+    category: "One Piece"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/one-piece-rubber-pirate.webp"
+  - name: "Labubu Luffy"
+    category: "One Piece"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/one-piece-labubu-luffy.webp"
+  - name: "Luffy Moon Flexi Lamp"
+    category: "One Piece"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/one-piece-luffy-moon-flexi-lamp.webp"
+  - name: "Gomu Gomu No Mi Gear Fidget Toy - One Piece Luffy Devil Fruit"
+    category: "One Piece"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/one-piece-gomu-gomu-no-mi-gear-fidget-toy-one-piece-luffy-devil-fruit.webp"
+  - name: "Mera Mera No Mi Gear Fidget Toy - One Piece Luffy - Burning Devil Fruit"
+    category: "One Piece"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/one-piece-mera-mera-no-mi-gear-fidget-toy-one-piece-luffy-burning-devil-fruit.webp"
+  - name: "Mera Mera No Mi - Burning Devil Fruit"
+    category: "One Piece"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/one-piece-mera-mera-no-mi-burning-devil-fruit.webp"
+  - name: "Jetdragon"
+    category: "Palworld"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/palworld-jetdragon.webp"
+  - name: "Grizzbolt"
+    category: "Palworld"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/palworld-grizzbolt.webp"
+  - name: "Frostallion"
+    category: "Palworld"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/palworld-frostallion.webp"
+  - name: "Palworld Logo & Keychain"
+    category: "Palworld"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/palworld-palworld-logo-keychain.webp"
+  - name: "Chase"
+    category: "Patrulha Canina"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/paw-patrol-chase.webp"
+  - name: "Bulbasaur"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/pokemon-bulbasaur.webp"
+  - name: "Ivysaur"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/pokemon-ivysaur.webp"
+  - name: "Venusaur"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/pokemon-venusaur.webp"
+  - name: "Bulbasaur Urban Vibes"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-bulbasaur-urban-vibes.webp"
+  - name: "Halloween Pumpkin Bulbasaur"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-halloween-pumpkin-bulbasaur.webp"
+  - name: "Charmander"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/pokemon-charmander.webp"
+  - name: "Charmeleon"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/pokemon-charmeleon.webp"
+  - name: "Charizard"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/pokemon-charizard.webp"
+  - name: "Charmander Urban Vibes"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-charmander-urban-vibes.webp"
+  - name: "Charizard Urban Vibes"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-charizard-urban-vibes.webp"
+  - name: "Squirtle"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/pokemon-squirtle.webp"
+  - name: "Wartortle"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/pokemon-wartortle.webp"
+  - name: "Blastoise"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/pokemon-blastoise.webp"
+  - name: "Squirtle Urban Vibes"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-squirtle-urban-vibes.webp"
+  - name: "Squirtle Saxophone"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-squirtle-saxophone.webp"
+  - name: "Caterpie"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-caterpie.webp"
+  - name: "Pikachu"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/pokemon-pikachu.webp"
+  - name: "Pikachu Urban Vibes"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-pikachu-urban-vibes.webp"
+  - name: "Pikachu Valentine"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/pokemon-pikachu-valentine.webp"
+  - name: "Pikachu - Keychain & Piggy Bank"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/pokemon-pikachu-keychain-piggy-bank.webp"
+  - name: "Pikachu Wolverine"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-pikachu-wolverine.webp"
+  - name: "Jigglypuff"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/pokemon-jigglypuff.webp"
+  - name: "Dugtrio Collapsing"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-dugtrio-collapsing.webp"
+  - name: "Meowth"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/pokemon-meowth.webp"
+  - name: "Psyduck"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/pokemon-psyduck.webp"
+  - name: "Gengar"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/pokemon-gengar.webp"
+  - name: "Gengar Skeleton"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-gengar-skeleton.webp"
+  - name: "Gengar Skeleton - Wall Decor Version"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-gengar-skeleton-wall-decor-version.webp"
+  - name: "Cubone"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/pokemon-cubone.webp"
+  - name: "Eevee"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/pokemon-eevee.webp"
+  - name: "Snorlax"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/pokemon-snorlax.webp"
+  - name: "Halloween Pumpkin Snorlax and Munchlax"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-halloween-pumpkin-snorlax-and-munchlax.webp"
+  - name: "Dragonite"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/pokemon-dragonite.webp"
+  - name: "Mew"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/pokemon-mew.webp"
+  - name: "Chikorita"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/pokemon-chikorita.webp"
+  - name: "Chikorita - Keychain & Piggy Bank"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/pokemon-chikorita-keychain-piggy-bank.webp"
+  - name: "Bayleef"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/pokemon-bayleef.webp"
+  - name: "Meganium"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/pokemon-meganium.webp"
+  - name: "Cyndaquil"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/pokemon-cyndaquil.webp"
+  - name: "Quilava"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/pokemon-quilava.webp"
+  - name: "Typhlosion"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/pokemon-typhlosion.webp"
+  - name: "Totodile"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/pokemon-totodile.webp"
+  - name: "Croconaw"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/pokemon-croconaw.webp"
+  - name: "Feraligatr"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/pokemon-feraligatr.webp"
+  - name: "Togepi"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/pokemon-togepi.webp"
+  - name: "Krookodile Swimming In Water"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-krookodile-swimming-in-water.webp"
+  - name: "Mega Greninja"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-mega-greninja.webp"
+  - name: "Chameleon"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/pokemon-chameleon.webp"
+  - name: "Ash Ketchum (Satoshi)"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/pokemon-ash-ketchum-satoshi.webp"
+  - name: "Misty"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/pokemon-misty.webp"
+  - name: "Brock"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/pokemon-brock.webp"
+  - name: "Browt"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/pokemon-browt.webp"
+  - name: "Pokeball"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/pokemon-pokeball.webp"
+  - name: "Iron Man Pokeball"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-iron-man-pokeball.webp"
+  - name: "Mega Rayquaza Pokeball"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-mega-rayquaza-pokeball.webp"
+  - name: "Airless Pokeball"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-airless-pokeball.webp"
+  - name: "Pokeball Gear Fidget Toy"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-pokeball-gear-fidget-toy.webp"
+  - name: "Pokeball charger stand"
+    category: "Pokémon"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-pokeball-charger-stand.webp"
+  - name: "Snoopy"
+    category: "Snoopy"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/snoopy-snoopy.webp"
+  - name: "Sonic"
+    category: "Sonic"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/sonic-sonic.webp"
+  - name: "Tails"
+    category: "Sonic"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/sonic-tails.webp"
+  - name: "Knuckles"
+    category: "Sonic"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/sonic-knuckles.webp"
+  - name: "Amy Rose"
+    category: "Sonic"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/sonic-amy-rose.webp"
+  - name: "Shadow the Hedgehog"
+    category: "Sonic"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/sonic-shadow-the-hedgehog.webp"
+  - name: "Silver the Hedgehog"
+    category: "Sonic"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/sonic-silver-the-hedgehog.webp"
+  - name: "Super Sonic"
+    category: "Sonic"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/sonic-super-sonic.webp"
+  - name: "Dr. Eggman"
+    category: "Sonic"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/sonic-dr-eggman.webp"
+  - name: "Mandalorian"
+    category: "Star Wars"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/star-wars-mandalorian.webp"
+  - name: "Baby Yoda"
+    category: "Star Wars"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/star-wars-baby-yoda.webp"
+  - name: "Stormtrooper - First Order"
+    category: "Star Wars"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/star-wars-stormtrooper-first-order.webp"
+  - name: "Demogorgon"
+    category: "Stranger Things"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/stranger-things-demogorgon.webp"
+  - name: "Superman"
+    category: "Super-heróis"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/super-heroes-superman.webp"
+  - name: "Batman"
+    category: "Super-heróis"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/super-heroes-batman.webp"
+  - name: "Joker"
+    category: "Super-heróis"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/super-heroes-joker.webp"
+  - name: "Spider Man"
+    category: "Super-heróis"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/super-heroes-spider-man.webp"
+  - name: "Venom"
+    category: "Super-heróis"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/super-heroes-venom.webp"
+  - name: "Hulk"
+    category: "Super-heróis"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/super-heroes-hulk.webp"
+  - name: "Wolverine"
+    category: "Super-heróis"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/super-heroes-wolverine.webp"
+  - name: "Deadpool"
+    category: "Super-heróis"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/super-heroes-deadpool.webp"
+  - name: "Baymax"
+    category: "Super-heróis"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/super-heroes-baymax.webp"
+  - name: "Megaman"
+    category: "Super-heróis"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/super-heroes-megaman.webp"
+  - name: "Zero - Megaman X"
+    category: "Super-heróis"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/super-heroes-zero-megaman-x.webp"
+  - name: "Astro Boy"
+    category: "Super-heróis"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/super-heroes-astro-boy.webp"
+  - name: "Woody"
+    category: "Toy Story"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/toy-story-woody.webp"
+  - name: "Buzz Lightyear"
+    category: "Toy Story"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/toy-story-buzz-lightyear.webp"
+  - name: "Winnie the Pooh"
+    category: "Ursinho Pooh"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/winnie-the-pooh-winnie-the-pooh.webp"
+  - name: "Tigger"
+    category: "Ursinho Pooh"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/winnie-the-pooh-tigger.webp"
+  - name: "Link"
+    category: "Zelda"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/zelda-link.webp"
+  - name: "Princess Zelda"
+    category: "Zelda"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/zelda-princess-zelda.webp"
+  - name: "Gojo Satoru"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/other-gojo-satoru.webp"
+  - name: "Sukuna"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-sukuna.webp"
+  - name: "InuYasha"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/other-inuyasha.webp"
+  - name: "Gon Freecss"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/other-gon-freecss.webp"
+  - name: "Pochita"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/other-pochita.webp"
+  - name: "Agumon"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/other-agumon.webp"
+  - name: "Minions"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/other-minions.webp"
+  - name: "Labubu"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/other-labubu.webp"
+  - name: "Tung Tung Tung Sahur"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/other-tung-tung-tung-sahur.webp"
+  - name: "Squid Game Soldier"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/other-squid-game-soldier.webp"
+  - name: "Jeff the Land Shark - Marvel Rivals"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-jeff-the-land-shark-marvel-rivals.webp"
+  - name: "Care Bears"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/other-care-bears.webp"
+  - name: "Kratos"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/other-kratos.webp"
+  - name: "Shinobi Turtle"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/other-shinobi-turtle.webp"
+  - name: "Bonbon Dog"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/other-bonbon-dog.webp"
+  - name: "Cute Cat"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/other-cute-cat.webp"
+  - name: "Valentine Cat"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/other-valentine-cat.webp"
+  - name: "Cute Corgi"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/other-cute-corgi.webp"
+  - name: "Corgi Dog"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/other-corgi-dog.webp"
+  - name: "Cute Husky"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/other-cute-husky.webp"
+  - name: "Cute Bulldog"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/other-cute-bulldog.webp"
+  - name: "Pug dog flexi"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-pug-dog-flexi.webp"
+  - name: "Hamster"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/other-hamster.webp"
+  - name: "Hamster Flexi"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/other-hamster-flexi.webp"
+  - name: "Fat Cabybara"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular", "Knitted"]
+    image: "/assets/img/projects/other-fat-cabybara.webp"
+  - name: "Cute Capybara Sleep"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-cute-capybara-sleep.webp"
+  - name: "Capybara Crocodile"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-capybara-crocodile.webp"
+  - name: "Cute Cow"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-cute-cow.webp"
+  - name: "Cute Rabbit - Kawaii Rabbit"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-cute-rabbit-kawaii-rabbit.webp"
+  - name: "Cute Chicken"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/other-cute-chicken.webp"
+  - name: "Cute Moo Deng Hippo"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/other-cute-moo-deng-hippo.webp"
+  - name: "Moo Deng Hippo Flexi"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-moo-deng-hippo-flexi.webp"
+  - name: "Cute Snake"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/other-cute-snake.webp"
+  - name: "Seahorse"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/other-seahorse.webp"
+  - name: "Cute Whale"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/other-cute-whale.webp"
+  - name: "Cute Blue Whale"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-cute-blue-whale.webp"
+  - name: "Cute Shark"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/other-cute-shark.webp"
+  - name: "Cute Orange Crab Articulated"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-cute-orange-crab-articulated.webp"
+  - name: "Red-whiskered bulbul"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-red-whiskered-bulbul.webp"
+  - name: "Dragon Cute - Lucky Dragon"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-dragon-cute-lucky-dragon.webp"
+  - name: "Dragon Cute Keycap"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-dragon-cute-keycap.webp"
+  - name: "Cute Dragon Flexi"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-cute-dragon-flexi.webp"
+  - name: "Cute Fat Dragon Flexi"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-cute-fat-dragon-flexi.webp"
+  - name: "Aquarium Diver Diorama"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-aquarium-diver-diorama.webp"
+  - name: "Ball Gear Fidget Toy"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-ball-gear-fidget-toy.webp"
+  - name: "Ball Gear Fidget Toy V2"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-ball-gear-fidget-toy-v2.webp"
+  - name: "Cube Gear Fidget Toy"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-cube-gear-fidget-toy.webp"
+  - name: "Pyramid Gear Fidget Toy"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-pyramid-gear-fidget-toy.webp"
+  - name: "Square Gear Fidget Toy"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-square-gear-fidget-toy.webp"
+  - name: "Hourglass Gear Fidget Toy"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-hourglass-gear-fidget-toy.webp"
+  - name: "Heart Gear Fidget Toy"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-heart-gear-fidget-toy.webp"
+  - name: "Pumpkin Gear Fidget Toy"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-pumpkin-gear-fidget-toy.webp"
+  - name: "The Rock Gear Fidget Toy"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-the-rock-gear-fidget-toy.webp"
+  - name: "Mechanical Box Fidget Toy"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-mechanical-box-fidget-toy.webp"
+  - name: "Articulated Spinner Fidget Toy"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-articulated-spinner-fidget-toy.webp"
+  - name: "Heart Morf worm fidget toy - Puzzle"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-heart-morf-worm-fidget-toy-puzzle.webp"
+  - name: "Morf worm fidget toy - Puzzle"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-morf-worm-fidget-toy-puzzle.webp"
+  - name: "Morf worm fidget toy - Sphere"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-morf-worm-fidget-toy-sphere.webp"
+  - name: "Morf worm fidget toy keychain - Sphere"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-morf-worm-fidget-toy-keychain-sphere.webp"
+  - name: "Morf worm fidget toy - Heart"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-morf-worm-fidget-toy-heart.webp"
+  - name: "Morf worm fidget toy - Circle"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-morf-worm-fidget-toy-circle.webp"
+  - name: "Morf worm fidget toy - Smile - Smiley face"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-morf-worm-fidget-toy-smile-smiley-face.webp"
+  - name: "Morf Worm Fidget Toy - Pacman"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-morf-worm-fidget-toy-pacman.webp"
+  - name: "Airless Basketball"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-airless-basketball.webp"
+  - name: "Airless Star ball - Soccer ball with star - Champion league ball"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-airless-star-ball-soccer-ball-with-star-champion-league-ball.webp"
+  - name: "Airless Volleyball"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-airless-volleyball.webp"
+  - name: "Airless Rugby ball - Football"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-airless-rugby-ball-football.webp"
+  - name: "Airless base ball"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-airless-base-ball.webp"
+  - name: "Airless tennis ball"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-airless-tennis-ball.webp"
+  - name: "Airless table tennis ball - ping pong"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-airless-table-tennis-ball-ping-pong.webp"
+  - name: "Airless Handball"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-airless-handball.webp"
+  - name: "Airless Ball Sci-Fi"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-airless-ball-sci-fi.webp"
+  - name: "Airless Ball Spaghetti"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-airless-ball-spaghetti.webp"
+  - name: "Airless Egg"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-airless-egg.webp"
+  - name: "Airless Egg Pen holder"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-airless-egg-pen-holder.webp"
+  - name: "Christmas Ornaments"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/other-christmas-ornaments.webp"
+  - name: "Snowman"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/other-snowman.webp"
+  - name: "Deer and Candy - Christmas Tree Decor"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Knitted"]
+    image: "/assets/img/projects/other-deer-and-candy-christmas-tree-decor.webp"
+  - name: "Emoji Easter Egg"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-emoji-easter-egg.webp"
+  - name: "Sunflower"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-sunflower.webp"
+  - name: "Mechanical rotating gift box"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-mechanical-rotating-gift-box.webp"
+  - name: "Mechanical Rotating Gift Box - Valentine & Christmas Box"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-mechanical-rotating-gift-box-valentine-christmas-box.webp"
+  - name: "Cute Cloud Tissue Box"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-cute-cloud-tissue-box.webp"
+  - name: "Cute Chicken Cable Holder"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-cute-chicken-cable-holder.webp"
+  - name: "Kawaii Chicken Pen Holder & Plant Pot"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-kawaii-chicken-pen-holder-plant-pot.webp"
+  - name: "Apple Pencil Stand - Holder"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-apple-pencil-stand-holder.webp"
+  - name: "Shark Keycap"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-shark-keycap.webp"
+  - name: "Dinosaur gravity knife - T-Rex carrot knife"
+    category: "Outros"
+    designer: "Whale3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-dinosaur-gravity-knife-t-rex-carrot-knife.webp"

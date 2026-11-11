@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// BLOCO: Filtros (categoria e modelador) e busca da página de projetos
+// BLOCK: Filters (category and designer) and search for the projects page
 // ---------------------------------------------------------------------------
 
 (function () {
@@ -10,15 +10,14 @@
   const chips = Array.prototype.slice.call(controls.querySelectorAll(".stock-chip"));
   const searchInput = controls.querySelector("[data-projects-search]");
   const countMsg = document.querySelector("[data-projects-count]");
-  const GROUPS = ["categoria", "modelador"];
+  const GROUPS = ["category", "designer"];
 
-  // Palavras de ligação que o cliente digita ("pikachu do pokemon") mas que
-  // não ajudam a achar nada.
+  // Filler words customers type ("pikachu do pokemon") that don't help match.
   const STOPWORDS = ["de", "do", "da", "dos", "das", "o", "a", "e", "the"];
 
-  // Remove acentos e caixa pra busca "tolerante" (ex.: "pokemon" acha "Pokémon").
-  function normalize(txt) {
-    return (txt || "")
+  // Drops accents and case so the search is forgiving ("pokemon" finds "Pokémon").
+  function normalize(text) {
+    return (text || "")
       .normalize("NFD")
       .replace(/\p{Diacritic}/gu, "")
       .toLowerCase()
@@ -27,36 +26,36 @@
 
   const items = Array.prototype.slice.call(grid.querySelectorAll(".stock-card")).map(function (card) {
     const item = { el: card, text: normalize(card.getAttribute("data-search")) };
-    GROUPS.forEach(function (g) {
-      item[g] = card.getAttribute("data-" + g);
+    GROUPS.forEach(function (group) {
+      item[group] = card.getAttribute("data-" + group);
     });
     return item;
   });
 
-  const active = { categoria: [], modelador: [] };
+  const active = { category: [], designer: [] };
   let words = [];
 
-  // Cada palavra buscada precisa aparecer no nome, categoria, modelador ou
-  // versão, em qualquer ordem.
+  // Every searched word must show up in the name, category, designer or
+  // version, in any order.
   function matchesSearch(item) {
-    return words.every(function (w) {
-      return item.text.indexOf(w) !== -1;
+    return words.every(function (word) {
+      return item.text.indexOf(word) !== -1;
     });
   }
 
-  // Dentro de um grupo, várias marcadas = união (cada projeto tem um valor só);
-  // entre grupos, interseção. `skip` ignora um grupo (usado nas contagens).
+  // Inside a group several chips = union (each project has one value);
+  // across groups = intersection. `skip` ignores one group (used for counts).
   function matchesGroups(item, skip) {
-    return GROUPS.every(function (g) {
-      return g === skip || active[g].length === 0 || active[g].indexOf(item[g]) !== -1;
+    return GROUPS.every(function (group) {
+      return group === skip || active[group].length === 0 || active[group].indexOf(item[group]) !== -1;
     });
   }
 
-  // Uma passada só: mostra/esconde os cards e conta, por grupo, quantos
-  // projetos cada chip mostraria (respeitando a busca e o outro grupo).
+  // Single pass: shows/hides cards and counts, per group, how many projects
+  // each chip would show (respecting the search and the other group).
   function apply() {
-    const counts = { categoria: {}, modelador: {} };
-    const totals = { categoria: 0, modelador: 0 };
+    const counts = { category: {}, designer: {} };
+    const totals = { category: 0, designer: 0 };
     let visible = 0;
 
     items.forEach(function (item) {
@@ -64,10 +63,10 @@
         item.el.classList.add("stock-card--hidden");
         return;
       }
-      GROUPS.forEach(function (g) {
-        if (matchesGroups(item, g)) {
-          counts[g][item[g]] = (counts[g][item[g]] || 0) + 1;
-          totals[g]++;
+      GROUPS.forEach(function (group) {
+        if (matchesGroups(item, group)) {
+          counts[group][item[group]] = (counts[group][item[group]] || 0) + 1;
+          totals[group]++;
         }
       });
       const show = matchesGroups(item);
@@ -78,7 +77,7 @@
     chips.forEach(function (chip) {
       const group = chip.getAttribute("data-group");
       const filter = chip.getAttribute("data-filter");
-      const isAll = filter === "todos";
+      const isAll = filter === "all";
       const isActive = isAll ? active[group].length === 0 : active[group].indexOf(filter) !== -1;
       const n = isAll ? totals[group] : counts[group][filter] || 0;
 
@@ -104,7 +103,7 @@
       if (chip.disabled) return;
       const list = active[chip.getAttribute("data-group")];
       const filter = chip.getAttribute("data-filter");
-      if (filter === "todos") {
+      if (filter === "all") {
         list.length = 0;
       } else {
         const i = list.indexOf(filter);
@@ -119,8 +118,8 @@
     searchInput.addEventListener("input", function () {
       words = normalize(searchInput.value)
         .split(/\s+/)
-        .filter(function (w) {
-          return w !== "" && STOPWORDS.indexOf(w) === -1;
+        .filter(function (word) {
+          return word !== "" && STOPWORDS.indexOf(word) === -1;
         });
       apply();
     });
