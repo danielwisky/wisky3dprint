@@ -3,8 +3,8 @@
 # Fields of each project (values shown on the site stay in Portuguese):
 #   - name:     card title, also used by the search.
 #   - category: becomes a filter chip at the top of the page.
-#   - designer: who made the model (e.g. "Whale3D"); becomes a chip in the
-#               "Modelador:" row.
+#   - designer: who made the model (e.g. "Whale3D", "Cats3D"); becomes a chip
+#               in the "Modelador:" row.
 #   - versions: Regular and/or Knitted (shown as "lisa" / "tricô").
 #   - image:    photo in assets/img/projects/ (webp, up to 400px, quality 72),
 #               named <category-in-english>-<name>.webp.
@@ -16,6 +16,7 @@
 # title still finds the projects after the category was translated.
 category_search_terms:
   "Ataque dos Titãs": "Attack on Titan Shingeki no Kyojin"
+  "Avatar": "The Last Airbender Aang"
   "Como Treinar o Seu Dragão": "How to Train Your Dragon"
   "Demon Slayer": "Kimetsu no Yaiba"
   "Disney": "Pixar"
@@ -23,11 +24,15 @@ category_search_terms:
   "Guerreiras do K-Pop": "K-Pop Demon Hunters Huntrx"
   "Hello Kitty": "Sanrio"
   "Mario": "Super Mario Nintendo"
+  "Meninas Superpoderosas": "Powerpuff Girls"
   "Patrulha Canina": "Paw Patrol"
+  "Religiosos": "Santa Santo"
   "Snoopy": "Peanuts"
   "Super-heróis": "Super Hero Marvel DC"
+  "Tartarugas Ninja": "Teenage Mutant Ninja Turtles TMNT"
   "Toy Story": "Pixar"
   "Ursinho Pooh": "Winnie the Pooh"
+  "Ursos sem Curso": "We Bare Bears"
   "Zelda": "Nintendo"
 
 projects:
@@ -46,6 +51,31 @@ projects:
     designer: "Whale3D"
     versions: ["Regular", "Knitted"]
     image: "/assets/img/projects/attack-on-titan-levi-ackerman.webp"
+  - name: "Aang & Momo"
+    category: "Avatar"
+    designer: "Mortex.3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/avatar-aang-momo.webp"
+  - name: "Katara & Sokka"
+    category: "Avatar"
+    designer: "Mortex.3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/avatar-katara-sokka.webp"
+  - name: "Toph"
+    category: "Avatar"
+    designer: "Mortex.3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/avatar-toph.webp"
+  - name: "Fire Benders"
+    category: "Avatar"
+    designer: "Mortex.3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/avatar-fire-benders.webp"
+  - name: "Kyoshi"
+    category: "Avatar"
+    designer: "Mortex.3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/avatar-kyoshi.webp"
   - name: "Bluey"
     category: "Bluey"
     designer: "Whale3D"
@@ -116,6 +146,11 @@ projects:
     designer: "Whale3D"
     versions: ["Knitted"]
     image: "/assets/img/projects/demon-slayer-akaza.webp"
+  - name: "Zenitsu (Mix&Bits)"
+    category: "Demon Slayer"
+    designer: "Mix&Bits"
+    versions: ["Regular"]
+    image: "/assets/img/projects/demon-slayer-zenitsu-mix-bits.webp"
   - name: "Mickey"
     category: "Disney"
     designer: "Whale3D"
@@ -196,6 +231,41 @@ projects:
     designer: "Whale3D"
     versions: ["Regular", "Knitted"]
     image: "/assets/img/projects/disney-tom-lizard.webp"
+  - name: "Wizard Mickey Keychain"
+    category: "Disney"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/disney-wizard-mickey-keychain.webp"
+  - name: "Goofy - Halloween"
+    category: "Disney"
+    designer: "Mix&Bits"
+    versions: ["Regular"]
+    image: "/assets/img/projects/disney-goofy-halloween.webp"
+  - name: "Jasmine"
+    category: "Disney"
+    designer: "Mortex.3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/disney-jasmine.webp"
+  - name: "Mulan"
+    category: "Disney"
+    designer: "Mortex.3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/disney-mulan.webp"
+  - name: "Cinderella"
+    category: "Disney"
+    designer: "Mortex.3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/disney-cinderella.webp"
+  - name: "Rapunzel Keychain"
+    category: "Disney"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/disney-rapunzel-keychain.webp"
+  - name: "Moana Keychain"
+    category: "Disney"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/disney-moana-keychain.webp"
   - name: "Goku"
     category: "Dragon Ball"
     designer: "Whale3D"
@@ -241,6 +311,66 @@ projects:
     designer: "Whale3D"
     versions: ["Knitted"]
     image: "/assets/img/projects/dragon-ball-kid-buu.webp"
+  - name: "Goku Base & Super Saiyan (Mortex.3D)"
+    category: "Dragon Ball"
+    designer: "Mortex.3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/dragon-ball-goku-base-super-saiyan-mortex-3d.webp"
+  - name: "Goku Super Saiyan Pack (Mortex.3D)"
+    category: "Dragon Ball"
+    designer: "Mortex.3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/dragon-ball-goku-super-saiyan-pack-mortex-3d.webp"
+  - name: "Goku Ultra Instinct"
+    category: "Dragon Ball"
+    designer: "Astromaker"
+    versions: ["Regular"]
+    image: "/assets/img/projects/dragon-ball-goku-ultra-instinct.webp"
+  - name: "Goku - Yardrat Outfit"
+    category: "Dragon Ball"
+    designer: "Mix&Bits"
+    versions: ["Regular"]
+    image: "/assets/img/projects/dragon-ball-goku-yardrat-outfit.webp"
+  - name: "Goku Black"
+    category: "Dragon Ball"
+    designer: "Astromaker"
+    versions: ["Regular"]
+    image: "/assets/img/projects/dragon-ball-goku-black.webp"
+  - name: "Great Ape - Oozaru"
+    category: "Dragon Ball"
+    designer: "Astromaker"
+    versions: ["Regular"]
+    image: "/assets/img/projects/dragon-ball-great-ape-oozaru.webp"
+  - name: "Future Gohan"
+    category: "Dragon Ball"
+    designer: "Mix&Bits"
+    versions: ["Regular"]
+    image: "/assets/img/projects/dragon-ball-future-gohan.webp"
+  - name: "Future Trunks"
+    category: "Dragon Ball"
+    designer: "Mix&Bits"
+    versions: ["Regular"]
+    image: "/assets/img/projects/dragon-ball-future-trunks.webp"
+  - name: "Fat Buu (Astromaker)"
+    category: "Dragon Ball"
+    designer: "Astromaker"
+    versions: ["Regular"]
+    image: "/assets/img/projects/dragon-ball-fat-buu-astromaker.webp"
+  - name: "Kid Buu Keychain"
+    category: "Dragon Ball"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/dragon-ball-kid-buu-keychain.webp"
+  - name: "Jiren"
+    category: "Dragon Ball"
+    designer: "Astromaker"
+    versions: ["Regular"]
+    image: "/assets/img/projects/dragon-ball-jiren.webp"
+  - name: "Whis"
+    category: "Dragon Ball"
+    designer: "Astromaker"
+    versions: ["Regular"]
+    image: "/assets/img/projects/dragon-ball-whis.webp"
   - name: "Grinch"
     category: "Grinch"
     designer: "Whale3D"
@@ -291,6 +421,106 @@ projects:
     designer: "Whale3D"
     versions: ["Regular"]
     image: "/assets/img/projects/halloween-halloween-pumpkin-deadpool.webp"
+  - name: "Ghostface"
+    category: "Halloween"
+    designer: "Astromaker"
+    versions: ["Regular"]
+    image: "/assets/img/projects/halloween-ghostface.webp"
+  - name: "Ghostface Keychain"
+    category: "Halloween"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/halloween-ghostface-keychain.webp"
+  - name: "Ghostface Dragon"
+    category: "Halloween"
+    designer: "Boxi3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/halloween-ghostface-dragon.webp"
+  - name: "Pennywise Keychain"
+    category: "Halloween"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/halloween-pennywise-keychain.webp"
+  - name: "Chucky Keychain"
+    category: "Halloween"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/halloween-chucky-keychain.webp"
+  - name: "Tiffany Valentine"
+    category: "Halloween"
+    designer: "Boxi3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/halloween-tiffany-valentine.webp"
+  - name: "Tiffany Valentine Keychain"
+    category: "Halloween"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/halloween-tiffany-valentine-keychain.webp"
+  - name: "Michael Myers Keychain"
+    category: "Halloween"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/halloween-michael-myers-keychain.webp"
+  - name: "Fatso - Killer Klowns"
+    category: "Halloween"
+    designer: "Boxi3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/halloween-fatso-killer-klowns.webp"
+  - name: "Gill-man - Creature from the Black Lagoon"
+    category: "Halloween"
+    designer: "Boxi3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/halloween-gill-man-creature-from-the-black-lagoon.webp"
+  - name: "Winifred Sanderson - Hocus Pocus"
+    category: "Halloween"
+    designer: "Boxi3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/halloween-winifred-sanderson-hocus-pocus.webp"
+  - name: "Mary Sanderson - Hocus Pocus"
+    category: "Halloween"
+    designer: "Boxi3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/halloween-mary-sanderson-hocus-pocus.webp"
+  - name: "Victor Van Dort - Corpse Bride"
+    category: "Halloween"
+    designer: "Boxi3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/halloween-victor-van-dort-corpse-bride.webp"
+  - name: "Addams Family Collection"
+    category: "Halloween"
+    designer: "Boxi3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/halloween-addams-family-collection.webp"
+  - name: "Halloween Pack"
+    category: "Halloween"
+    designer: "Mortex.3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/halloween-halloween-pack.webp"
+  - name: "Terror Pack"
+    category: "Halloween"
+    designer: "Mortex.3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/halloween-terror-pack.webp"
+  - name: "Mummy Keychain"
+    category: "Halloween"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/halloween-mummy-keychain.webp"
+  - name: "Skeleton Keychain"
+    category: "Halloween"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/halloween-skeleton-keychain.webp"
+  - name: "Ghost with Heart Keychain"
+    category: "Halloween"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/halloween-ghost-with-heart-keychain.webp"
+  - name: "Pumpkin Keychain"
+    category: "Halloween"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/halloween-pumpkin-keychain.webp"
   - name: "Harry Potter"
     category: "Harry Potter"
     designer: "Whale3D"
@@ -336,6 +566,56 @@ projects:
     designer: "Whale3D"
     versions: ["Knitted"]
     image: "/assets/img/projects/harry-potter-wise-wizard.webp"
+  - name: "Harry Potter & Hedwig"
+    category: "Harry Potter"
+    designer: "Boxi3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/harry-potter-harry-potter-hedwig.webp"
+  - name: "Hermione Granger & Crookshanks"
+    category: "Harry Potter"
+    designer: "Boxi3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/harry-potter-hermione-granger-crookshanks.webp"
+  - name: "Ron Weasley & Scabbers"
+    category: "Harry Potter"
+    designer: "Boxi3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/harry-potter-ron-weasley-scabbers.webp"
+  - name: "Draco Malfoy (Mortex.3D)"
+    category: "Harry Potter"
+    designer: "Mortex.3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/harry-potter-draco-malfoy-mortex-3d.webp"
+  - name: "Luna Lovegood"
+    category: "Harry Potter"
+    designer: "Boxi3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/harry-potter-luna-lovegood.webp"
+  - name: "Hagrid (Boxi3D)"
+    category: "Harry Potter"
+    designer: "Boxi3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/harry-potter-hagrid-boxi3d.webp"
+  - name: "Fang - Hagrid's Dog"
+    category: "Harry Potter"
+    designer: "Boxi3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/harry-potter-fang-hagrid-s-dog.webp"
+  - name: "Dobby (Boxi3D)"
+    category: "Harry Potter"
+    designer: "Boxi3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/harry-potter-dobby-boxi3d.webp"
+  - name: "Thestral"
+    category: "Harry Potter"
+    designer: "Boxi3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/harry-potter-thestral.webp"
+  - name: "Hogwarts"
+    category: "Harry Potter"
+    designer: "Boxi3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/harry-potter-hogwarts.webp"
   - name: "Hello Kitty"
     category: "Hello Kitty"
     designer: "Whale3D"
@@ -411,6 +691,36 @@ projects:
     designer: "Whale3D"
     versions: ["Knitted"]
     image: "/assets/img/projects/mario-kirby-yoshi.webp"
+  - name: "Mario & Yoshi"
+    category: "Mario"
+    designer: "Astromaker"
+    versions: ["Regular"]
+    image: "/assets/img/projects/mario-mario-yoshi.webp"
+  - name: "Princess Peach Keychain"
+    category: "Mario"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/mario-princess-peach-keychain.webp"
+  - name: "Mario Bros Pack"
+    category: "Mario"
+    designer: "Mortex.3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/mario-mario-bros-pack.webp"
+  - name: "Blossom Keychain"
+    category: "Meninas Superpoderosas"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/powerpuff-girls-blossom-keychain.webp"
+  - name: "Bubbles Keychain"
+    category: "Meninas Superpoderosas"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/powerpuff-girls-bubbles-keychain.webp"
+  - name: "Buttercup Keychain"
+    category: "Meninas Superpoderosas"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/powerpuff-girls-buttercup-keychain.webp"
   - name: "Naruto"
     category: "Naruto"
     designer: "Whale3D"
@@ -441,6 +751,26 @@ projects:
     designer: "Whale3D"
     versions: ["Knitted"]
     image: "/assets/img/projects/naruto-itachi.webp"
+  - name: "Sasuke (Astromaker)"
+    category: "Naruto"
+    designer: "Astromaker"
+    versions: ["Regular"]
+    image: "/assets/img/projects/naruto-sasuke-astromaker.webp"
+  - name: "Itachi (Astromaker)"
+    category: "Naruto"
+    designer: "Astromaker"
+    versions: ["Regular"]
+    image: "/assets/img/projects/naruto-itachi-astromaker.webp"
+  - name: "Jiraiya (Astromaker)"
+    category: "Naruto"
+    designer: "Astromaker"
+    versions: ["Regular"]
+    image: "/assets/img/projects/naruto-jiraiya-astromaker.webp"
+  - name: "Minato"
+    category: "Naruto"
+    designer: "Astromaker"
+    versions: ["Regular"]
+    image: "/assets/img/projects/naruto-minato.webp"
   - name: "Luffy Chibi"
     category: "One Piece"
     designer: "Whale3D"
@@ -576,6 +906,16 @@ projects:
     designer: "Whale3D"
     versions: ["Regular"]
     image: "/assets/img/projects/pokemon-halloween-pumpkin-bulbasaur.webp"
+  - name: "Chibi Venusaur"
+    category: "Pokémon"
+    designer: "X-Hobby"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-chibi-venusaur.webp"
+  - name: "Halloween Bulbasaur"
+    category: "Pokémon"
+    designer: "Boxi3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-halloween-bulbasaur.webp"
   - name: "Charmander"
     category: "Pokémon"
     designer: "Whale3D"
@@ -601,6 +941,21 @@ projects:
     designer: "Whale3D"
     versions: ["Regular"]
     image: "/assets/img/projects/pokemon-charizard-urban-vibes.webp"
+  - name: "Chibi Charizard"
+    category: "Pokémon"
+    designer: "X-Hobby"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-chibi-charizard.webp"
+  - name: "Charizard Breath Lamp"
+    category: "Pokémon"
+    designer: "X-Hobby"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-charizard-breath-lamp.webp"
+  - name: "Mega Charizard X Flame Lamp"
+    category: "Pokémon"
+    designer: "X-Hobby"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-mega-charizard-x-flame-lamp.webp"
   - name: "Squirtle"
     category: "Pokémon"
     designer: "Whale3D"
@@ -626,6 +981,11 @@ projects:
     designer: "Whale3D"
     versions: ["Regular"]
     image: "/assets/img/projects/pokemon-squirtle-saxophone.webp"
+  - name: "Chibi Blastoise"
+    category: "Pokémon"
+    designer: "X-Hobby"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-chibi-blastoise.webp"
   - name: "Caterpie"
     category: "Pokémon"
     designer: "Whale3D"
@@ -656,11 +1016,51 @@ projects:
     designer: "Whale3D"
     versions: ["Regular"]
     image: "/assets/img/projects/pokemon-pikachu-wolverine.webp"
+  - name: "Chibi Pikachu"
+    category: "Pokémon"
+    designer: "X-Hobby"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-chibi-pikachu.webp"
+  - name: "Halloween Pumpkin Pikachu Light"
+    category: "Pokémon"
+    designer: "X-Hobby"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-halloween-pumpkin-pikachu-light.webp"
+  - name: "Pikachu Smashed by Pokeball"
+    category: "Pokémon"
+    designer: "X-Hobby"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-pikachu-smashed-by-pokeball.webp"
+  - name: "Pikachu Legendary Poncho"
+    category: "Pokémon"
+    designer: "Mortex.3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-pikachu-legendary-poncho.webp"
+  - name: "Pikachu Starter Poncho"
+    category: "Pokémon"
+    designer: "Mortex.3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-pikachu-starter-poncho.webp"
+  - name: "Raichu"
+    category: "Pokémon"
+    designer: "Mortex.3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-raichu.webp"
+  - name: "Sandshrew & Sandslash"
+    category: "Pokémon"
+    designer: "Mortex.3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-sandshrew-sandslash.webp"
   - name: "Jigglypuff"
     category: "Pokémon"
     designer: "Whale3D"
     versions: ["Knitted"]
     image: "/assets/img/projects/pokemon-jigglypuff.webp"
+  - name: "Vileplume Fragrance Diffuser"
+    category: "Pokémon"
+    designer: "X-Hobby"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-vileplume-fragrance-diffuser.webp"
   - name: "Dugtrio Collapsing"
     category: "Pokémon"
     designer: "Whale3D"
@@ -676,6 +1076,26 @@ projects:
     designer: "Whale3D"
     versions: ["Regular", "Knitted"]
     image: "/assets/img/projects/pokemon-psyduck.webp"
+  - name: "Psyduck (Boxi3D)"
+    category: "Pokémon"
+    designer: "Boxi3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-psyduck-boxi3d.webp"
+  - name: "Psyduck Poncho"
+    category: "Pokémon"
+    designer: "Mortex.3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-psyduck-poncho.webp"
+  - name: "Arcanine Keychain"
+    category: "Pokémon"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-arcanine-keychain.webp"
+  - name: "Magneton"
+    category: "Pokémon"
+    designer: "Mortex.3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-magneton.webp"
   - name: "Gengar"
     category: "Pokémon"
     designer: "Whale3D"
@@ -691,6 +1111,21 @@ projects:
     designer: "Whale3D"
     versions: ["Regular"]
     image: "/assets/img/projects/pokemon-gengar-skeleton-wall-decor-version.webp"
+  - name: "Gengar Keychain"
+    category: "Pokémon"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-gengar-keychain.webp"
+  - name: "Chibi Gengar"
+    category: "Pokémon"
+    designer: "X-Hobby"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-chibi-gengar.webp"
+  - name: "Pumpkin Gengar"
+    category: "Pokémon"
+    designer: "X-Hobby"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-pumpkin-gengar.webp"
   - name: "Cubone"
     category: "Pokémon"
     designer: "Whale3D"
@@ -721,6 +1156,11 @@ projects:
     designer: "Whale3D"
     versions: ["Knitted"]
     image: "/assets/img/projects/pokemon-mew.webp"
+  - name: "Mew (Mortex.3D)"
+    category: "Pokémon"
+    designer: "Mortex.3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-mew-mortex-3d.webp"
   - name: "Chikorita"
     category: "Pokémon"
     designer: "Whale3D"
@@ -731,6 +1171,11 @@ projects:
     designer: "Whale3D"
     versions: ["Knitted"]
     image: "/assets/img/projects/pokemon-chikorita-keychain-piggy-bank.webp"
+  - name: "Razor Leaf Chikorita & Petri Dish"
+    category: "Pokémon"
+    designer: "X-Hobby"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-razor-leaf-chikorita-petri-dish.webp"
   - name: "Bayleef"
     category: "Pokémon"
     designer: "Whale3D"
@@ -776,6 +1221,46 @@ projects:
     designer: "Whale3D"
     versions: ["Knitted"]
     image: "/assets/img/projects/pokemon-togepi.webp"
+  - name: "Togepi (Mortex.3D)"
+    category: "Pokémon"
+    designer: "Mortex.3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-togepi-mortex-3d.webp"
+  - name: "Chibi Regirock"
+    category: "Pokémon"
+    designer: "X-Hobby"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-chibi-regirock.webp"
+  - name: "Chibi Regice"
+    category: "Pokémon"
+    designer: "X-Hobby"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-chibi-regice.webp"
+  - name: "Chibi Registeel"
+    category: "Pokémon"
+    designer: "X-Hobby"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-chibi-registeel.webp"
+  - name: "Groudon Venusaur Fusion"
+    category: "Pokémon"
+    designer: "Mortex.3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-groudon-venusaur-fusion.webp"
+  - name: "Rayquaza Charizard Fusion"
+    category: "Pokémon"
+    designer: "Mortex.3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-rayquaza-charizard-fusion.webp"
+  - name: "Chibi Jirachi"
+    category: "Pokémon"
+    designer: "X-Hobby"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-chibi-jirachi.webp"
+  - name: "Articulated Regigigas"
+    category: "Pokémon"
+    designer: "X-Hobby"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-articulated-regigigas.webp"
   - name: "Krookodile Swimming In Water"
     category: "Pokémon"
     designer: "Whale3D"
@@ -786,6 +1271,11 @@ projects:
     designer: "Whale3D"
     versions: ["Regular"]
     image: "/assets/img/projects/pokemon-mega-greninja.webp"
+  - name: "Greninja Keychain"
+    category: "Pokémon"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/pokemon-greninja-keychain.webp"
   - name: "Chameleon"
     category: "Pokémon"
     designer: "Whale3D"
@@ -841,11 +1331,31 @@ projects:
     designer: "Whale3D"
     versions: ["Regular"]
     image: "/assets/img/projects/pokemon-pokeball-charger-stand.webp"
+  - name: "Virgin Mary Keychain"
+    category: "Religiosos"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/religious-virgin-mary-keychain.webp"
+  - name: "Nossa Senhora Aparecida Keychain"
+    category: "Religiosos"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/religious-nossa-senhora-aparecida-keychain.webp"
+  - name: "Carlo Acutis Keychain"
+    category: "Religiosos"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/religious-carlo-acutis-keychain.webp"
   - name: "Snoopy"
     category: "Snoopy"
     designer: "Whale3D"
     versions: ["Knitted"]
     image: "/assets/img/projects/snoopy-snoopy.webp"
+  - name: "Snoopy Doghouse Keychain"
+    category: "Snoopy"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/snoopy-snoopy-doghouse-keychain.webp"
   - name: "Sonic"
     category: "Sonic"
     designer: "Whale3D"
@@ -886,6 +1396,16 @@ projects:
     designer: "Whale3D"
     versions: ["Knitted"]
     image: "/assets/img/projects/sonic-dr-eggman.webp"
+  - name: "Sonic (Astromaker)"
+    category: "Sonic"
+    designer: "Astromaker"
+    versions: ["Regular"]
+    image: "/assets/img/projects/sonic-sonic-astromaker.webp"
+  - name: "Sonic Keychain"
+    category: "Sonic"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/sonic-sonic-keychain.webp"
   - name: "Mandalorian"
     category: "Star Wars"
     designer: "Whale3D"
@@ -901,6 +1421,16 @@ projects:
     designer: "Whale3D"
     versions: ["Regular", "Knitted"]
     image: "/assets/img/projects/star-wars-stormtrooper-first-order.webp"
+  - name: "Anakin & Battle Droid"
+    category: "Star Wars"
+    designer: "Mortex.3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/star-wars-anakin-battle-droid.webp"
+  - name: "Bo-Katan"
+    category: "Star Wars"
+    designer: "Mortex.3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/star-wars-bo-katan.webp"
   - name: "Demogorgon"
     category: "Stranger Things"
     designer: "Whale3D"
@@ -966,6 +1496,126 @@ projects:
     designer: "Whale3D"
     versions: ["Regular", "Knitted"]
     image: "/assets/img/projects/super-heroes-astro-boy.webp"
+  - name: "Superman Keychain"
+    category: "Super-heróis"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/super-heroes-superman-keychain.webp"
+  - name: "Wonder Woman Keychain"
+    category: "Super-heróis"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/super-heroes-wonder-woman-keychain.webp"
+  - name: "Hal Jordan - Green Lantern"
+    category: "Super-heróis"
+    designer: "Mix&Bits"
+    versions: ["Regular"]
+    image: "/assets/img/projects/super-heroes-hal-jordan-green-lantern.webp"
+  - name: "Guy Gardner - Green Lantern"
+    category: "Super-heróis"
+    designer: "Mix&Bits"
+    versions: ["Regular"]
+    image: "/assets/img/projects/super-heroes-guy-gardner-green-lantern.webp"
+  - name: "Spider-Man (Boxi3D)"
+    category: "Super-heróis"
+    designer: "Boxi3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/super-heroes-spider-man-boxi3d.webp"
+  - name: "Hanging Spider-Man Chibi"
+    category: "Super-heróis"
+    designer: "X-Hobby"
+    versions: ["Regular"]
+    image: "/assets/img/projects/super-heroes-hanging-spider-man-chibi.webp"
+  - name: "Hanging Black Spider-Man Chibi"
+    category: "Super-heróis"
+    designer: "X-Hobby"
+    versions: ["Regular"]
+    image: "/assets/img/projects/super-heroes-hanging-black-spider-man-chibi.webp"
+  - name: "Swinging Spider-Man Keychain"
+    category: "Super-heróis"
+    designer: "X-Hobby"
+    versions: ["Regular"]
+    image: "/assets/img/projects/super-heroes-swinging-spider-man-keychain.webp"
+  - name: "Miles Morales - Ultimate Spider-Man"
+    category: "Super-heróis"
+    designer: "X-Hobby"
+    versions: ["Regular"]
+    image: "/assets/img/projects/super-heroes-miles-morales-ultimate-spider-man.webp"
+  - name: "Spider-Man 2099"
+    category: "Super-heróis"
+    designer: "X-Hobby"
+    versions: ["Regular"]
+    image: "/assets/img/projects/super-heroes-spider-man-2099.webp"
+  - name: "Hanging Spider-Gwen Chibi"
+    category: "Super-heróis"
+    designer: "X-Hobby"
+    versions: ["Regular"]
+    image: "/assets/img/projects/super-heroes-hanging-spider-gwen-chibi.webp"
+  - name: "Swinging Spider-Gwen Keychain"
+    category: "Super-heróis"
+    designer: "X-Hobby"
+    versions: ["Regular"]
+    image: "/assets/img/projects/super-heroes-swinging-spider-gwen-keychain.webp"
+  - name: "WD-40 Spider-Man"
+    category: "Super-heróis"
+    designer: "X-Hobby"
+    versions: ["Regular"]
+    image: "/assets/img/projects/super-heroes-wd-40-spider-man.webp"
+  - name: "Spider-Man Dragon"
+    category: "Super-heróis"
+    designer: "Boxi3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/super-heroes-spider-man-dragon.webp"
+  - name: "Wolverine Keychain"
+    category: "Super-heróis"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/super-heroes-wolverine-keychain.webp"
+  - name: "Deadpool Keychain"
+    category: "Super-heróis"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/super-heroes-deadpool-keychain.webp"
+  - name: "Jean Grey - X-Men '97"
+    category: "Super-heróis"
+    designer: "Mix&Bits"
+    versions: ["Regular"]
+    image: "/assets/img/projects/super-heroes-jean-grey-x-men-97.webp"
+  - name: "Thanos Keychain"
+    category: "Super-heróis"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/super-heroes-thanos-keychain.webp"
+  - name: "Doctor Doom Keychain"
+    category: "Super-heróis"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/super-heroes-doctor-doom-keychain.webp"
+  - name: "Ghost Rider Keychain"
+    category: "Super-heróis"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/super-heroes-ghost-rider-keychain.webp"
+  - name: "Master Splinter"
+    category: "Tartarugas Ninja"
+    designer: "Mix&Bits"
+    versions: ["Regular"]
+    image: "/assets/img/projects/tmnt-master-splinter.webp"
+  - name: "Shredder"
+    category: "Tartarugas Ninja"
+    designer: "Mix&Bits"
+    versions: ["Regular"]
+    image: "/assets/img/projects/tmnt-shredder.webp"
+  - name: "Bebop"
+    category: "Tartarugas Ninja"
+    designer: "Mix&Bits"
+    versions: ["Regular"]
+    image: "/assets/img/projects/tmnt-bebop.webp"
+  - name: "Rocksteady"
+    category: "Tartarugas Ninja"
+    designer: "Mix&Bits"
+    versions: ["Regular"]
+    image: "/assets/img/projects/tmnt-rocksteady.webp"
   - name: "Woody"
     category: "Toy Story"
     designer: "Whale3D"
@@ -976,6 +1626,31 @@ projects:
     designer: "Whale3D"
     versions: ["Regular", "Knitted"]
     image: "/assets/img/projects/toy-story-buzz-lightyear.webp"
+  - name: "Woody (Boxi3D)"
+    category: "Toy Story"
+    designer: "Boxi3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/toy-story-woody-boxi3d.webp"
+  - name: "Toy Story Pack"
+    category: "Toy Story"
+    designer: "Mortex.3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/toy-story-toy-story-pack.webp"
+  - name: "Bullseye"
+    category: "Toy Story"
+    designer: "Boxi3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/toy-story-bullseye.webp"
+  - name: "Lotso Keychain"
+    category: "Toy Story"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/toy-story-lotso-keychain.webp"
+  - name: "Alien Keychain"
+    category: "Toy Story"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/toy-story-alien-keychain.webp"
   - name: "Winnie the Pooh"
     category: "Ursinho Pooh"
     designer: "Whale3D"
@@ -986,6 +1661,31 @@ projects:
     designer: "Whale3D"
     versions: ["Knitted"]
     image: "/assets/img/projects/winnie-the-pooh-tigger.webp"
+  - name: "Christmas Pooh Keychain"
+    category: "Ursinho Pooh"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/winnie-the-pooh-christmas-pooh-keychain.webp"
+  - name: "Eeyore Keychain"
+    category: "Ursinho Pooh"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/winnie-the-pooh-eeyore-keychain.webp"
+  - name: "Grizzly Keychain"
+    category: "Ursos sem Curso"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/we-bare-bears-grizzly-keychain.webp"
+  - name: "Panda Keychain"
+    category: "Ursos sem Curso"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/we-bare-bears-panda-keychain.webp"
+  - name: "Ice Bear Keychain"
+    category: "Ursos sem Curso"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/we-bare-bears-ice-bear-keychain.webp"
   - name: "Link"
     category: "Zelda"
     designer: "Whale3D"
@@ -996,6 +1696,26 @@ projects:
     designer: "Whale3D"
     versions: ["Knitted"]
     image: "/assets/img/projects/zelda-princess-zelda.webp"
+  - name: "Toon Link"
+    category: "Zelda"
+    designer: "Mortex.3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/zelda-toon-link.webp"
+  - name: "Toon Zelda"
+    category: "Zelda"
+    designer: "Mortex.3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/zelda-toon-zelda.webp"
+  - name: "Link with Bow"
+    category: "Zelda"
+    designer: "Mortex.3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/zelda-link-with-bow.webp"
+  - name: "Revali"
+    category: "Zelda"
+    designer: "Mortex.3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/zelda-revali.webp"
   - name: "Gojo Satoru"
     category: "Outros"
     designer: "Whale3D"
@@ -1436,3 +2156,113 @@ projects:
     designer: "Whale3D"
     versions: ["Regular"]
     image: "/assets/img/projects/other-dinosaur-gravity-knife-t-rex-carrot-knife.webp"
+  - name: "Sung Jinwoo - Solo Leveling"
+    category: "Outros"
+    designer: "Astromaker"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-sung-jinwoo-solo-leveling.webp"
+  - name: "Ichigo Kurosaki - Bleach"
+    category: "Outros"
+    designer: "Astromaker"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-ichigo-kurosaki-bleach.webp"
+  - name: "Yuji Itadori - Jujutsu Kaisen"
+    category: "Outros"
+    designer: "Mix&Bits"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-yuji-itadori-jujutsu-kaisen.webp"
+  - name: "Sailor Moon"
+    category: "Outros"
+    designer: "Mix&Bits"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-sailor-moon.webp"
+  - name: "Blue-Eyes White Dragon"
+    category: "Outros"
+    designer: "Mortex.3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-blue-eyes-white-dragon.webp"
+  - name: "Star Fox - Fox & Falco"
+    category: "Outros"
+    designer: "Mortex.3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-star-fox-fox-falco.webp"
+  - name: "Astro Bot"
+    category: "Outros"
+    designer: "Boxi3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-astro-bot.webp"
+  - name: "Kratos Keychain"
+    category: "Outros"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-kratos-keychain.webp"
+  - name: "Rick and Morty Pack"
+    category: "Outros"
+    designer: "Mortex.3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-rick-and-morty-pack.webp"
+  - name: "Peter Griffin Keychain"
+    category: "Outros"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-peter-griffin-keychain.webp"
+  - name: "Gary the Snail"
+    category: "Outros"
+    designer: "Boxi3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-gary-the-snail.webp"
+  - name: "Patrick Star Keychain"
+    category: "Outros"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-patrick-star-keychain.webp"
+  - name: "Jake the Dog Keychain"
+    category: "Outros"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-jake-the-dog-keychain.webp"
+  - name: "Hefty Smurf Keychain"
+    category: "Outros"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-hefty-smurf-keychain.webp"
+  - name: "Masha Keychain"
+    category: "Outros"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-masha-keychain.webp"
+  - name: "Bear Keychain - Masha and the Bear"
+    category: "Outros"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-bear-keychain-masha-and-the-bear.webp"
+  - name: "Paddington Keychain"
+    category: "Outros"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-paddington-keychain.webp"
+  - name: "Crazy Frog Keychain"
+    category: "Outros"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-crazy-frog-keychain.webp"
+  - name: "Chaves"
+    category: "Outros"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-chaves.webp"
+  - name: "Macca"
+    category: "Outros"
+    designer: "Astromaker"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-macca.webp"
+  - name: "Santa Claus Keychain"
+    category: "Outros"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-santa-claus-keychain.webp"
+  - name: "Christmas Elf Keychain"
+    category: "Outros"
+    designer: "Cats3D"
+    versions: ["Regular"]
+    image: "/assets/img/projects/other-christmas-elf-keychain.webp"
